@@ -34,6 +34,7 @@ router.get("/", isAuth, getOrderCustomer);
 //#send email invoice to customer
 router.post(
   "/customer/invoice",
+  isAuth,
   emailVerificationLimit,
   sendEmailInvoiceToCustomer
 );

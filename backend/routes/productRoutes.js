@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const rateLimit = require("express-rate-limit");
-const { isAuthOptional } = require("../config/auth");
+const { isAuthOptional, isAuth, isAdmin } = require("../config/auth");
 const {
     exportProductsCSV,
     importProductsCSV,
@@ -40,10 +40,10 @@ const recommendationLimiter = rateLimit({
 router.get("/export/csv", exportProductsCSV);
 
 // ================= IMPORT ROUTE =================
-router.post("/import/csv", importProductsCSV);
+router.post("/import/csv", isAuth, isAdmin, importProductsCSV);
 
 //add a product
-router.post("/add", addProduct);
+router.post("/add", isAuth, isAdmin, addProduct);
 
 //track product view
 router.post("/view", viewLimiter, isAuthOptional, addProductView);
@@ -55,7 +55,7 @@ router.post("/recommendations", recommendationLimiter, isAuthOptional, getRecomm
 router.get("/suggested", recommendationLimiter, isAuthOptional, getRecommendations);
 
 //add multiple products
-router.post("/all", addAllProducts);
+router.post("/all", isAuth, isAdmin, addAllProducts);
 
 //get a product
 router.post("/:id", getProductById);
@@ -73,19 +73,19 @@ router.get("/", getAllProducts);
 router.get("/product/:slug", getProductBySlug);
 
 //update a product
-router.patch("/:id", updateProduct);
+router.patch("/:id", isAuth, isAdmin, updateProduct);
 
 //update many products
-router.patch("/update/many", updateManyProducts);
+router.patch("/update/many", isAuth, isAdmin, updateManyProducts);
 
 //update a product status
-router.put("/status/:id", updateStatus);
+router.put("/status/:id", isAuth, isAdmin, updateStatus);
 
 //delete a product
-router.delete("/:id", deleteProduct);
+router.delete("/:id", isAuth, isAdmin, deleteProduct);
 
 //delete many product
-router.patch("/delete/many", deleteManyProducts);
+router.patch("/delete/many", isAuth, isAdmin, deleteManyProducts);
 
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { isAuth, isAdmin } = require("../config/auth");
 const {
   registerAdmin,
   loginAdmin,
@@ -15,8 +16,8 @@ const {
 } = require("../controller/adminController");
 const { passwordVerificationLimit } = require("../lib/email-sender/sender");
 
-//register a staff
-router.post("/register", registerAdmin);
+//register a staff (only admin can register a new admin/staff)
+router.post("/register", isAuth, isAdmin, registerAdmin);
 
 //login a admin
 router.post("/login", loginAdmin);
@@ -28,24 +29,24 @@ router.put("/forget-password", passwordVerificationLimit, forgetPassword);
 router.put("/reset-password", resetPassword);
 
 //add a staff
-router.post("/add", addStaff);
+router.post("/add", isAuth, isAdmin, addStaff);
 
 //get all staff
-router.get("/", getAllStaff);
+router.get("/", isAuth, isAdmin, getAllStaff);
 
 //get a staff
-router.post("/:id", getStaffById);
+router.post("/:id", isAuth, isAdmin, getStaffById);
 
 //update a staff
-router.put("/:id", updateStaff);
+router.put("/:id", isAuth, isAdmin, updateStaff);
 
 //update staf status
-router.put("/update-status/:id", updatedStatus);
+router.put("/update-status/:id", isAuth, isAdmin, updatedStatus);
 
 //delete a staff
-router.delete("/:id", deleteStaff);
+router.delete("/:id", isAuth, isAdmin, deleteStaff);
 
 // update fcm token
-router.put("/update-fcm-token/:id", updateFcmToken);
+router.put("/update-fcm-token/:id", isAuth, isAdmin, updateFcmToken);
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { isAuth, isAdmin } = require('../config/auth');
 
 const {
   addLanguage,
@@ -15,10 +16,10 @@ const {
 } = require('../controller/languageController');
 
 // add a language
-router.post('/add', addLanguage);
+router.post('/add', isAuth, isAdmin, addLanguage);
 
 // add all language
-router.post('/add/all', addAllLanguage);
+router.post('/add/all', isAuth, isAdmin, addAllLanguage);
 
 // get only showing language
 router.get('/show', getShowingLanguage);
@@ -30,18 +31,18 @@ router.get('/all', getAllLanguages);
 router.get('/:id', getLanguageById);
 
 // update a language
-router.put('/:id', updateLanguage);
+router.put('/:id', isAuth, isAdmin, updateLanguage);
 
 // update many language
-router.patch('/update/many', updateManyLanguage);
+router.patch('/update/many', isAuth, isAdmin, updateManyLanguage);
 
 // show/hide a language
-router.put('/status/:id', updateStatus);
+router.put('/status/:id', isAuth, isAdmin, updateStatus);
 
 // delete a language
-router.patch('/:id', deleteLanguage);
+router.patch('/:id', isAuth, isAdmin, deleteLanguage);
 
 //delete many language
-router.patch('/delete/many', deleteManyLanguage);
+router.patch('/delete/many', isAuth, isAdmin, deleteManyLanguage);
 
 module.exports = router;

@@ -1,5 +1,5 @@
 const express = require("express");
-
+const { isAuth, isAdmin } = require("../config/auth");
 const {
   addBrand,
   getAllBrands,
@@ -13,14 +13,14 @@ const {
 
 const router = express.Router();
 
-router.post("/add", addBrand);
+router.post("/add", isAuth, isAdmin, addBrand);
 router.get("/", getAllBrands);
 router.get("/show", getShowingBrands);
 router.get("/:id", getBrandById);
-router.put("/:id", updateBrand);
-router.put("/status/:id", updateBrandStatus);
-router.delete("/:id", deleteBrand);
-router.patch("/delete/many", deleteManyBrands);
+router.put("/:id", isAuth, isAdmin, updateBrand);
+router.put("/status/:id", isAuth, isAdmin, updateBrandStatus);
+router.delete("/:id", isAuth, isAdmin, deleteBrand);
+router.patch("/delete/many", isAuth, isAdmin, deleteManyBrands);
 
 module.exports = router;
 

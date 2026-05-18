@@ -44,6 +44,7 @@ const {
   emailVerificationLimit,
   phoneVerificationLimit,
 } = require("../lib/email-sender/sender");
+const { isAuth, isAdmin } = require("../config/auth");
 
 //verify email
 router.post("/verify-email", emailVerificationLimit, verifyEmailAddress);
@@ -65,16 +66,16 @@ router.post("/login/send-phone-email-otp", sendPhoneEmailOTP);
 router.post("/login/verify-phone-email-otp", verifyPhoneEmailOTP);
 
 // shipping address send to array
-router.post("/shipping/address/:id", addShippingAddress);
+router.post("/shipping/address/:id", isAuth, addShippingAddress);
 
 // get all shipping address
-router.get("/shipping/address/:id", getShippingAddress);
+router.get("/shipping/address/:id", isAuth, getShippingAddress);
 
 // shipping address update
-router.put("/shipping/address/:userId/:shippingId", updateShippingAddress);
+router.put("/shipping/address/:userId/:shippingId", isAuth, updateShippingAddress);
 
 // shipping address delete
-router.delete("/shipping/address/:userId/:shippingId", deleteShippingAddress);
+router.delete("/shipping/address/:userId/:shippingId", isAuth, deleteShippingAddress);
 
 //register a user
 router.post("/register/:token", registerCustomer);
@@ -126,7 +127,7 @@ router.post('/send-credentials/:id', async (req, res) => {
 });
 
 // Admin: get wholesalers
-router.get("/wholesalers", getAllWholesalers);
+router.get("/wholesalers", isAuth, isAdmin, getAllWholesalers);
 
 //login a user
 router.post("/login", loginCustomer);
@@ -144,16 +145,16 @@ router.put("/forget-password", passwordVerificationLimit, forgetPassword);
 router.put("/reset-password", resetPassword);
 
 //change password
-router.post("/change-password", changePassword);
+router.post("/change-password", isAuth, changePassword);
 
 //add all users
-router.post("/add/all", addAllCustomers);
+router.post("/add/all", isAuth, isAdmin, addAllCustomers);
 
 //get all user
-router.get("/", getAllCustomers);
+router.get("/", isAuth, isAdmin, getAllCustomers);
 
 //get customer statistics
-router.get("/statistics", getCustomerStatistics);
+router.get("/statistics", isAuth, isAdmin, getCustomerStatistics);
 
 //check customer existence
 router.post("/check-user", checkCustomerExistance);
@@ -162,32 +163,32 @@ router.post("/check-user", checkCustomerExistance);
 // ─── CART ROUTES ──────────────────────────────────────────────────────────────
 
 // Get customer cart (populated) — must be BEFORE /:id wildcard
-router.get("/cart/:customerId", getCart);
+router.get("/cart/:customerId", isAuth, getCart);
 
 // Add item to cart
-router.post("/cart/:customerId/add", addToCart);
+router.post("/cart/:customerId/add", isAuth, addToCart);
 
 // Update item quantity in cart
-router.put("/cart/:customerId/update", updateCartItem);
+router.put("/cart/:customerId/update", isAuth, updateCartItem);
 
 // Remove a specific item from cart
-router.delete("/cart/:customerId/remove/:productId", removeFromCart);
+router.delete("/cart/:customerId/remove/:productId", isAuth, removeFromCart);
 
 // Clear entire cart
-router.delete("/cart/:customerId/clear", clearCart);
+router.delete("/cart/:customerId/clear", isAuth, clearCart);
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 //get a user
-router.get("/:id", getCustomerById);
+router.get("/:id", isAuth, getCustomerById);
 
 //update a user
-router.put("/:id", updateCustomer);
+router.put("/:id", isAuth, updateCustomer);
 
 //delete a user
-router.delete("/:id", deleteCustomer);
+router.delete("/:id", isAuth, isAdmin, deleteCustomer);
 
 // update fcm token
-router.put("/update-fcm-token/:id", updateFcmToken);
+router.put("/update-fcm-token/:id", isAuth, updateFcmToken);
 
 module.exports = router;

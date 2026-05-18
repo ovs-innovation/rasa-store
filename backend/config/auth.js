@@ -12,6 +12,7 @@ const signInToken = (user) => {
       address: user.address,
       phone: user.phone,
       image: user.image,
+      role: user.role,
     },
     process.env.JWT_SECRET || "fallback_jwt_secret",
     {
@@ -82,12 +83,12 @@ const isAuthOptional = async (req, res, next) => {
 
 
 const isAdmin = async (req, res, next) => {
-  const admin = await Admin.findOne({ role: "Admin" });
-  if (admin) {
+  const adminRoles = ["Admin", "Super Admin", "Cashier", "Manager", "CEO", "Driver", "Security Guard", "Accountant"];
+  if (req.user && req.user.role && adminRoles.includes(req.user.role)) {
     next();
   } else {
     res.status(401).send({
-      message: "User is not Admin",
+      message: "User is not authorized as Admin",
     });
   }
 };
