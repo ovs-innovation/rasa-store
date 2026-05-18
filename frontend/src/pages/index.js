@@ -82,22 +82,23 @@ const Home = ({ popularProducts, discountProducts, bestSellingProducts, attribut
 
             {/* feature category's */}
             {storeCustomizationSetting?.home?.featured_status && (
-              <div id="feature-category" className="bg-white lg:py-16 py-10">
+              <div id="feature-category" className="bg-white lg:py-12 pt-6 pb-10">
                 <div className="mx-auto max-w-screen-2xl px-3 sm:px-10">
-                  <div className="flex items-center md:justify-between mb-2 justify-center  gap-2">
-                    <SectionHeader
-                      title={storeCustomizationSetting?.home?.feature_title || "Featured Categories"}
-                      subtitle={storeCustomizationSetting?.home?.feature_description || "Explore our handpicked selection of featured categories"}
-                      loading={loading}
-                      error={error}
-                      align="left"
-                    />
+                  <div className="flex flex-row justify-between items-end mb-4">
+                    <div className="flex-1">
+                      <SectionHeader
+                        title={storeCustomizationSetting?.home?.feature_title || "Featured Categories"}
+                        subtitle={storeCustomizationSetting?.home?.feature_description || "Explore our handpicked selection of featured categories"}
+                        loading={loading}
+                        error={error}
+                        align="left"
+                      />
+                    </div>
                     <Link
                       href="/categories"
-                      className="border border-emerald-700 text-emerald-700 font-bold rounded-full px-6 py-2 flex items-center gap-2 hover:bg-emerald-50 transition text-sm  md:text-base whitespace-nowrap"
-                      style={{ minWidth: 80 }}
+                      className="border border-emerald-700 text-emerald-700 font-bold rounded-full px-4 md:px-6 py-1.5 md:py-2 flex items-center justify-center hover:bg-emerald-50 transition text-xs md:text-sm whitespace-nowrap flex-shrink-0 mb-1 ml-2"
                     >
-                      View All <span className="text-lg">&gt;</span>
+                      View All <span className="ml-1 text-base">&gt;</span>
                     </Link>
                   </div>
                   <FeatureCategory attributes={attributes} />
@@ -224,8 +225,8 @@ const Home = ({ popularProducts, discountProducts, bestSellingProducts, attribut
                         <span>Popular Choice</span>
                       </div>
                       <SectionHeader
-                        title="Best Selling Products"
-                        subtitle="Explore our top-rated essentials, loved by thousands of customers."
+                        title={storeCustomizationSetting?.home?.best_selling_title || "Best Selling Products"}
+                        subtitle={storeCustomizationSetting?.home?.best_selling_description || "Explore our top-rated essentials, loved by thousands of customers."}
                         align="left"
                       />
                     </div>

@@ -133,7 +133,24 @@ const PrivacyPolicy = () => {
                         height={18}
                         error={error}
                         loading={loading}
-                        data={storeCustomizationSetting?.privacy_policy?.description}
+                        data={storeCustomizationSetting?.privacy_policy?.description || `<h2>1. Introduction</h2>
+<p>Welcome to Farmacykart. We are committed to protecting your privacy and ensuring the security of your personal data.</p>
+<h2>2. Information We Collect</h2>
+<ul>
+  <li><strong>Personal Details:</strong> Name, contact number, email, and delivery address.</li>
+  <li><strong>Medical Information:</strong> Prescription uploads (used strictly for order verification by licensed pharmacists).</li>
+  <li><strong>Payment Data:</strong> Securely processed via trusted payment gateways (we do not store card details).</li>
+</ul>
+<h2>3. How We Use Your Data</h2>
+<ul>
+  <li>To process and deliver your medicines and groceries.</li>
+  <li>To verify prescriptions in compliance with Indian pharmaceutical laws.</li>
+  <li>To send order updates and promotional offers (opt-out available).</li>
+</ul>
+<h2>4. Data Security & Sharing</h2>
+<p>Your data is encrypted and stored securely. We share necessary details (like address and phone number) only with verified delivery partners. We do not sell your data to third parties.</p>
+<h2>5. Your Rights</h2>
+<p>Under the DPDP Act (India), you have the right to access, correct, or request the deletion of your data. Contact our grievance officer for any privacy concerns.</p>`}
                       />
                     </div>
                   </div>

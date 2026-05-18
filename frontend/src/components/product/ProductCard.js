@@ -250,12 +250,14 @@ const ProductCard = ({ product, attributes, hidePriceAndAdd = false, hideDiscoun
                           MRP <span className="line-through">{currency}{getNumberTwo(originalPriceValue)}</span>
                         </p>
                       )}
-                      <p className="text-sm sm:text-base md:text-lg font-bold text-gray-900">
-                        {currency}{getNumberTwo(Math.max(0, currentPrice))}
-                        <span className="text-[10px] sm:text-xs font-normal text-gray-500 ml-1">
-                          + including GST
+                      <div className="flex flex-col mb-0.5">
+                        <p className="text-sm sm:text-base md:text-lg font-bold text-gray-900 leading-none mt-1">
+                          {currency}{getNumberTwo(Math.max(0, currentPrice))}
+                        </p>
+                        <span className="inline-block text-[9px] sm:text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded mt-1 w-fit">
+                          (Incl. of GST)
                         </span>
-                      </p>
+                      </div>
                       {isWholesaler && wholesalePrice && (
                         <p className="text-xs text-gray-500 mt-1">Wholesale: <span className="font-semibold">{currency}{getNumberTwo(wholesalePrice)}</span>{product.minQuantity ? ` (Min ${product.minQuantity})` : ""}</p>
                       )}

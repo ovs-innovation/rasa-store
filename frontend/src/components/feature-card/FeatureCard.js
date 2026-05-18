@@ -15,7 +15,7 @@ const FeatureCard = () => {
       id: 1,
       title: showingTranslateValue(
         storeCustomizationSetting?.footer?.shipping_card
-      ),
+      ) || "Free Shipping",
 
       icon: FiTruck,
     },
@@ -23,7 +23,7 @@ const FeatureCard = () => {
       id: 2,
       title: showingTranslateValue(
         storeCustomizationSetting?.footer?.support_card
-      ),
+      ) || "24/7 Support",
 
       icon: FiPhoneCall,
     },
@@ -31,14 +31,14 @@ const FeatureCard = () => {
       id: 3,
       title: showingTranslateValue(
         storeCustomizationSetting?.footer?.payment_card
-      ),
+      ) || "Secure Payment",
       icon: FiCreditCard,
     },
     {
       id: 4,
       title: showingTranslateValue(
         storeCustomizationSetting?.footer?.offer_card
-      ),
+      ) || "Daily Offers",
       icon: FiGift,
     },
   ];

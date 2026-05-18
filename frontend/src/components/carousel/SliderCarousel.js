@@ -21,33 +21,33 @@ const SliderCarousel = () => {
   const showDots = bottom_dots || both_slider;
 
   // Get all slider images and links from CMS
-  const sliderData = [
+  const backendSliderData = [
     {
-      img: storeCustomizationSetting?.slider?.first_img || "/slider/dss11.webp",
+      img: storeCustomizationSetting?.slider?.first_img,
       slug: storeCustomizationSetting?.slider?.first_productSlug,
       catSlug: storeCustomizationSetting?.slider?.first_categorySlug,
       catId: storeCustomizationSetting?.slider?.first_categoryId
     },
     {
-      img: storeCustomizationSetting?.slider?.second_img || "/slider/dss22.webp",
+      img: storeCustomizationSetting?.slider?.second_img,
       slug: storeCustomizationSetting?.slider?.second_productSlug,
       catSlug: storeCustomizationSetting?.slider?.second_categorySlug,
       catId: storeCustomizationSetting?.slider?.second_categoryId
     },
     {
-      img: storeCustomizationSetting?.slider?.third_img || "/slider/dss11.webp",
+      img: storeCustomizationSetting?.slider?.third_img,
       slug: storeCustomizationSetting?.slider?.third_productSlug,
       catSlug: storeCustomizationSetting?.slider?.third_categorySlug,
       catId: storeCustomizationSetting?.slider?.third_categoryId
     },
     {
-      img: storeCustomizationSetting?.slider?.four_img || "/slider/dss11.webp",
+      img: storeCustomizationSetting?.slider?.four_img,
       slug: storeCustomizationSetting?.slider?.four_productSlug,
       catSlug: storeCustomizationSetting?.slider?.four_categorySlug,
       catId: storeCustomizationSetting?.slider?.four_categoryId
     },
     {
-      img: storeCustomizationSetting?.slider?.five_img || "/slider/dss11.webp",
+      img: storeCustomizationSetting?.slider?.five_img,
       slug: storeCustomizationSetting?.slider?.five_productSlug,
       catSlug: storeCustomizationSetting?.slider?.five_categorySlug,
       catId: storeCustomizationSetting?.slider?.five_categoryId
@@ -56,6 +56,13 @@ const SliderCarousel = () => {
     ...item,
     img: showingImage(item.img)
   }));
+
+  const defaultSliderData = [
+    { img: "/slider/dss11.webp" },
+    { img: "/slider/dss22.webp" },
+  ];
+
+  const sliderData = backendSliderData.length > 0 ? backendSliderData : defaultSliderData;
 
   // Don't render if no images
   if (!sliderData || sliderData.length === 0) {

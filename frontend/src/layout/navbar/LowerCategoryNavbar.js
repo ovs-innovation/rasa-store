@@ -60,7 +60,7 @@ export default function LowerCategoryNavbar({ categories = [], showingTranslateV
   if (!categories || categories.length === 0) return null;
 
   return (
-    <div className="w-full bg-white border-b border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] sticky top-[80px] z-40 transition-all duration-300">
+    <div className="w-full bg-white border-b border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] sticky top-[64px] lg:top-[80px] z-40 transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 md:px-8 relative">
         <nav
           ref={dropdownRef}

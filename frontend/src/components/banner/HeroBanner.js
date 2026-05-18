@@ -6,6 +6,7 @@ import useTranslation from "next-translate/useTranslation";
 import LocationPickerDropdown from "@components/location/LocationPickerDropdown";
 import SearchSuggestions from "@components/search/SearchSuggestions";
 import PrescriptionUploadModal from "@components/prescription/PrescriptionUploadModal";
+import useGetSetting from "@hooks/useGetSetting";
 import {
   FaHeartbeat,
   FaCapsules,
@@ -23,6 +24,7 @@ const HeroBanner = () => {
   const router = useRouter();
   const { t } = useTranslation("common");
   const searchInputRef = useRef(null);
+  const { storeCustomizationSetting } = useGetSetting();
 
   const handleSearchChange = (value) => {
     setSearchText(value);
@@ -281,10 +283,10 @@ const HeroBanner = () => {
           className="relative z-10 text-center w-full max-w-6xl mx-auto mb-6 md:mb-8 px-2"
         >
           <h1 className="text-2xl md:text-5xl   font-bold mb-4 md:mb-6 leading-tight text-emerald-950 drop-shadow-sm">
-            Affordable Medicines, Delivered to Your Doorstep
+            {storeCustomizationSetting?.home?.hero_title || "Affordable Medicines, Delivered to Your Doorstep"}
           </h1>
           <p className="text-base md:text-lg lg:text-xl text-emerald-800 drop-shadow-sm mb-6 md:mb-8" style={{ fontFamily: 'Poppins, Arial, sans-serif' }}>
-            Trusted pharmacy • Genuine medicines • Fast delivery
+            {storeCustomizationSetting?.home?.hero_description || "Trusted pharmacy • Genuine medicines • Fast delivery"}
           </p>
           {/* Search Box Section */}
         <motion.div

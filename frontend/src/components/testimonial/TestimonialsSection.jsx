@@ -12,10 +12,12 @@ import "swiper/css/autoplay";
 import TestimonialServices from "@services/TestimonialServices";
 import CMSkeleton from "@components/preloader/CMSkeleton";
 import SectionHeader from "@components/common/SectionHeader";
+import useGetSetting from "@hooks/useGetSetting";
 
 const TestimonialsSection = () => {
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const { storeCustomizationSetting } = useGetSetting();
 
   const {
     data: testimonials,
@@ -92,10 +94,10 @@ const TestimonialsSection = () => {
         <div className="mx-auto max-w-screen-2xl px-3 sm:px-10">
           <div className="text-left mb-10">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-              What our customers have to say
+              {storeCustomizationSetting?.home?.testimonial_title || "What our customers have to say"}
             </h2>
             <p className="text-lg text-gray-600">
-              Hear from our satisfied customers
+              {storeCustomizationSetting?.home?.testimonial_description || "Hear from our satisfied customers"}
             </p>
           </div>
 

@@ -111,10 +111,10 @@ const Careers = () => {
                       </p>
                       <a
                         href="mailto:careers@farmacykart.com"
-                        className="inline-flex items-center gap-2 text-store-600 hover:text-store-700 font-semibold text-lg transition-colors"
+                        className="inline-flex items-center gap-2 text-store-600 hover:text-store-700 font-semibold text-sm sm:text-base md:text-lg transition-colors break-all"
                       >
-                        <FiMail className="w-5 h-5" />
-                        careers@farmacykart.com
+                        <FiMail className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                        <span className="break-all">careers@farmacykart.com</span>
                       </a>
                     </div>
                   </div>

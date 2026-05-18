@@ -39,7 +39,24 @@ const RefundReturnPolicy = () => {
                     height={15}
                     error={error}
                     loading={loading}
-                    data={storeCustomizationSetting?.refund_return_policy?.description}
+                    data={storeCustomizationSetting?.refund_return_policy?.description || `<h2>1. Return Eligibility</h2>
+<p>Items can be returned within 7 days of delivery under the following conditions:</p>
+<ul>
+  <li>Products are expired or damaged upon arrival.</li>
+  <li>Wrong items were delivered.</li>
+  <li>Items must be unused, in original packaging, with all seals intact.</li>
+</ul>
+<h2>2. Non-Returnable Items</h2>
+<p>Due to hygiene and safety reasons, the following cannot be returned:</p>
+<ul>
+  <li>Opened medicines and syrups.</li>
+  <li>Personal care and hygiene products.</li>
+  <li>Temperature-sensitive items (like insulin or vaccines).</li>
+</ul>
+<h2>3. Refund Process</h2>
+<p>Once your return is received and inspected, refunds will be processed to your original payment method within 5-7 business days.</p>
+<h2>4. Cancellations</h2>
+<p>You may cancel your order at no cost before it has been dispatched. Dispatched orders cannot be cancelled.</p>`}
                   />
                 </div>
               </div>

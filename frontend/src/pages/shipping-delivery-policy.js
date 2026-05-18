@@ -39,7 +39,20 @@ const ShippingDeliveryPolicy = () => {
                     height={15}
                     error={error}
                     loading={loading}
-                    data={storeCustomizationSetting?.shipping_delivery_policy?.description}
+                    data={storeCustomizationSetting?.shipping_delivery_policy?.description || `<h2>1. Delivery Areas</h2>
+<p>We currently deliver across Ghaziabad and select areas in the National Capital Region (NCR).</p>
+<h2>2. Delivery Charges</h2>
+<ul>
+  <li>Free delivery on all orders above ₹499.</li>
+  <li>A nominal delivery fee of ₹40 applies to orders below ₹499.</li>
+</ul>
+<h2>3. Estimated Delivery Time</h2>
+<ul>
+  <li><strong>Medicines & Prescriptions:</strong> Standard delivery within 24-48 hours. Express delivery within 4-6 hours (subject to availability).</li>
+  <li><strong>Groceries & Daily Needs:</strong> Same-day delivery for orders placed before 4:00 PM.</li>
+</ul>
+<h2>4. Order Tracking</h2>
+<p>Once your order is dispatched, you will receive a tracking link via SMS/WhatsApp and email.</p>`}
                   />
                 </div>
               </div>

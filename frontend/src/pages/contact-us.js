@@ -164,11 +164,14 @@ const ContactUs = () => {
                 className="block w-auto"
               />
             </div>
-            <div className="px-0 pb-2 lg:w-5/12 flex flex-col md:flex-row">
+            <div className="px-0 pb-2 lg:w-5/12 flex flex-col md:flex-row w-full">
               <form
                 onSubmit={handleSubmit(submitHandler)}
-                className="w-full mx-auto flex flex-col justify-center"
+                className="w-full mx-auto flex flex-col justify-center bg-white p-6 sm:p-8 md:p-10 rounded-2xl shadow-2xl border border-gray-100 relative overflow-hidden"
               >
+                {/* Decorative blob */}
+                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 rounded-full bg-store-50 opacity-50 pointer-events-none"></div>
+                <div className="relative z-10 w-full flex flex-col justify-center">
                 <div className="mb-12">
                   <h3 className="text-xl md:text-2xl lg:text-3xl font-semibold font-serif mb-3">
                     <CMSkeleton
@@ -248,14 +251,16 @@ const ContactUs = () => {
                     ></textarea>
                     <Error errorName={errors.message} />
                   </div>
-                  <div className="relative">
+                  <div className="relative mt-2">
                     <button
+                      type="submit"
                       data-variant="flat"
-                      className={`md:text-sm leading-4 inline-flex items-center cursor-pointer transition ease-in-out duration-300 font-semibold text-center justify-center border-0 border-transparent rounded-md placeholder-white focus-visible:outline-none focus:outline-none bg-store-500 text-white px-5 md:px-6 lg:px-8 py-3 md:py-3.5 lg:py-3 hover:text-white hover:bg-store-600 h-12 mt-1 text-sm lg:text-base w-full sm:w-auto`}
+                      className="w-full bg-gradient-to-r from-store-500 to-store-600 hover:from-store-600 hover:to-store-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 text-base md:text-lg"
                     >
                       {t("Send Message")}
                     </button>
                   </div>
+                </div>
                 </div>
               </form>
             </div>

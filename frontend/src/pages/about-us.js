@@ -21,7 +21,7 @@ const AboutUs = () => {
         }
       /> */}
 
-      <div className="bg-white">
+      <div className="bg-white pt-8 lg:pt-16">
         <div className="max-w-screen-2xl mx-auto pb-10 px-4 sm:px-10">
           <div className="grid grid-flow-row lg:grid-cols-2 gap-4 lg:gap-16 items-center">
             <div className="">
@@ -32,7 +32,7 @@ const AboutUs = () => {
                   count={1}
                   height={50}
                   loading={loading}
-                  data={storeCustomizationSetting?.about_us?.top_title}
+                  data={storeCustomizationSetting?.about_us?.top_title || "About Farmacykart"}
                 />
               </h3>
               <div className="mt-3 text-base opacity-90 leading-7 text-justify">
@@ -41,7 +41,7 @@ const AboutUs = () => {
                     count={5}
                     height={20}
                     loading={loading}
-                    data={storeCustomizationSetting?.about_us?.top_description}
+                    data={storeCustomizationSetting?.about_us?.top_description || "Founded in 2020 in the heart of Ghaziabad, Uttar Pradesh, Farmacykart was built on a simple idea: health and daily essentials should never be hard to reach. We are a proud Indian multi-vendor e-commerce platform that connects families with licensed medicine distributors, local pharmacies, and quality grocery vendors."}
                   />
                 </p>
               </div>
@@ -59,18 +59,18 @@ const AboutUs = () => {
                       <span className="text-3xl block font-extrabold font-serif mb-4 text-gray-800">
                         {showingTranslateValue(
                           storeCustomizationSetting?.about_us?.card_two_title
-                        )}
+                        ) || "Our Mission"}
                       </span>
                       <h4 className="text-lg font-serif font-bold mb-1">
                         {showingTranslateValue(
                           storeCustomizationSetting?.about_us?.card_two_sub
-                        )}
+                        ) || "Healthcare & Groceries"}
                       </h4>
                       <p className="mb-0 opacity-90 leading-7">
                         {showingTranslateValue(
                           storeCustomizationSetting?.about_us
                             ?.card_two_description
-                        )}
+                        ) || "To simplify healthcare and daily shopping for Indian households by offering a reliable, transparent, and user-friendly home delivery platform."}
                       </p>
                     </>
                   )}
@@ -88,18 +88,18 @@ const AboutUs = () => {
                       <span className="text-3xl block font-extrabold font-serif mb-4 text-gray-800">
                         {showingTranslateValue(
                           storeCustomizationSetting?.about_us?.card_one_title
-                        )}
+                        ) || "What We Do"}
                       </span>
                       <h4 className="text-lg font-serif font-bold mb-1">
                         {showingTranslateValue(
                           storeCustomizationSetting?.about_us?.card_one_sub
-                        )}
+                        ) || "Unified online platform"}
                       </h4>
                       <p className="mb-0 opacity-90 leading-7">
                         {showingTranslateValue(
                           storeCustomizationSetting?.about_us
                             ?.card_one_description
-                        )}
+                        ) || "We provide a unified online platform where you can buy prescription drugs, over-the-counter medicines, personal care items, and daily groceries."}
                       </p>
                     </>
                   )}
@@ -127,7 +127,7 @@ const AboutUs = () => {
                 height={20}
                 loading={loading}
                 data={
-                  storeCustomizationSetting?.about_us?.middle_description_one
+                  storeCustomizationSetting?.about_us?.middle_description_one || "At Farmacykart, our mission is to make healthcare and daily essentials accessible, affordable, and highly convenient for every household in Ghaziabad and beyond."
                 }
               />
             </p>
@@ -139,7 +139,7 @@ const AboutUs = () => {
                 error={error}
                 loading={loading}
                 data={
-                  storeCustomizationSetting?.about_us?.middle_description_two
+                  storeCustomizationSetting?.about_us?.middle_description_two || "We proudly support and connect local Ghaziabad businesses with the community they serve. By bringing local vendors online, we ensure that you get lightning-fast delivery of 100% genuine products."
                 }
               />
             </p>

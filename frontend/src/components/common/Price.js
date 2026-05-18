@@ -124,17 +124,19 @@ const Price = ({
         </>
       )}
       {hasTaxInfo && (
-        <p
-          className={`text-xs md:text-sm font-normal mt-1 ${
-            product?.isPriceInclusive ? "text-emerald-600" : "text-gray-500"
-          }`}
-        >
-          {product?.isPriceInclusive
-            ? "+ including GST"
-            : "Price exclusive of taxes"}
-          <span className="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-600">
-            ({taxRateValue}%)
-          </span>
+        <p className="text-[11px] sm:text-xs font-medium mt-1">
+          {product?.isPriceInclusive ? (
+            <span className="inline-block text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold">
+              (Incl. of GST)
+            </span>
+          ) : (
+            <span className="text-gray-500">
+              + GST Extra 
+              <span className="ml-1 inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-600">
+                {taxRateValue}%
+              </span>
+            </span>
+          )}
         </p>
       )}
     </div>
