@@ -51,7 +51,7 @@ app.set("trust proxy", 1);
 
 // CORS configuration - allow frontend domain + localhost for dev
 const allowedOrigins = process.env.FRONTEND_URL 
-  ? [process.env.FRONTEND_URL, "http://localhost:3000", "http://localhost:5055"]
+  ? [process.env.FRONTEND_URL, "http://localhost:3000", "http://localhost:5055","exp://192.168.1.6:8081","exp://192.168.1.6:8082"]
   : ["http://localhost:3000", "http://localhost:5055", "*"];
 
 const corsOptions = {
