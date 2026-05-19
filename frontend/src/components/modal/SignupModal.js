@@ -306,12 +306,11 @@ export const SignupContent = ({ onSuccess }) => {
     return (
         <div className="w-full">
             {/* ── Account Type Switcher ── */}
-            <div className="mb-8">
+            {/* <div className="mb-8">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4 text-center">
                     Choose Account Type
                 </p>
                 <div className="grid grid-cols-2 gap-3">
-                    {/* Customer Tab */}
                     <button
                         type="button"
                         onClick={() => setActiveTab("customer")}
@@ -336,7 +335,6 @@ export const SignupContent = ({ onSuccess }) => {
                         )}
                     </button>
 
-                    {/* Wholesaler Tab */}
                     <button
                         type="button"
                         onClick={() => setActiveTab("wholesaler")}
@@ -361,7 +359,7 @@ export const SignupContent = ({ onSuccess }) => {
                         )}
                     </button>
                 </div>
-            </div>
+            </div> */}
 
             {/* ── CUSTOMER FORM ── */}
             {activeTab === "customer" && (
@@ -448,6 +446,7 @@ export const SignupContent = ({ onSuccess }) => {
                                 <Link href="/privacy-policy" className="text-blue-600 font-semibold hover:underline">
                                     Privacy Policy
                                 </Link>
+                                <span className="text-red-500 ml-1">*</span>
                             </label>
                         </div>
                         <Error errorName={errors.agreeterm} />

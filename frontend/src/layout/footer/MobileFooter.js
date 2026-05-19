@@ -71,7 +71,7 @@ const MobileFooter = () => {
     <>
       {/* Drawer lives off-canvas; keep it mounted without forcing page layout/scroll */}
       <CategoryDrawer />
-      <footer className="lg:hidden fixed z-30 top-0 bg-white flex items-center justify-between w-full h-16 px-3 sm:px-10 shadow-sm">
+      <footer className="lg:hidden fixed z-[60] top-0 bg-white flex items-center justify-between w-full h-16 px-3 sm:px-10 shadow-sm">
         <div className="flex items-center gap-4">
           <button
             aria-label="Bar"
@@ -121,34 +121,12 @@ const MobileFooter = () => {
               </Link>
             ) : (
               <div className="relative">
-                <button
-                  onClick={() => setShowSignDropdown((prev) => !prev)}
-                  onBlur={() => setTimeout(() => setShowSignDropdown(false), 200)}
+                <Link
+                  href="/auth/signup"
                   className="bg-store-500 text-white px-4 py-2 rounded-full flex items-center gap-2 font-bold text-sm hover:bg-store-600 transition-colors"
                 >
                   <IoLockClosedOutline className="text-lg" /> Sign In
-                </button>
-
-                {showSignDropdown && (
-                  <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-100">
-                    <Link
-                      href="/auth/login"
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-store-500"
-                    >
-                      Customer
-                    </Link>
-                    <button
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-store-500"
-                      onMouseDown={(e) => {
-                        e.preventDefault(); // Prevent blur
-                        setShowSignDropdown(false);
-                        setWholesalerModalOpen(true);
-                      }}
-                    >
-                      Wholesaler
-                    </button>
-                  </div>
-                )}
+                </Link>
               </div>
             )}
           </div>

@@ -159,7 +159,7 @@ const RefundSettings = () => {
 
   return (
     <>
-      <PageTitle>{t("RefundSettings")}</PageTitle>
+      <PageTitle>{t("Refund Settings")}</PageTitle>
       <AnimatedContent>
         <div className="space-y-6">
           {/* Refund Request Mode Section */}

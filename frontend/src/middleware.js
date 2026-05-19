@@ -9,7 +9,7 @@ export async function middleware(request) {
   
   if (userInfoCookie?.value) {
     try {
-      cookieUserInfo = JSON.parse(userInfoCookie.value);
+      cookieUserInfo = JSON.parse(decodeURIComponent(userInfoCookie.value));
     } catch (e) {
       cookieUserInfo = null;
     }

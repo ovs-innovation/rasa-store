@@ -125,8 +125,8 @@ const sendPhoneEmailOTP = async (req, res) => {
       });
     }
 
-    // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
     const hashedOtp = bcrypt.hashSync(otp, 10);
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
@@ -404,7 +404,7 @@ const registerCustomerDirect = async (req, res) => {
       });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
+    const otp = Math.floor(1000 + Math.random() * 9000).toString(); const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
 
 
 
@@ -512,7 +512,7 @@ const resendVerificationEmail = async (req, res) => {
     }
 
     // Generate new OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
     const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
 
     user.emailVerificationOtp = otp;

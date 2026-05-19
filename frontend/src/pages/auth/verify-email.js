@@ -14,7 +14,7 @@ const VerifyEmail = () => {
   const { email } = router.query;
   const { dispatch } = useContext(UserContext);
   
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState(["", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const otpInputRefs = useRef([]);
@@ -33,7 +33,7 @@ const VerifyEmail = () => {
       next[index] = digit;
       return next;
     });
-    if (digit && index < 5) otpInputRefs.current[index + 1]?.focus();
+    if (digit && index < 3) otpInputRefs.current[index + 1]?.focus();
   };
 
   const handleOtpKeyDown = (index, e) => {
@@ -43,8 +43,8 @@ const VerifyEmail = () => {
   const handleVerify = async (e) => {
     e.preventDefault();
     const otpCode = otp.join("");
-    if (otpCode.length !== 6) {
-      notifyError("Please enter the full 6-digit OTP.");
+    if (otpCode.length !== 4) {
+      notifyError("Please enter the full 4-digit OTP.");
       return;
     }
 
@@ -68,7 +68,7 @@ const VerifyEmail = () => {
         Cookies.set("userInfo", JSON.stringify(userInfo), { expires: 1 });
         dispatch({ type: "USER_LOGIN", payload: userInfo });
         notifySuccess("Email verified successfully!");
-        router.push("/");
+        router.push("/user/dashboard");
       }
     } catch (err) {
       notifyError(err?.response?.data?.message || "Invalid OTP.");
@@ -95,7 +95,7 @@ const VerifyEmail = () => {
         <div className="mx-auto max-w-lg bg-white shadow-xl rounded-2xl p-8 sm:p-10 text-center">
           <h2 className="text-3xl font-bold mb-4">Verify Your Email</h2>
           <p className="text-gray-500 mb-8">
-            We've sent a 6-digit verification code to <br />
+            We've sent a 4-digit verification code to <br />
             <span className="font-semibold text-gray-900">{email}</span>
           </p>
 

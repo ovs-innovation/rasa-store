@@ -23,7 +23,7 @@ const InputArea = ({
   const isPassword = type === "password";
   return (
     <>
-      <Label label={label} />
+      <Label label={label} required={required} />
       <div className="relative">
         {Icon && (
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

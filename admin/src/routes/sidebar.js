@@ -116,7 +116,7 @@ const sidebar = [
       },
       {
         path: "/sub-categories",
-        name: "SubCategory",
+        name: "Sub Category",
       },
     ],
   },
@@ -137,7 +137,7 @@ const sidebar = [
   // },
   {
     icon: FiBox,
-    name: "ProductSetup",
+    name: "Product Setup",
     routes: [
       {
         path: "/products/add",
@@ -149,24 +149,24 @@ const sidebar = [
       },
       {
         path: "/products/low-stock",
-        name: "LowStockList",
+        name: "Low Stock List",
       },
       {
         path: "/products/gallery",
-        name: "ProductGallery",
+        name: "Product Gallery",
       },
       {
         path: "/products/new-request",
-        name: "NewItemRequest",
+        name: "New Item Request",
       },
 
       {
         path: "/products/bulk-import",
-        name: "BulkImport",
+        name: "Bulk Import",
       },
       {
         path: "/products/bulk-export",
-        name: "BulkExport",
+        name: "Bulk Export",
       },
     ],
   },
@@ -242,11 +242,11 @@ const sidebar = [
     routes: [
       {
         path: "/settings/general",
-        name: "GeneralSettings",
+        name: "General Settings",
       },
       {
         path: "/settings/business",
-        name: "BusinessSettings",
+        name: "Business Settings",
       },
       // {
       //   path: "/settings/business-information",
@@ -304,11 +304,11 @@ const sidebar = [
 
       {
         path: "/store/customization",
-        name: "StoreCustomization",
+        name: "Store Customization",
       },
       {
         path: "/store/store-settings",
-        name: "StoreSettings",
+        name: "Store Settings",
       },
     ],
   },

@@ -17,7 +17,7 @@ const OTPLogin = () => {
   const { dispatch } = useContext(UserContext);
   const [step, setStep] = useState("phone");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [otp, setOtp] = useState(["", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [confirmationResult, setConfirmationResult] = useState(null);
@@ -58,8 +58,8 @@ const OTPLogin = () => {
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     const otpCode = otp.join("");
-    if (otpCode.length !== 6) {
-      setError("Please enter the 6-digit OTP");
+    if (otpCode.length !== 4) {
+      setError("Please enter the 4-digit OTP");
       return;
     }
 
@@ -86,7 +86,7 @@ const OTPLogin = () => {
         Cookies.set("userInfo", JSON.stringify(userInfo), { expires: 1 });
         dispatch({ type: "USER_LOGIN", payload: userInfo });
         notifySuccess("Login successful!");
-        router.push("/");
+        router.push("/user/dashboard");
       }
     } catch (err) {
       console.error("Verify OTP Error:", err);
@@ -106,7 +106,7 @@ const OTPLogin = () => {
       next[index] = digit;
       return next;
     });
-    if (digit && index < 5) otpInputRefs.current[index + 1]?.focus();
+    if (digit && index < 3) otpInputRefs.current[index + 1]?.focus();
   };
 
   const handleOtpKeyDown = (index, e) => {

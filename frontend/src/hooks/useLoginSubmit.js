@@ -109,7 +109,7 @@ const useLoginSubmit = () => {
               dispatch({ type: "USER_LOGIN", payload: userInfo });
             }
 
-            const url = redirectUrl ? "/checkout" : "/";
+            const url = redirectUrl ? "/checkout" : "/user/dashboard";
             reset();
             router.push(url);
             setLoading(false);
