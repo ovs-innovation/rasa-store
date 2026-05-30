@@ -259,7 +259,7 @@ export const SignupContent = ({ onSuccess }) => {
                     Cookies.set("userInfo", JSON.stringify(userInfo), { expires: 1 });
                     if (dispatch) dispatch({ type: "USER_LOGIN", payload: userInfo });
                     if (onSuccess) onSuccess();
-                    router.push("/");
+                    router.push("/user/dashboard");
                 }
             }
         } catch (error) {

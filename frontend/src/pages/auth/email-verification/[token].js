@@ -36,11 +36,13 @@ const EmailVerification = ({ params }) => {
         });
 
         if (signInRes?.ok) {
-          router.push("/");
+          router.push("/user/dashboard");
         } else {
           notifyError("Sign-in failed. Please try manually.");
           router.push("/auth/login");
         }
+      } else {
+        router.push("/user/dashboard");
       }
     },
     onError: (error) => {
@@ -70,7 +72,7 @@ const EmailVerification = ({ params }) => {
     if (isSuccess) {
       // Wait for a brief delay (optional) to ensure the user sees the success message
       const redirectTimer = setTimeout(() => {
-        router.push("/");
+        router.push("/user/dashboard");
       }, 300); // Adjust delay as needed (optional)
 
       return () => clearTimeout(redirectTimer); // Cleanup on unmount
