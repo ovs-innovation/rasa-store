@@ -52,6 +52,11 @@ app.set("trust proxy", 1);
 const allowedOrigins = process.env.FRONTEND_URL
   ? [
       process.env.FRONTEND_URL,
+      process.env.ADMIN_URL,
+      process.env.STORE_URL,
+      "https://admin.farmacykart.com",
+      "https://farmacykart.com",
+      "https://www.farmacykart.com",
       "http://localhost:3000",
       "http://127.0.0.1:3000",
       "http://localhost:4100",
@@ -60,7 +65,7 @@ const allowedOrigins = process.env.FRONTEND_URL
       "http://127.0.0.1:5055",
       "exp://192.168.1.6:8081",
       "exp://192.168.1.6:8082",
-    ]
+    ].filter(Boolean)
   : ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:4100", "http://127.0.0.1:4100", "http://localhost:5055", "*"];
 
 const corsOptions = {
