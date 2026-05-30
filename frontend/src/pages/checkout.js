@@ -326,7 +326,7 @@ const Checkout = () => {
     e.preventDefault();
     try {
       if (!userInfo || !userInfo._id) {
-        console.error("User ID not found in session");
+        notifyError("User ID not found in session");
         return;
       }
 
@@ -346,7 +346,7 @@ const Checkout = () => {
         });
       }
 
-      if (response.success) {
+      if (response.success || response.message) {
         setShowAddressModal(false);
         setEditingAddress(null);
         // Reset form
@@ -371,11 +371,13 @@ const Checkout = () => {
           const newDefault = updatedAddresses.find(addr => addr.isDefault) || updatedAddresses[updatedAddresses.length - 1];
           if (newDefault) setSelectedAddress(newDefault);
         }
+        notifySuccess(editingAddress ? "Address updated successfully" : "Address added successfully");
       } else {
-        console.error("Failed to save address:", response.message);
+        notifyError(response.message || "Failed to save address");
       }
     } catch (error) {
       console.error("Error saving address:", error);
+      notifyError(error?.response?.data?.message || error?.message || "Failed to save address");
     }
   };
 
