@@ -100,6 +100,10 @@ const sidebar = [
         name: "Refunded",
       },
       {
+        path: "/orders/refund-requested",
+        name: "Refund Requested",
+      },
+      {
         path: "/orders/offline-payments",
         name: "Offline Payments",
       },

@@ -43,6 +43,12 @@ const SelectStatus = ({ id, order }) => {
         <option defaultValue={order?.status === "Cancel"} value="Cancel">
           Cancel
         </option>
+        <option defaultValue={order?.status === "Refund Requested"} value="Refund Requested">
+          Refund Requested
+        </option>
+        <option defaultValue={order?.status === "Refunded"} value="Refunded">
+          Refunded
+        </option>
       </Select>
     </>
   );

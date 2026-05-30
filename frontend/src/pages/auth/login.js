@@ -1,18 +1,15 @@
 import { useState, useEffect, useRef, useContext } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { FiLock, FiMail, FiSmartphone } from "react-icons/fi";
+import { FiLock, FiMail } from "react-icons/fi";
 import Cookies from "js-cookie";
-// Firebase is only used for FCM if needed, but for phone auth we are moving to custom backend
-// import { auth } from "@lib/firebase"; 
 
-//internal  import
 import Layout from "@layout/Layout";
-import Error from "@components/form/Error";
 import useLoginSubmit from "@hooks/useLoginSubmit";
+import usePhoneLogin from "@hooks/usePhoneLogin";
+import useResendTimer from "@hooks/useResendTimer";
+import { redirectLocalhostTo127 } from "@hooks/useFirebasePhoneOtp";
 import InputArea from "@components/form/InputArea";
-import BottomNavigation from "@components/login/BottomNavigation";
-import CustomerServices from "@services/CustomerServices";
 import { setToken } from "@services/httpServices";
 import { UserContext } from "@context/UserContext";
 import { notifySuccess, notifyError } from "@utils/toast";
@@ -20,101 +17,75 @@ import { notifySuccess, notifyError } from "@utils/toast";
 const Login = () => {
   const router = useRouter();
   const { dispatch } = useContext(UserContext);
-  const [loginMethod, setLoginMethod] = useState("otp"); 
-  const { handleSubmit, submitHandler, register, reset, setValue, errors, loading } = useLoginSubmit();
+  const [loginMethod, setLoginMethod] = useState("otp");
+  const { handleSubmit, submitHandler, register, reset, setValue, errors, loading } =
+    useLoginSubmit();
 
-  useEffect(() => {
-    // Stage 1: Initial reset
-    reset({ email: "", password: "" });
-    setValue("email", "");
-    setValue("password", "");
+  const phoneLogin = usePhoneLogin();
+  const { remaining, startTimer, resetTimer, canResend, formatted } = useResendTimer(60);
 
-    // Stage 2: Aggressive interval clearing for 2 seconds (to catch late autofills)
-    const interval = setInterval(() => {
-      try {
-        const emailField = document.querySelector('input[name="email"]');
-        const passwordField = document.querySelector('input[name="password"]');
-        
-        // Clear if field has value and user is NOT currently typing in it
-        if (emailField && document.activeElement !== emailField && emailField.value !== "") {
-          emailField.value = "";
-          emailField.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-        if (passwordField && document.activeElement !== passwordField && passwordField.value !== "") {
-          passwordField.value = "";
-          passwordField.dispatchEvent(new Event("input", { bubbles: true }));
-        }
-      } catch (e) {}
-    }, 100);
-
-    // Stop the interval after 2 seconds
-    const timer = setTimeout(() => clearInterval(interval), 2000);
-
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timer);
-    };
-  }, [reset, setValue]);
-
-  // OTP states
   const [step, setStep] = useState("phone");
-  const [confirmationResult, setConfirmationResult] = useState(null);
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpError, setOtpError] = useState("");
-  const [otp, setOtp] = useState(["", "", "", ""]);
+  const [otpLength, setOtpLength] = useState(phoneLogin.otpLength);
+  const [otp, setOtp] = useState(Array(phoneLogin.otpLength).fill(""));
   const otpInputRefs = useRef([]);
   const [phoneNumber, setPhoneNumber] = useState("");
 
   useEffect(() => {
-    // No recaptcha cleanup needed for custom backend OTP
+    redirectLocalhostTo127();
   }, []);
+
+  useEffect(() => {
+    reset({ email: "", password: "" });
+    setValue("email", "");
+    setValue("password", "");
+  }, [reset, setValue]);
+
+  const resetOtpInputs = (len) => {
+    setOtpLength(len);
+    setOtp(Array(len).fill(""));
+  };
+
+  const sendOtpRequest = async () => {
+    phoneLogin.setError("");
+    const response = await phoneLogin.sendOtp(phoneNumber);
+    const len = response?.otpLength || phoneLogin.otpLength;
+    resetOtpInputs(len);
+    setStep("otp");
+    startTimer();
+    notifySuccess(response?.message || "OTP sent to your phone!");
+  };
 
   const handleSendOTP = async (e) => {
     e.preventDefault();
-    if (!phoneNumber || phoneNumber.length < 10) {
-      setOtpError("Please enter a 10-digit number");
-      return;
-    }
-
-    setOtpLoading(true);
-    setOtpError("");
-
     try {
-      // Use custom backend API to send OTP to registered email
-      const response = await CustomerServices.sendPhoneEmailOTP({ phoneNumber });
-      
-      if (response) {
-        setStep("otp");
-        notifySuccess(response.message || "OTP sent to your registered email!");
-      }
-    } catch (error) {
-      console.error("Send OTP Error:", error);
-      const msg = error.response?.data?.message || "Failed to send OTP. Please try again.";
-      setOtpError(msg);
-      notifyError(msg);
-    } finally {
-      setOtpLoading(false);
+      await sendOtpRequest();
+    } catch (err) {
+      notifyError(err.message);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (!canResend || phoneLogin.loading) return;
+    try {
+      await sendOtpRequest();
+    } catch (err) {
+      notifyError(err.message);
     }
   };
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     const otpCode = otp.join("");
-    if (otpCode.length !== 4) {
-      setOtpError("Please enter the 4-digit OTP");
+    if (otpCode.length !== otpLength) {
+      phoneLogin.setError(`Please enter the ${otpLength}-digit OTP`);
       return;
     }
 
-    setOtpLoading(true);
-    setOtpError("");
+    phoneLogin.setError("");
     try {
-      // Use custom backend API to verify OTP
-      const response = await CustomerServices.verifyPhoneEmailOTP({
-        phoneNumber,
-        otp: otpCode,
-      });
+      const response = await phoneLogin.verifyOtp(phoneNumber, otpCode);
 
-      if (response.token) {
+      if (response?.token) {
         const userInfo = {
           _id: response._id,
           name: response.name,
@@ -130,51 +101,117 @@ const Login = () => {
         notifySuccess("Login successful!");
         router.push("/user/dashboard");
       }
-    } catch (error) {
-      console.error("Verify OTP Error:", error);
-      const backendMessage = error.response?.data?.message || "OTP verification failed.";
-      setOtpError(backendMessage);
-      notifyError(backendMessage);
-    } finally {
-      setOtpLoading(false);
+    } catch (err) {
+      notifyError(err.message);
     }
   };
 
   const handleOtpChange = (index, value) => {
     if (isNaN(value)) return;
     const digit = value.slice(-1);
-    setOtp(prev => {
+    setOtp((prev) => {
       const next = [...prev];
       next[index] = digit;
       return next;
     });
-    if (digit && index < 3) otpInputRefs.current[index + 1]?.focus();
+    if (digit && index < otpLength - 1) otpInputRefs.current[index + 1]?.focus();
   };
 
   const handleOtpKeyDown = (index, e) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) otpInputRefs.current[index - 1]?.focus();
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
   };
+
+  const switchToPhone = () => {
+    setLoginMethod("otp");
+    setStep("phone");
+    resetOtpInputs(phoneLogin.otpLength);
+    phoneLogin.setError("");
+    resetTimer();
+  };
+
+  const switchToEmail = () => {
+    setLoginMethod("email");
+    setStep("phone");
+    resetTimer();
+    phoneLogin.setError("");
+  };
+
+  const otpError = phoneLogin.error;
 
   return (
     <Layout title="Login">
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-10 py-10">
         <div className="mx-auto max-w-lg bg-white shadow-xl rounded-2xl p-8 sm:p-10">
+          {phoneLogin.isFirebase && <div id="recaptcha-container" />}
           <div className="text-center mb-6">
             <h2 className="text-3xl font-bold">Login</h2>
             <div className="flex gap-2 justify-center mt-6">
-              <button onClick={() => { setLoginMethod("email"); setStep("phone"); setOtpError(""); }} className={`px-6 py-2.5 rounded-lg transition-all ${loginMethod === "email" ? "bg-store-500 text-white" : "bg-gray-100"}`}>Email</button>
-              <button onClick={() => { setLoginMethod("otp"); setStep("phone"); setOtpError(""); }} className={`px-6 py-2.5 rounded-lg transition-all ${loginMethod === "otp" ? "bg-store-500 text-white" : "bg-gray-100"}`}>Phone</button>
+              <button
+                type="button"
+                onClick={switchToEmail}
+                className={`px-6 py-2.5 rounded-lg transition-all ${loginMethod === "email" ? "bg-store-500 text-white" : "bg-gray-100"}`}
+              >
+                Email
+              </button>
+              <button
+                type="button"
+                onClick={switchToPhone}
+                className={`px-6 py-2.5 rounded-lg transition-all ${loginMethod === "otp" ? "bg-store-500 text-white" : "bg-gray-100"}`}
+              >
+                Phone
+              </button>
             </div>
           </div>
 
           {loginMethod === "email" ? (
             <form onSubmit={handleSubmit(submitHandler)} className="space-y-4" autoComplete="off">
-              {/* Invisible Trap inputs to catch browser autofill (more effective than display: none) */}
-              <input type="text" name="dummy-email" style={{ opacity: 0, position: 'absolute', top: 0, left: 0, height: 0, width: 0, zIndex: -1 }} tabIndex="-1" aria-hidden="true" />
-              <input type="password" name="dummy-password" style={{ opacity: 0, position: 'absolute', top: 0, left: 0, height: 0, width: 0, zIndex: -1 }} tabIndex="-1" aria-hidden="true" />
-              <InputArea register={register} label="Email" name="email" type="email" placeholder="Email" Icon={FiMail} autocomplete="new-password" />
-              <InputArea register={register} label="Password" name="password" type="password" placeholder="Password" Icon={FiLock} autocomplete="new-password" />
-              <button disabled={loading} type="submit" className="w-full py-3 rounded bg-store-500 text-white h-12 flex items-center justify-center">
+              <input
+                type="text"
+                name="dummy-email"
+                style={{ opacity: 0, position: "absolute", top: 0, left: 0, height: 0, width: 0, zIndex: -1 }}
+                tabIndex="-1"
+                aria-hidden="true"
+              />
+              <input
+                type="password"
+                name="dummy-password"
+                style={{ opacity: 0, position: "absolute", top: 0, left: 0, height: 0, width: 0, zIndex: -1 }}
+                tabIndex="-1"
+                aria-hidden="true"
+              />
+              <InputArea
+                register={register}
+                label="Email"
+                name="email"
+                type="email"
+                placeholder="Email"
+                Icon={FiMail}
+                autocomplete="new-password"
+              />
+              <InputArea
+                register={register}
+                label="Password"
+                name="password"
+                type="password"
+                placeholder="Password"
+                Icon={FiLock}
+                autocomplete="new-password"
+              />
+              <div className="flex justify-end">
+                <Link
+                  href="/auth/forget-password"
+                  className="text-sm text-store-500 hover:text-store-600 font-medium hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <button
+                disabled={loading}
+                type="submit"
+                className="w-full py-3 rounded bg-store-500 text-white h-12 flex items-center justify-center"
+              >
                 {loading ? "Loading..." : "Login"}
               </button>
             </form>
@@ -183,7 +220,9 @@ const Login = () => {
               {step === "phone" ? (
                 <form onSubmit={handleSendOTP} className="space-y-4">
                   <div className="relative">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">+91</span>
+                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                      +91
+                    </span>
                     <input
                       type="tel"
                       value={phoneNumber}
@@ -194,20 +233,82 @@ const Login = () => {
                       required
                     />
                   </div>
-                  {otpError && <p className="text-red-500 text-sm mt-2">{otpError}</p>}
-
-                  <button disabled={otpLoading} type="submit" className="w-full py-3 rounded bg-store-500 text-white h-12 flex items-center justify-center">
-                    {otpLoading ? "Sending..." : "Send OTP"}
+                  <p className="text-xs text-gray-500 text-center">
+                    Use{" "}
+                    <a href="http://127.0.0.1:3000/auth/login" className="text-store-600 underline">
+                      127.0.0.1:3000
+                    </a>{" "}
+                    for SMS OTP
+                  </p>
+                  {otpError && (
+                    <p className="text-red-500 text-sm mt-2 leading-relaxed">{otpError}</p>
+                  )}
+                  <button
+                    disabled={phoneLogin.loading}
+                    type="submit"
+                    className="w-full py-3 rounded bg-store-500 text-white h-12 flex items-center justify-center"
+                  >
+                    {phoneLogin.loading ? "Sending..." : "Send OTP"}
                   </button>
                 </form>
               ) : (
-                <form onSubmit={handleVerifyOTP} className="space-y-6">
-                  <div className="flex justify-center gap-2">
+                <form onSubmit={handleVerifyOTP} className="space-y-5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep("phone");
+                      resetOtpInputs(phoneLogin.otpLength);
+                      phoneLogin.setError("");
+                      resetTimer();
+                    }}
+                    className="text-sm text-gray-500 underline"
+                  >
+                    Change number
+                  </button>
+                  <p className="text-sm text-gray-600 text-center">
+                    Enter <strong>{otpLength}-digit OTP</strong> sent to{" "}
+                    <strong>+91{phoneNumber}</strong>
+                  </p>
+                  <div className="flex justify-center gap-2 sm:gap-3">
                     {otp.map((digit, i) => (
-                      <input key={i} ref={el => otpInputRefs.current[i] = el} type="text" inputMode="numeric" maxLength={1} value={digit} onChange={e => handleOtpChange(i, e.target.value)} onKeyDown={e => handleOtpKeyDown(i, e)} className="w-12 h-12 text-center text-xl font-bold border-2 rounded-lg" />
+                      <input
+                        key={i}
+                        ref={(el) => (otpInputRefs.current[i] = el)}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleOtpChange(i, e.target.value)}
+                        onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                        className="w-11 h-11 sm:w-14 sm:h-14 text-center text-xl font-bold border-2 rounded-lg focus:border-store-500 focus:ring-1 focus:ring-store-500"
+                      />
                     ))}
                   </div>
-                  <button disabled={otpLoading} type="submit" className="w-full py-3 rounded bg-store-500 text-white h-12">Verify OTP</button>
+                  {otpError && <p className="text-red-500 text-sm text-center">{otpError}</p>}
+                  <button
+                    disabled={phoneLogin.loading}
+                    type="submit"
+                    className="w-full py-3 rounded bg-store-500 text-white h-12 font-medium"
+                  >
+                    {phoneLogin.loading ? "Verifying..." : "Verify & Login"}
+                  </button>
+                  <div className="text-center">
+                    {canResend ? (
+                      <button
+                        type="button"
+                        onClick={handleResendOTP}
+                        disabled={phoneLogin.loading}
+                        className="text-sm text-store-600 font-semibold hover:underline disabled:opacity-50"
+                      >
+                        Resend OTP
+                      </button>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        Resend OTP in{" "}
+                        <span className="font-bold text-store-600 tabular-nums">{formatted}</span>
+                      </p>
+                    )}
+                  </div>
                 </form>
               )}
             </div>

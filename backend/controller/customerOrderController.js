@@ -22,6 +22,7 @@ const {
   orderConfirmationBody 
 } = require("../lib/email-sender/templates/order-to-customer");
 const { sendSMS } = require("../lib/sms-sender/sender");
+const { populateCartTaxFields } = require("../utils/cartTaxUtils");
 
 const sendOrderNotifications = async (order) => {
   try {
@@ -46,9 +47,9 @@ const sendOrderNotifications = async (order) => {
       };
 
       const emailBody = {
-        from: contactEmail,
         to: order.user_info.email,
-        subject: `Order Confirmed - #${order.invoice}`,
+        replyTo: contactEmail,
+        subject: `Farmacykart – Order #${order.invoice} confirmed`,
         html: orderConfirmationBody(emailOption),
       };
 
@@ -130,52 +131,6 @@ const populateBrandNames = async (order) => {
   return order;
 };
 
-// Helper function to populate taxRate and HSN in cart items from Product collection
-const populateCartTaxFields = async (cart) => {
-  if (!cart || cart.length === 0) return cart;
-  
-  // Get all unique product IDs from cart items
-  const productIds = [...new Set(
-    cart
-      .filter(item => item.productId || item.id || item._id)
-      .map(item => item.productId || item.id || item._id)
-      .filter(id => mongoose.Types.ObjectId.isValid(id))
-  )];
-  
-  // Fetch product tax fields if there are product IDs
-  if (productIds.length > 0) {
-    const products = await Product.find({ _id: { $in: productIds } }).select('_id taxRate hsnCode mrp originalPrice batchNo expDate');
-    const productMap = {};
-    products.forEach(product => {
-      productMap[product._id.toString()] = {
-        taxRate: product.taxRate || 0,
-        hsnCode: product.hsnCode || '',
-        mrp: product.mrp || product.originalPrice || 0,
-        batchNo: product.batchNo || '',
-        expDate: product.expDate || ''
-      };
-    });
-    
-    // Add taxRate, hsnCode, mrp, batchNo, and expDate to cart items
-    cart = cart.map(item => {
-      const productId = item.productId || item.id || item._id;
-      if (productId && productMap[productId]) {
-        return { 
-          ...item, 
-          taxRate: item.taxRate || productMap[productId].taxRate,
-          hsn: item.hsn || item.hsnCode || productMap[productId].hsnCode,
-          mrp: item.mrp || productMap[productId].mrp || productMap[productId].originalPrice,
-          batchNo: item.batchNo || productMap[productId].batchNo,
-          expDate: item.expDate || productMap[productId].expDate
-        };
-      }
-      return item;
-    });
-  }
-  
-  return cart;
-};
-
 const addOrder = async (req, res) => {
   // console.log("addOrder", req.body);
   try {
@@ -189,8 +144,11 @@ const addOrder = async (req, res) => {
 
     // console.log("addOrder: Creating order for user:", req.user ? req.user._id : "Guest (null)");
 
+    const cartWithTax = await populateCartTaxFields(req.body.cart || []);
+
     const newOrder = new Order({
       ...req.body,
+      cart: cartWithTax,
       user: req.user?._id || null,
     });
     const order = await newOrder.save();
@@ -372,8 +330,11 @@ const addRazorpayOrder = async (req, res) => {
       });
     }
 
+    const cartWithTax = await populateCartTaxFields(req.body.cart || []);
+
     const newOrder = new Order({
       ...req.body,
+      cart: cartWithTax,
       user: req.user?._id || null,
     });
     const order = await newOrder.save();
@@ -555,9 +516,9 @@ const sendEmailInvoiceToCustomer = async (req, res) => {
     };
 
     const body = {
-      from: globalSetting?.setting?.email || req.body.company_info?.from_email || "sales@dummy.com",
       to: user.email,
-      subject: `Your Order - ${req.body.invoice} at ${globalSetting?.setting?.shop_name || req.body.company_info.company}`,
+      replyTo: globalSetting?.setting?.email || req.body.company_info?.email,
+      subject: `Farmacykart – Invoice #${req.body.invoice}`,
       html: customerInvoiceEmailBody(option),
       attachments: [
         {
@@ -581,6 +542,32 @@ const sendEmailInvoiceToCustomer = async (req, res) => {
   }
 };
 
+const requestRefund = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).send({ message: "Order not found" });
+    }
+    
+    // Only allow refund if order is Delivered
+    if (order.status !== "Delivered") {
+      return res.status(400).send({ message: "Refund can only be requested for Delivered orders." });
+    }
+
+    order.status = "Refund Requested";
+    order.refund = {
+      reason: req.body.reason,
+      note: req.body.note || "",
+      requestedAt: new Date(),
+    };
+    
+    await order.save();
+    res.send({ message: "Refund Requested Successfully!", order });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
 module.exports = {
   addOrder,
   getOrderById,
@@ -589,4 +576,5 @@ module.exports = {
   createOrderByRazorPay,
   addRazorpayOrder,
   sendEmailInvoiceToCustomer,
+  requestRefund,
 };

@@ -6,7 +6,11 @@ const AttributeServices = {
   },
 
   getShowingAttributes: async () => {
-    return requests.get(`/attributes/show`);
+    try {
+      return await requests.get(`/attributes/show`);
+    } catch {
+      return [];
+    }
   },
 
   getAttributeById: async (id) => {

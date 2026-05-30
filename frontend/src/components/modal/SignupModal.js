@@ -1,4 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
+import { auth } from "@lib/firebase";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import MainModal from "@components/modal/MainModal";
 import { useForm } from "react-hook-form";
 import { FiLock, FiMail, FiUser, FiCheckCircle, FiArrowRight, FiShield, FiEye, FiEyeOff } from "react-icons/fi";
@@ -222,11 +224,26 @@ export const SignupContent = ({ onSuccess }) => {
     const handleCustomerSubmit = async ({ name, email, phone, password }) => {
         setCustomerLoading(true);
         try {
-            const res = await CustomerServices.registerUser({ name, email, phone, password });
+            // Provide a fallback email if user doesn't enter one, since Firebase requires it
+            const finalEmail = email || `${phone}@farmacykart.com`;
+
+            // 1. Create Firebase User
+            const userCredential = await createUserWithEmailAndPassword(auth, finalEmail, password);
+            const firebaseUser = userCredential.user;
+
+            // 2. Send Email Verification (only if real email was provided)
+            if (email) {
+                await sendEmailVerification(firebaseUser);
+            }
+
+            // 3. Sync with backend
+            const idToken = await firebaseUser.getIdToken();
+            const res = await CustomerServices.registerUser({ idToken, name, phone });
+
             if (res) {
+                notifySuccess(res.message);
+                reset();
                 if (res.requiresVerification) {
-                    notifySuccess(res.message);
-                    reset();
                     router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
                 } else {
                     const userInfo = {
@@ -241,14 +258,16 @@ export const SignupContent = ({ onSuccess }) => {
                     };
                     Cookies.set("userInfo", JSON.stringify(userInfo), { expires: 1 });
                     if (dispatch) dispatch({ type: "USER_LOGIN", payload: userInfo });
-                    notifySuccess("Account created successfully!");
-                    reset();
                     if (onSuccess) onSuccess();
                     router.push("/");
                 }
             }
         } catch (error) {
-            notifyError(error?.response?.data?.message || error?.message);
+            let errorMessage = error?.response?.data?.message || error?.message;
+            if (error.code === 'auth/email-already-in-use') {
+                errorMessage = 'Email is already in use!';
+            }
+            notifyError(errorMessage);
         } finally {
             setCustomerLoading(false);
         }
@@ -391,6 +410,7 @@ export const SignupContent = ({ onSuccess }) => {
                                 placeholder="john@example.com"
                                 Icon={FiMail}
                                 autocomplete="new-email"
+                                required={false}
                             />
                             <Error errorName={errors.email} />
                         </div>
@@ -420,11 +440,11 @@ export const SignupContent = ({ onSuccess }) => {
                                 label="Password"
                                 name="password"
                                 type="password"
-                                placeholder="Minimum 8 characters"
+                                placeholder="Minimum 6 characters"
                                 Icon={FiLock}
                                 autocomplete="new-password"
-                                pattern={/^.{8,}$/}
-                                patternMessage="Password must be at least 8 characters."
+                                pattern={/^.{6,}$/}
+                                patternMessage="Password must be at least 6 characters."
                             />
                             <Error errorName={errors.password} />
                         </div>
@@ -854,10 +874,10 @@ export const SignupContent = ({ onSuccess }) => {
             <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <p className="text-sm text-gray-500">Already have an account?</p>
                 <Link href="/auth/login"
-                    className="inline-flex items-center gap-2 px-6 py-2.5 text-blue-600 font-bold border-2 border-blue-100
-                        hover:bg-blue-50 hover:border-blue-300 rounded-xl transition-all text-sm">
+                    className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-blue-600 font-bold border-2 border-blue-200
+                        hover:bg-blue-50 hover:border-blue-400 rounded-xl transition-all text-base w-full sm:w-auto shadow-sm hover:shadow">
                     Login to your account
-                    <FiArrowRight className="text-sm" />
+                    <FiArrowRight className="text-lg" />
                 </Link>
             </div>
         </div>

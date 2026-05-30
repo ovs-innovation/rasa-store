@@ -10,6 +10,8 @@ import { UserContext } from "@context/UserContext";
 
 import { notifyError, notifySuccess } from "@utils/toast";
 import CustomerServices from "@services/CustomerServices";
+import { auth } from "@lib/firebase";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "firebase/auth";
 
 const useLoginSubmit = () => {
   const router = useRouter();
@@ -41,11 +43,18 @@ const useLoginSubmit = () => {
 
     try {
       if (router.pathname === "/auth/signup") {
-        // Call the sign-up API (now creates pending account and sends OTP)
+        // Firebase Signup
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const firebaseUser = userCredential.user;
+        
+        await sendEmailVerification(firebaseUser);
+        
+        const idToken = await firebaseUser.getIdToken();
+
         const res = await CustomerServices.registerUser({
+          idToken,
           name,
-          email,
-          password,
+          phone
         });
 
         if (res.requiresVerification) {
@@ -59,13 +68,12 @@ const useLoginSubmit = () => {
         }
         return setLoading(false);
       } else if (router.pathname === "/auth/forget-password") {
-        // Call the forget password API for reset password
-        const res = await CustomerServices.forgetPassword({
-          email,
-        });
-
-        // console.log("res", res);
-        notifySuccess(res.message);
+        // Use Firebase to send the password reset email
+        await sendPasswordResetEmail(auth, email);
+        
+        notifySuccess("Password reset email sent! Please check your inbox.");
+        reset();
+        router.push("/auth/login");
         return setLoading(false);
       } else if (router.pathname === "/auth/phone-signup") {
         const res = await CustomerServices.verifyPhoneNumber({
@@ -75,20 +83,13 @@ const useLoginSubmit = () => {
         // console.log("sing up with phone", phone, "result", res);
         return setLoading(false);
       } else {
-        // Login via backend directly so we can get role and set a readable cookie
+        // Login via Firebase and backend
         try {
-          // PRE-CHECK: Is the email registered?
-          const checkRes = await CustomerServices.checkCustomerExistance({ email });
-          if (!checkRes.exists) {
-            notifyError("Account not found. Please register first.");
-            setLoading(false);
-            setTimeout(() => {
-              router.push("/auth/signup");
-            }, 1000);
-            return;
-          }
+          // Firebase Login
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
+          const idToken = await userCredential.user.getIdToken();
 
-          const res = await CustomerServices.loginCustomer({ email, password });
+          const res = await CustomerServices.loginCustomer({ idToken });
 
           if (res && res.token) {
             // setToken(res.token); // Assuming setToken is imported if needed

@@ -42,28 +42,13 @@ const {
 const {
   passwordVerificationLimit,
   emailVerificationLimit,
-  phoneVerificationLimit,
 } = require("../lib/email-sender/sender");
 const { isAuth, isAdmin } = require("../config/auth");
 
-//verify email
-router.post("/verify-email", emailVerificationLimit, verifyEmailAddress);
-
-//verify phone number
-router.post("/verify-phone", phoneVerificationLimit, verifyPhoneNumber);
-
-// Verify email with OTP
-router.post("/verify-email-otp", emailVerificationLimit, verifyEmailOTP);
-
-// Resend verification email
-router.post("/resend-verification", emailVerificationLimit, resendVerificationEmail);
-
 //login with phone
 router.post("/login-phone", loginWithPhone);
-
-// login with phone (email OTP)
-router.post("/login/send-phone-email-otp", sendPhoneEmailOTP);
-router.post("/login/verify-phone-email-otp", verifyPhoneEmailOTP);
+router.post("/send-phone-otp", sendPhoneEmailOTP);
+router.post("/verify-phone-otp", verifyPhoneEmailOTP);
 
 // shipping address send to array
 router.post("/shipping/address/:id", isAuth, addShippingAddress);

@@ -13,11 +13,18 @@ import useUtilsFunction from "@/hooks/useUtilsFunction";
 import Container from "@/components/image-uploader/Container";
 import { FiCheck } from "react-icons/fi";
 
+const getCloudinaryErrorMessage = (err) => {
+  const apiMessage = err?.response?.data?.error?.message;
+  if (apiMessage) return apiMessage;
+  if (err?.message) return err.message;
+  return "Error uploading image";
+};
+
 const Uploader = ({
   setImageUrl,
   imageUrl,
   product,
-  folder,
+  folder = "settings",
   targetWidth = 800, // Set default fixed width
   targetHeight = 800, // Set default fixed height
   useOriginalSize = false,
@@ -130,6 +137,17 @@ const Uploader = ({
           );
         }
 
+        const uploadPreset = import.meta.env.VITE_APP_CLOUDINARY_UPLOAD_PRESET;
+        const baseUrl = import.meta.env.VITE_APP_CLOUDINARY_URL;
+
+        if (!uploadPreset || !baseUrl) {
+          showAlert(
+            "Cloudinary is not configured. Set VITE_APP_CLOUDINARY_UPLOAD_PRESET and VITE_APP_CLOUDINARY_URL in admin/.env",
+            "error"
+          );
+          return;
+        }
+
         setLoading(true);
         setError("Uploading....");
 
@@ -139,15 +157,14 @@ const Uploader = ({
 
         const formData = new FormData();
         formData.append("file", file);
-        formData.append(
-          "upload_preset",
-          import.meta.env.VITE_APP_CLOUDINARY_UPLOAD_PRESET
-        );
-        formData.append("cloud_name", import.meta.env.VITE_APP_CLOUD_NAME);
-        formData.append("folder", folder);
-        formData.append("public_id", public_id);
+        formData.append("upload_preset", uploadPreset);
+        if (folder) {
+          formData.append("folder", folder);
+        }
+        if (public_id) {
+          formData.append("public_id", public_id);
+        }
 
-        const baseUrl = import.meta.env.VITE_APP_CLOUDINARY_URL;
         const uploadUrl =
           file?.type === "application/pdf" && typeof baseUrl === "string"
             ? baseUrl.replace("/image/upload", "/auto/upload")
@@ -161,6 +178,7 @@ const Uploader = ({
           .then((res) => {
             showAlert("Image Uploaded successfully!", "success");
             setLoading(false);
+            setFiles([]);
             if (typeof onUploadComplete === "function") {
               onUploadComplete(res.data);
             }
@@ -171,9 +189,10 @@ const Uploader = ({
             }
           })
           .catch((err) => {
-            console.error("err", err);
-            showAlert(err.Message || "Error uploading image", "error");
+            console.error("Cloudinary upload error:", err?.response?.data || err);
+            showAlert(getCloudinaryErrorMessage(err), "error");
             setLoading(false);
+            setFiles([]);
           });
       });
     }

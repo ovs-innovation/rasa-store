@@ -1,5 +1,4 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getMessaging, isSupported } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_APP_FIREBASE_API_KEY,
@@ -11,24 +10,13 @@ const firebaseConfig = {
 };
 
 let app;
-let messaging = null;
 
-if (typeof window !== "undefined") {
+if (typeof window !== "undefined" && firebaseConfig.apiKey) {
   try {
-    if (firebaseConfig.apiKey) {
-      app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-      
-      // Initialize messaging
-      isSupported().then((supported) => {
-        if (supported) {
-          messaging = getMessaging(app);
-        }
-      });
-    }
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   } catch (error) {
     console.error("Firebase initialization error:", error);
   }
 }
 
-export { messaging };
 export default app;

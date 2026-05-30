@@ -47,6 +47,9 @@ const addPushNotification = async (req, res) => {
         data: {
           click_action: clickAction || "/",
           image: image || "",
+          title: title || "",
+          body: description || "",
+          description: description || "",
         },
         tokens: tokens,
       };
@@ -61,12 +64,23 @@ const addPushNotification = async (req, res) => {
       
       if (response.failureCount > 0) {
         console.warn(`${response.failureCount} messages failed to send`);
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            console.warn(`Token ${idx} failed:`, resp.error?.message);
+          }
+        });
       }
+    } else {
+      console.warn(`No FCM tokens found for target: ${target}`);
     }
 
     res.status(200).send({
-      message: "Push Notification sent successfully!",
+      message: tokens.length > 0
+        ? "Push Notification sent successfully!"
+        : "Notification saved but no devices registered. Ask users to allow notifications and log in.",
       data: newNotification,
+      sentCount: newNotification.sentCount,
+      recipientCount: tokens.length,
     });
   } catch (err) {
     console.error("Error sending push notification:", err);

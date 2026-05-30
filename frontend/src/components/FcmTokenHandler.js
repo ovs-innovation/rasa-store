@@ -1,47 +1,46 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useContext } from 'react';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import app from '@lib/firebase';
 import CustomerServices from '@services/CustomerServices';
-import Cookies from 'js-cookie';
+import { UserContext } from '@context/UserContext';
 import { toast } from 'react-toastify';
 import { FiBell, FiExternalLink, FiX } from 'react-icons/fi';
 
 const FcmTokenHandler = () => {
   const lastMessageId = useRef(null);
+  const { state } = useContext(UserContext);
+  const { userInfo } = state;
 
   useEffect(() => {
     const setupFcm = async () => {
       try {
-        if (typeof window === 'undefined') return;
+        if (typeof window === 'undefined' || !app) return;
 
-        // 1. Check if Firebase is supported and initialize messaging inside the hook
         const supported = await isSupported();
         if (!supported) {
           console.log("FCM is not supported in this browser");
           return;
         }
 
-        const messaging = getMessaging(app);
-        console.log("FCM Messaging Initialized:", !!messaging);
-
-        // 2. Request permission
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
           console.log('Notification permission denied');
           return;
         }
 
-        // 3. Get token
+        const swRegistration = await navigator.serviceWorker.register(
+          '/firebase-messaging-sw.js'
+        );
+
+        const messaging = getMessaging(app);
         const token = await getToken(messaging, {
           vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+          serviceWorkerRegistration: swRegistration,
         });
 
-        if (token) {
+        if (token && userInfo?._id) {
           console.log("FCM Token Generated:", token.substring(0, 10) + "...");
-          const userInfo = Cookies.get('userInfo') ? JSON.parse(Cookies.get('userInfo')) : null;
-          if (userInfo && userInfo._id) {
-            await CustomerServices.updateFcmToken(userInfo._id, token);
-          }
+          await CustomerServices.updateFcmToken(userInfo._id, token);
         }
 
         // 4. Handle foreground messages
@@ -112,7 +111,7 @@ const FcmTokenHandler = () => {
     };
 
     setupFcm();
-  }, []);
+  }, [userInfo?._id]);
 
   return null;
 };

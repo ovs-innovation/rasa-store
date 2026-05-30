@@ -106,6 +106,7 @@ const orderSchema = new mongoose.Schema(
         "Order On The Way",
         "Delivered",
         "Cancelled",
+        "Refund Requested",
         "Refunded",
         "Payment Failed",
         // Legacy statuses for safety during migration
@@ -139,6 +140,13 @@ const orderSchema = new mongoose.Schema(
     shipmentStatus: { type: String },
     confirmationEmailSent: { type: Boolean, default: false },
     confirmationSmsSent: { type: Boolean, default: false },
+    refundEmailSent: { type: Boolean, default: false },
+    refundNotifiedAt: { type: Date },
+    refund: {
+      reason: { type: String, default: "" },
+      note: { type: String, default: "" },
+      requestedAt: { type: Date }
+    },
   },
   {
     timestamps: true,

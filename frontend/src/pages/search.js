@@ -661,7 +661,7 @@ export default Search;
 export const getServerSideProps = async (context) => {
   const { query, _id, brand, category } = context.query;
 
-  const [data, attributes] = await Promise.all([
+  const [dataResult, attributesResult] = await Promise.allSettled([
     ProductServices.getShowingStoreProducts({
       category: _id ? _id : category ? category : "",
       title: query ? encodeURIComponent(query) : "",
@@ -670,10 +670,14 @@ export const getServerSideProps = async (context) => {
     AttributeServices.getShowingAttributes({}),
   ]);
 
+  const data = dataResult.status === "fulfilled" ? dataResult.value : null;
+  const attributes =
+    attributesResult.status === "fulfilled" ? attributesResult.value : [];
+
   return {
     props: {
-      attributes,
-      products: data?.products,
+      attributes: attributes || [],
+      products: data?.products || [],
     },
   };
 };

@@ -58,7 +58,7 @@ const SeoSetting = ({
                 {t("Favicon")}
               </label>
               <div className="sm:col-span-3">
-                <Uploader imageUrl={favicon} setImageUrl={setFavicon} />
+                <Uploader imageUrl={favicon} setImageUrl={setFavicon} folder="favicon" />
               </div>
             </div>
             <div className="grid md:grid-cols-5 items-center sm:grid-cols-12 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
@@ -127,7 +127,7 @@ const SeoSetting = ({
                 {t("MetaImage")}
               </label>
               <div className="sm:col-span-3">
-                <Uploader imageUrl={metaImg} setImageUrl={setMetaImg} />
+                <Uploader imageUrl={metaImg} setImageUrl={setMetaImg} folder="seo" />
               </div>
             </div>
           </div>

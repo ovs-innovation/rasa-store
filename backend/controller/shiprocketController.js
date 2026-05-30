@@ -1,20 +1,18 @@
 const { shiprocketRequest } = require("../services/shiprocketService");
 const Order = require("../models/Order");
 const { syncShiprocketTracking } = require("../services/shiprocketSyncService");
+const { mapShiprocketAddressFields } = require("../utils/shiprocketAddressMapper");
+const { enrichOrderItemsForShiprocket } = require("../utils/cartTaxUtils");
 
 // STEP 3 — Create Shiprocket Order (Business Logic + Auto Courier & AWB)
 const createShiprocketOrder = async (req, res) => {
   try {
     const { orderId, ...shiprocketBody } = req.body;
-    const payload = buildShiprocketPayload(shiprocketBody);
+    const payload = await buildShiprocketPayload(shiprocketBody, orderId);
 
-    // Basic validation for required fields
-    if (
-      !payload.order_id ||
-      !payload.billing_customer_name ||
-      !payload.order_items
-    ) {
-      return res.status(400).json({ error: "Missing required fields" });
+    const validationError = validateShiprocketPayload(payload);
+    if (validationError) {
+      return res.status(400).json({ error: validationError });
     }
 
     const response = await shiprocketRequest(
@@ -61,8 +59,37 @@ const createShiprocketOrder = async (req, res) => {
   }
 };
 
-function buildShiprocketPayload(rawPayload = {}) {
-  const payload = enrichPayloadWithShipping(rawPayload);
+function validateShiprocketPayload(payload = {}) {
+  if (!payload.order_id || !payload.billing_customer_name || !payload.order_items) {
+    return "Missing required fields: order_id, billing_customer_name, or order_items";
+  }
+  if (!payload.billing_state) {
+    return "Missing required field: billing_state";
+  }
+  if (!payload.billing_country) {
+    return "Missing required field: billing_country";
+  }
+  const missingHsn = (payload.order_items || []).find(
+    (item) => !String(item.hsn || "").trim()
+  );
+  if (missingHsn) {
+    return "Missing HSN on one or more order items";
+  }
+  return null;
+}
+
+async function buildShiprocketPayload(rawPayload = {}, orderId = null) {
+  let orderCart = [];
+  if (orderId) {
+    const order = await Order.findById(orderId).select("cart").lean();
+    if (order?.cart?.length) {
+      orderCart = order.cart;
+    }
+  }
+
+  const payload = mapShiprocketAddressFields(
+    enrichPayloadWithShipping(rawPayload)
+  );
 
   const defaultPayload = {
     order_id: "",
@@ -112,15 +139,10 @@ function buildShiprocketPayload(rawPayload = {}) {
     order_type: "",
   };
 
-  const normalizedOrderItems = (payload.order_items || []).map((item) => ({
-    name: item.name || "",
-    sku: item.sku || "",
-    units: item.units || "",
-    selling_price: item.selling_price || "",
-    discount: item.discount || "",
-    tax: item.tax || "",
-    hsn: item.hsn || "",
-  }));
+  const normalizedOrderItems = await enrichOrderItemsForShiprocket(
+    payload.order_items || [],
+    orderCart
+  );
 
   return {
     ...defaultPayload,

@@ -2,7 +2,11 @@ import requests from "./httpServices";
 
 const BrandServices = {
   getShowingBrands: async () => {
-    return requests.get("/brand/show");
+    try {
+      return await requests.get("/brand/show");
+    } catch {
+      return [];
+    }
   },
 };
 

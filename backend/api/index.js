@@ -1,5 +1,4 @@
-
-require("dotenv").config();
+require("../config/env");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -50,9 +49,19 @@ const app = express();
 app.set("trust proxy", 1);
 
 // CORS configuration - allow frontend domain + localhost for dev
-const allowedOrigins = process.env.FRONTEND_URL 
-  ? [process.env.FRONTEND_URL, "http://localhost:3000", "http://localhost:5055","exp://192.168.1.6:8081","exp://192.168.1.6:8082"]
-  : ["http://localhost:3000", "http://localhost:5055", "*"];
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [
+      process.env.FRONTEND_URL,
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://localhost:4100",
+      "http://127.0.0.1:4100",
+      "http://localhost:5055",
+      "http://127.0.0.1:5055",
+      "exp://192.168.1.6:8081",
+      "exp://192.168.1.6:8082",
+    ]
+  : ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:4100", "http://127.0.0.1:4100", "http://localhost:5055", "*"];
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -136,7 +145,21 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-// const server = http.createServer(app);
+const server = app.listen(PORT, () => {
+  console.log(`server running on port ${PORT}`);
+});
 
-app.listen(PORT, () => console.log(`server running on port ${PORT}`));
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(
+      `\nPort ${PORT} is already in use. Stop the other backend process first:\n` +
+        `  netstat -ano | findstr :${PORT}\n` +
+        `  taskkill /PID <pid> /F\n` +
+        `Then run: npm run dev\n`
+    );
+    process.exit(1);
+  }
+  console.error("Server error:", err);
+  process.exit(1);
+});
 

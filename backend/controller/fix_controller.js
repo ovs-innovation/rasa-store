@@ -37,9 +37,8 @@ const verifyEmailAddress = async (req, res) => {
       shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
     };
     const body = {
-      from: globalSetting?.setting?.email || process.env.EMAIL_USER,
       to: \`\${req.body.email}\`,
-      subject: "Verify Your Email",
+      subject: "Farmacykart – Verify your email",
       html: customerRegisterBody(option),
     };
 

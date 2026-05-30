@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("../config/env");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Customer = require("../models/Customer");
@@ -6,15 +6,12 @@ const Order = require("../models/Order");
 const Setting = require("../models/Setting");
 const { signInToken, tokenForVerify } = require("../config/auth");
 const { sendEmail } = require("../lib/email-sender/sender");
-const { sendSMS } = require("../lib/sms-sender/sender");
+const { sendSMS, sendLoginOtpSms } = require("../lib/sms-sender/sender");
 const {
-  customerRegisterBody,
-  otpEmailBody,
-  loginOtpEmailBody,
-} = require("../lib/email-sender/templates/register");
-const {
-  forgetPasswordEmailBody,
-} = require("../lib/email-sender/templates/forget-password");
+  simpleOtpEmail,
+  simpleVerifyEmail,
+  simpleResetPasswordEmail,
+} = require("../lib/email-sender/simple-templates");
 const { sendVerificationCode } = require("../lib/phone-verification/sender");
 
 const verifyEmailAddress = async (req, res) => {
@@ -29,15 +26,16 @@ const verifyEmailAddress = async (req, res) => {
     const option = {
       name: req.body.name,
       email: req.body.email,
-      contact_email: globalSetting?.setting?.email || "support@farmacykart.com",
       token: token,
       shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
     };
+    const { html, text } = simpleVerifyEmail(option);
     const body = {
-      from: globalSetting?.setting?.email || process.env.EMAIL_USER,
       to: `${req.body.email}`,
-      subject: "Verify Your Email",
-      html: customerRegisterBody(option),
+      subject: `Complete your ${option.shop_name} signup`,
+      html,
+      text,
+      emailType: "signup-verify",
     };
 
     const message = "Please check your email to verify your account!";
@@ -142,22 +140,49 @@ const sendPhoneEmailOTP = async (req, res) => {
       name: user.name,
       email: user.email,
       otp: otp,
-      contact_email: globalSetting?.setting?.email || "support@farmacykart.com",
       shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
     };
 
+    const otpMail = simpleOtpEmail({
+      ...option,
+      purpose: "login",
+      expiresMinutes: 10,
+    });
     const body = {
-      from: globalSetting?.setting?.email || process.env.EMAIL_USER,
       to: user.email,
-      subject: "Your Login OTP - Farmacykart",
-      html: loginOtpEmailBody(option),
+      subject: `${option.shop_name} login code`,
+      html: otpMail.html,
+      text: otpMail.text,
+      emailType: "login-otp",
     };
 
-    await sendEmail(body);
+    const smsPhone = user.phone || phoneNumber;
+    const smsResult = await sendLoginOtpSms(smsPhone, otp);
 
+    if (!smsResult.ok) {
+      console.warn("[OTP] SMS failed, falling back to email:", smsResult.error);
+      try {
+        await sendEmail(body);
+        return res.send({
+          message: `SMS could not be sent. 4-digit OTP sent to your email: ${user.email.replace(/(.{2})(.*)(@.*)/, "$1***$3")}`,
+          channel: "email",
+          email: user.email,
+          resendAfter: 60,
+        });
+      } catch (emailErr) {
+        console.error("[OTP] Email fallback failed:", emailErr.message);
+        return res.status(500).send({
+          message: "Could not send OTP by SMS or email. Please try again later.",
+        });
+      }
+    }
+
+    const maskedPhone = String(smsPhone).replace(/\d(?=\d{4})/g, "*");
     res.send({
-      message: `OTP sent successfully to your registered email: ${user.email.replace(/(.{2})(.*)(@.*)/, "$1***$3")}`,
-      email: user.email, // Frontend can use this to show where it was sent
+      message: `4-digit OTP sent to +91${String(smsPhone).replace(/\D/g, "").slice(-10)}`,
+      channel: "sms",
+      phone: smsPhone,
+      resendAfter: 60,
     });
 
   } catch (err) {
@@ -382,7 +407,23 @@ const registerCustomer = async (req, res) => {
 
 const registerCustomerDirect = async (req, res) => {
   try {
-    const { name, email, phone, password } = req.body;
+    const { idToken, name, phone } = req.body;
+
+    if (!idToken) {
+      return res.status(400).send({ message: "Firebase ID token is required." });
+    }
+
+    const admin = require("../config/firebase-admin");
+    let decodedToken;
+    try {
+      if (!admin.apps.length) throw new Error("Firebase Admin not initialized");
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (verifyErr) {
+      return res.status(401).send({ message: "Invalid or expired Firebase token." });
+    }
+
+    const { email, uid, phone_number } = decodedToken;
+    const finalPhone = phone_number || phone;
 
     // Optional: block disposable email domains
     const disposableDomains = [
@@ -396,7 +437,7 @@ const registerCustomerDirect = async (req, res) => {
       });
     }
 
-    const isAdded = await Customer.findOne({ $or: [{ email }, { phone }] });
+    const isAdded = await Customer.findOne({ $or: [{ email }, { firebaseUid: uid }] });
 
     if (isAdded) {
       return res.status(403).send({
@@ -404,53 +445,28 @@ const registerCustomerDirect = async (req, res) => {
       });
     }
 
-    const otp = Math.floor(1000 + Math.random() * 9000).toString(); const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
-
-
-
     const newUser = new Customer({
       name,
       email,
-      phone,
-      password: bcrypt.hashSync(password),
+      phone: finalPhone,
+      firebaseUid: uid,
       role: "customer",
-      emailVerified: false, emailVerificationOtp: otp, emailVerificationExpires: otpExpires,
-
-
+      emailVerified: false,
     });
 
     await newUser.save();
 
-    // Send OTP Email
-    try {
-      const globalSetting = await Setting.findOne({ name: "globalSetting" });
-      const option = {
-        name: newUser.name,
-        email: newUser.email,
-        otp: otp,
-        contact_email: globalSetting?.setting?.email || "support@farmacykart.com",
-        shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
-      };
-
-      const body = {
-        from: globalSetting?.setting?.email || process.env.EMAIL_USER,
-        to: newUser.email,
-        subject: "Verify Your Email - OTP",
-        html: otpEmailBody(option),
-      };
-
-      await sendEmail(body);
-    } catch (emailErr) {
-      console.error("Signup Email Error:", emailErr);
-    }
-
+    // Firebase handles email verification links natively now, so no custom OTP email is sent.
+    
+    const token = signInToken(newUser);
     res.send({
+      token,
       _id: newUser._id,
       name: newUser.name,
       email: newUser.email,
       phone: newUser.phone,
-      message: "Registration Successful!",
-      requiresVerification: true,
+      message: "Registration Successful! Please check your email to verify.",
+      requiresVerification: true, // We can still let frontend know to show the verification message
     });
   } catch (err) {
     res.status(500).send({
@@ -524,15 +540,20 @@ const resendVerificationEmail = async (req, res) => {
       name: user.name,
       email: user.email,
       otp: otp,
-      contact_email: globalSetting?.setting?.email || "support@farmacykart.com",
       shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
     };
 
+    const otpMail = simpleOtpEmail({
+      ...option,
+      purpose: "email verification",
+      expiresMinutes: 15,
+    });
     const body = {
-      from: globalSetting?.setting?.email || process.env.EMAIL_USER,
       to: user.email,
-      subject: "Your New Verification OTP",
-      html: otpEmailBody(option),
+      subject: `${option.shop_name} verification code`,
+      html: otpMail.html,
+      text: otpMail.text,
+      emailType: "email-verify-otp",
     };
 
     await sendEmail(body);
@@ -798,74 +819,88 @@ const addAllCustomers = async (req, res) => {
 
 const loginCustomer = async (req, res) => {
   try {
-    const customer = await Customer.findOne({ email: req.body.email });
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).send({ message: "Firebase ID token is required." });
+    }
+
+    const admin = require("../config/firebase-admin");
+    let decodedToken;
+    try {
+      if (!admin.apps.length) {
+        throw new Error("Firebase Admin not initialized.");
+      }
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (verifyErr) {
+      console.error("Firebase ID Token verification failed:", verifyErr);
+      return res.status(401).send({ message: "Invalid or expired Firebase token." });
+    }
+
+    const { email, phone_number: phone, uid } = decodedToken;
+
+    // Try to find the user by Firebase UID, email, or phone
+    const queryConds = [];
+    if (uid) queryConds.push({ firebaseUid: uid });
+    if (email) queryConds.push({ email: email });
+    if (phone) queryConds.push({ phone: phone });
+    if (phone) queryConds.push({ phone: phone.slice(-10) });
+
+    let customer = await Customer.findOne({ $or: queryConds });
 
     if (!customer) {
       return res.status(404).send({
-        message: "Account with this email does not exist. Please register first.",
+        message: "Account does not exist. Please register first.",
         error: "USER_NOT_FOUND",
       });
     }
 
-    if (
-      customer.password &&
-      bcrypt.compareSync(req.body.password, customer.password)
-    ) {
-
-
-
-
-
-
-
-
-      // If the account is a wholesaler, check approval status
-      if (customer.role === 'wholesaler') {
-        if (customer.wholesalerStatus === 'pending') {
-          return res.status(403).send({
-            message: 'Your account is currently under verification. You will be notified once approved by our team.',
-            wholesalerStatus: 'pending',
-          });
-        }
-        if (customer.wholesalerStatus === 'rejected') {
-          return res.status(403).send({
-            message: 'Your wholesaler application has been rejected. Please contact support for more information.',
-            wholesalerStatus: 'rejected',
-          });
-        }
-      }
-      // Update lastLogin timestamp
-      customer.lastLogin = new Date();
-      await customer.save();
-
-      // Fetch fresh customer data with populated cart to ensure we have latest details
-      const customerWithCart = await Customer.findById(customer._id).populate({
-        path: "cart.productId",
-        select: "title prices image slug",
-      });
-
-      const token = signInToken(customerWithCart);
-      res.send({
-        token,
-        _id: customerWithCart._id,
-        name: customerWithCart.name,
-        email: customerWithCart.email,
-        address: customerWithCart.address,
-        phone: customerWithCart.phone,
-        image: customerWithCart.image,
-        role: customerWithCart.role || "customer", // Added role
-        cart: customerWithCart.cart,
-      });
-    } else {
-      res.status(401).send({
-        message: "Invalid user or password!",
-        error: "Invalid user or password!",
-      });
+    // Update firebaseUid if it was missing (for migration of existing users)
+    if (!customer.firebaseUid) {
+      customer.firebaseUid = uid;
     }
+
+    // If the account is a wholesaler, check approval status
+    if (customer.role === 'wholesaler') {
+      if (customer.wholesalerStatus === 'pending') {
+        return res.status(403).send({
+          message: 'Your account is currently under verification. You will be notified once approved by our team.',
+          wholesalerStatus: 'pending',
+        });
+      }
+      if (customer.wholesalerStatus === 'rejected') {
+        return res.status(403).send({
+          message: 'Your wholesaler application has been rejected. Please contact support for more information.',
+          wholesalerStatus: 'rejected',
+        });
+      }
+    }
+    
+    // Update lastLogin timestamp
+    customer.lastLogin = new Date();
+    await customer.save();
+
+    // Fetch fresh customer data with populated cart to ensure we have latest details
+    const customerWithCart = await Customer.findById(customer._id).populate({
+      path: "cart.productId",
+      select: "title prices image slug",
+    });
+
+    const token = signInToken(customerWithCart);
+    res.send({
+      token,
+      _id: customerWithCart._id,
+      name: customerWithCart.name,
+      email: customerWithCart.email,
+      address: customerWithCart.address,
+      phone: customerWithCart.phone,
+      image: customerWithCart.image,
+      role: customerWithCart.role || "customer",
+      cart: customerWithCart.cart,
+      message: "Login Successful!"
+    });
   } catch (err) {
     res.status(500).send({
       message: err.message,
-      error: "Invalid user or password!",
     });
   }
 };
@@ -883,16 +918,17 @@ const forgetPassword = async (req, res) => {
     const option = {
       name: isAdded.name,
       email: req.body.email,
-      contact_email: globalSetting?.setting?.email || "support@Farmacykart.com",
       token: token,
       shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
     };
 
+    const { html, text } = simpleResetPasswordEmail(option);
     const body = {
-      from: globalSetting?.setting?.email || process.env.EMAIL_USER,
       to: `${req.body.email}`,
-      subject: "Password Reset",
-      html: forgetPasswordEmailBody(option),
+      subject: `${option.shop_name} password reset`,
+      html,
+      text,
+      emailType: "password-reset",
     };
 
     const message = "Please check your email to reset password!";
@@ -942,23 +978,10 @@ const sendCredentials = async (req, res) => {
       return res.status(400).send({ message: 'Password is required. Generate it from the admin UI and send it.' });
     }
     const plainPassword = String(password);
-    // Prepare transporter and send mail directly so we can update DB only on success
-    const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport({
-      host: process.env.HOST,
-      port: process.env.EMAIL_PORT,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
     const frontendUrl = process.env.FRONTEND_URL || process.env.STORE_URL || 'http://localhost:3000';
     const mailBody = {
-      from: process.env.EMAIL_USER || 'no-reply@farmcykart.com',
       to: customer.email,
-      subject: 'Your Wholesaler Login Credentials',
+      subject: 'Farmacykart – Your wholesaler login details',
       html: `<p>Hi ${customer.name || 'Wholesaler'},</p>
              <p>Your wholesaler panel login credentials are below:</p>
              <p><strong>Email:</strong> ${customer.email}</p>
@@ -967,27 +990,21 @@ const sendCredentials = async (req, res) => {
              <p>Regards,<br/>Farmacykart Team</p>`,
     };
 
-    transporter.verify(async (verErr) => {
-      if (verErr) {
-        console.error('Email transporter verify error:', verErr);
-        return res.status(403).send({ message: `Email service verification failed: ${verErr.message}` });
-      }
-
-      transporter.sendMail(mailBody, async (err, info) => {
-        if (err) {
-          console.error('sendCredentials email send error:', err);
-          return res.status(403).send({ message: `Error sending email: ${err.message}` });
-        }
-
-        // On success update customer's password (hashed) and counters
-        customer.password = bcrypt.hashSync(plainPassword);
-        customer.credentialEmailCount = (customer.credentialEmailCount || 0) + 1;
-        customer.lastCredentialEmailSentAt = new Date();
-        await customer.save();
-
-        return res.send({ message: 'Credentials emailed successfully', credentialEmailCount: customer.credentialEmailCount, lastCredentialEmailSentAt: customer.lastCredentialEmailSentAt });
+    try {
+      await sendEmail(mailBody);
+      customer.password = bcrypt.hashSync(plainPassword);
+      customer.credentialEmailCount = (customer.credentialEmailCount || 0) + 1;
+      customer.lastCredentialEmailSentAt = new Date();
+      await customer.save();
+      return res.send({
+        message: 'Credentials emailed successfully',
+        credentialEmailCount: customer.credentialEmailCount,
+        lastCredentialEmailSentAt: customer.lastCredentialEmailSentAt,
       });
-    });
+    } catch (err) {
+      console.error('sendCredentials email send error:', err);
+      return res.status(403).send({ message: `Error sending email: ${err.message}` });
+    }
   } catch (err) {
     console.error('sendCredentials error:', err);
     res.status(500).send({ message: err.message });

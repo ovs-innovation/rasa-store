@@ -479,39 +479,37 @@ export const getServerSideProps = async (context) => {
   const { cookies } = context.req;
   const { query, _id } = context.query;
 
-  try {
-    const [data, attributes, brands] = await Promise.all([
-      ProductServices.getShowingStoreProducts({
-        category: _id ? _id : "",
-        title: query ? query : "",
-      }),
-      AttributeServices.getShowingAttributes(),
-      BrandServices.getShowingBrands(),
-    ]);
+  const [dataResult, attributesResult, brandsResult] = await Promise.allSettled([
+    ProductServices.getShowingStoreProducts({
+      category: _id ? _id : "",
+      title: query ? query : "",
+    }),
+    AttributeServices.getShowingAttributes(),
+    BrandServices.getShowingBrands(),
+  ]);
 
-    return {
-      props: {
-        attributes: attributes || [],
-        cookies: cookies,
-        popularProducts: data?.popularProducts || [],
-        discountProducts: data?.discountedProducts || [],
-        bestSellingProducts: data?.bestSellingProducts || [],
-        brands: brands || [],
-      },
-    };
-  } catch (err) {
-    console.warn("getServerSideProps: Backend unavailable, rendering with empty data.", err?.message || err);
-    return {
-      props: {
-        attributes: [],
-        cookies: cookies,
-        popularProducts: [],
-        discountProducts: [],
-        bestSellingProducts: [],
-        brands: [],
-      },
-    };
+  const data = dataResult.status === "fulfilled" ? dataResult.value : null;
+  const attributes =
+    attributesResult.status === "fulfilled" ? attributesResult.value : [];
+  const brands = brandsResult.status === "fulfilled" ? brandsResult.value : [];
+
+  if (dataResult.status === "rejected") {
+    console.warn(
+      "getServerSideProps: products fetch failed.",
+      dataResult.reason?.message || dataResult.reason
+    );
   }
+
+  return {
+    props: {
+      attributes: attributes || [],
+      cookies: cookies,
+      popularProducts: data?.popularProducts || [],
+      discountProducts: data?.discountedProducts || [],
+      bestSellingProducts: data?.bestSellingProducts || [],
+      brands: brands || [],
+    },
+  };
 };
 
 export default Home;

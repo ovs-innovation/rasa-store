@@ -32,15 +32,15 @@ const usePushNotificationSubmit = (id) => {
       };
 
       if (id) {
-        const res = await PushNotificationServices.updatePushNotification(id, pushNotificationData);
+        await PushNotificationServices.updatePushNotification(id, pushNotificationData);
         setIsSubmitting(false);
-        notifySuccess(res.message);
-        window.location.reload();
+        notifySuccess("Notification sent successfully");
+        setTimeout(() => window.location.reload(), 2000);
       } else {
-        const res = await PushNotificationServices.addPushNotification(pushNotificationData);
+        await PushNotificationServices.addPushNotification(pushNotificationData);
         setIsSubmitting(false);
-        notifySuccess(res.message);
-        window.location.reload();
+        notifySuccess("Notification sent successfully");
+        setTimeout(() => window.location.reload(), 2000);
       }
     } catch (err) {
       setIsSubmitting(false);

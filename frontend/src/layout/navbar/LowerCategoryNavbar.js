@@ -35,10 +35,18 @@ export default function LowerCategoryNavbar({ categories = [], showingTranslateV
     }
   };
 
+  const [dropdownTop, setDropdownTop] = useState(130);
+
   const handleToggle = (id, e) => {
     if (window.innerWidth <= 1024) {
       e.stopPropagation();
-      setActiveCategory(activeCategory === id ? null : id);
+      if (activeCategory === id) {
+        setActiveCategory(null);
+      } else {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setDropdownTop(rect.bottom + 5);
+        setActiveCategory(id);
+      }
     }
   };
 
@@ -60,7 +68,7 @@ export default function LowerCategoryNavbar({ categories = [], showingTranslateV
   if (!categories || categories.length === 0) return null;
 
   return (
-    <div className="w-full bg-white border-b border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] sticky top-[64px] lg:top-[80px] z-40 transition-all duration-300">
+    <div className="w-full bg-white border-b border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] sticky top-[64px] lg:top-[80px] z-[60] transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 md:px-8 relative">
         <nav
           ref={dropdownRef}
@@ -91,7 +99,8 @@ export default function LowerCategoryNavbar({ categories = [], showingTranslateV
               {/* Enhanced Subcategory Dropdown */}
               {category?.children?.length > 0 && activeCategory === category._id && (
                 <div
-                  className="fixed lg:absolute top-[130px] lg:top-full z-[100] left-4 right-4 lg:left-1/2 lg:right-auto lg:-translate-x-1/2 lg:mt-2 lg:w-64 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200"
+                  style={{ top: typeof window !== "undefined" && window.innerWidth <= 1024 ? `${dropdownTop}px` : undefined }}
+                  className="fixed lg:absolute lg:top-full lg:!top-full z-[100] left-4 right-4 lg:left-1/2 lg:right-auto lg:-translate-x-1/2 lg:mt-2 lg:w-64 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200"
                 >
                   <div className="bg-white shadow-[0_10px_40px_rgba(0,0,0,0.12)] rounded-xl border border-gray-100 py-3 backdrop-blur-sm bg-white/95">
                     <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">

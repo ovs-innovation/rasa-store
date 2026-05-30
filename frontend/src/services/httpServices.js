@@ -1,12 +1,24 @@
 import axios from "axios";
+import http from "http";
+
+const isServer = typeof window === "undefined";
+
+// Prefer IPv4 on server (Windows often resolves localhost to ::1 first)
+const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(
+  "://localhost",
+  "://127.0.0.1"
+);
 
 const instance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseURL: apiBaseUrl,
   timeout: 50000,
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
   },
+  ...(isServer && {
+    httpAgent: new http.Agent({ family: 4 }),
+  }),
 });
 
 export const setToken = (token) => {

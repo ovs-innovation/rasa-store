@@ -349,19 +349,14 @@ const addStaffEmailBody = (option) => {
                                                       <div
                                                         style="padding-top:10px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:11px;font-weight:400;line-height:16px;text-align:center;color:#8a8a8a;"
                                                       >
-                                                        You are receiving this
-                                                        email because you
-                                                        registered with
-                                                        ${option.shop_name} and agreed
-                                                        to receive emails from
-                                                        us regarding new
-                                                        features, events and
-                                                        special offers.
+                                                        This is an account-related message from
+                                                        <strong>${option.shop_name}</strong>.
+                                                        If you did not expect this email, contact
+                                                        ${option.contact_email}.
                                                         <p
-                                                          style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:11px;font-weight:400;line-height:16px;text-align:center;color:#303030;"
+                                                          style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:11px;font-weight:400;line-height:16px;text-align:center;color:#303030;margin-top:12px;"
                                                         >
-                                                          &copy; ${option.shop_name},
-                                                          All Rights Reserved.</p></div>
+                                                          &copy; ${new Date().getFullYear()} ${option.shop_name}. All rights reserved.</p></div>
                                                     </td>
                                                   </tr>
 

@@ -1,6 +1,6 @@
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import dynamic from "next/dynamic";
-import { useRef, useEffect, useContext } from "react";
+import { useRef, useEffect, useState, useContext } from "react";
 import { IoCloudDownloadOutline, IoPrintOutline, IoCopyOutline } from "react-icons/io5";
 import { FiTruck, FiExternalLink } from "react-icons/fi";
 import { notifySuccess } from "@utils/toast";
@@ -15,6 +15,7 @@ import useGetSetting from "@hooks/useGetSetting";
 import Invoice from "@components/invoice/Invoice";
 import Loading from "@components/preloader/Loading";
 import OrderServices from "@services/OrderServices";
+import RefundServices from "@services/RefundServices";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import InvoiceForDownload from "@components/invoice/InvoiceForDownload";
 import OrderTracking from "@components/order/OrderTracking";
@@ -37,6 +38,38 @@ const Order = ({ params }) => {
       }
     }
   }, []);
+
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [refundReasons, setRefundReasons] = useState([]);
+  const [refundMode, setRefundMode] = useState(false);
+  const [selectedReason, setSelectedReason] = useState("");
+  const [refundNote, setRefundNote] = useState("");
+
+  useEffect(() => {
+    RefundServices.getRefundData().then((res) => {
+      if (res && res.reasons) {
+        setRefundReasons(res.reasons.filter((r) => r.status?.toLowerCase() === "show"));
+      }
+      if (res && res.refundMode !== undefined) {
+        setRefundMode(res.refundMode);
+      }
+    });
+  }, []);
+
+  const handleRefundSubmit = async () => {
+    if (!selectedReason) return notifyError("Please select a reason");
+    try {
+      const res = await OrderServices.requestRefund(orderId, {
+        reason: selectedReason,
+        note: refundNote,
+      });
+      notifySuccess(res.message);
+      setIsRefundModalOpen(false);
+      window.location.reload();
+    } catch (err) {
+      notifyError(err?.response?.data?.message || err.message);
+    }
+  };
 
   const { data, error, isLoading } = useQuery({
     queryKey: ["order", orderId],
@@ -134,6 +167,15 @@ const Order = ({ params }) => {
                    )}
                  </>
                )}
+
+               {data?.status === "Delivered" && refundMode && (
+                 <button
+                   onClick={() => setIsRefundModalOpen(true)}
+                   className="flex items-center justify-center bg-red-500 text-white transition-all font-serif text-sm font-semibold h-10 py-2 px-5 rounded-md hover:bg-red-600 shadow-sm"
+                 >
+                   Request Refund
+                 </button>
+               )}
             </div>
 
             {/* Live Tracking Section */}
@@ -150,6 +192,51 @@ const Order = ({ params }) => {
               globalSetting={globalSetting}
             />
           </div>
+
+          {/* Refund Modal */}
+          {isRefundModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+                <h2 className="text-xl font-bold mb-4">Request Refund</h2>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Reason</label>
+                  <select
+                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-store-500 focus:ring-store-500 p-2 border"
+                    value={selectedReason}
+                    onChange={(e) => setSelectedReason(e.target.value)}
+                  >
+                    <option value="" disabled>Select a reason...</option>
+                    {refundReasons.map((r) => (
+                      <option key={r._id} value={r.title}>{r.title}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Additional Note (Optional)</label>
+                  <textarea
+                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-store-500 focus:ring-store-500 p-2 border"
+                    rows="3"
+                    value={refundNote}
+                    onChange={(e) => setRefundNote(e.target.value)}
+                  ></textarea>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setIsRefundModalOpen(false)}
+                    className="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRefundSubmit}
+                    className="px-4 py-2 bg-store-500 text-white rounded-md hover:bg-store-600"
+                  >
+                    Submit Request
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </Layout>

@@ -30,19 +30,6 @@ const Layout = ({ title, description, children, hideMobileHeader }) => {
 
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={true}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-
       <div className="font-sans">
         <Head>
           <style>
@@ -93,6 +80,18 @@ const Layout = ({ title, description, children, hideMobileHeader }) => {
         </div>
         <FloatingWhatsApp />
       </div>
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </>
   );
 };

@@ -217,7 +217,7 @@ const forgetPasswordEmailBody = (option) => {
                               reset your password</p>
 
                             <a
-                            href=${process.env.STORE_URL}/auth/forget-password/${option.token}
+                            href="${process.env.STORE_URL || process.env.FRONTEND_URL || "https://farmacykart.com"}/auth/forget-password/${option.token}"
                               style="background:#22c55e;color:white;border:1px solid #22c55e; padding: 10px 15px; border-radius: 4px; text-decoration:none;"
                             >Reset Password </a>
 
@@ -352,18 +352,14 @@ const forgetPasswordEmailBody = (option) => {
                                                       <div
                                                         style="padding-top:0px; font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:11px;font-weight:400;line-height:16px;text-align:center;color:#8a8a8a;"
                                                       >
-                                                        You are receiving this
-                                                        email because you
-                                                        registered with ${option.shop_name}
-                                                        and agreed to receive
-                                                        emails from us regarding
-                                                        new features, events and
-                                                        special offers.
+                                                        This is an account-related message from
+                                                        <strong>${option.shop_name}</strong>.
+                                                        If you did not request a password reset, contact
+                                                        <a href="mailto:${option.contact_email}">${option.contact_email}</a>.
                                                         <p
-                                                          style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:11px;font-weight:400;line-height:16px;text-align:center;color:#303030;"
+                                                          style="font-family:'Helvetica Neue', Helvetica, Arial, sans-serif;font-size:11px;font-weight:400;line-height:16px;text-align:center;color:#303030;margin-top:12px;"
                                                         >
-                                                          &copy; ${option.shop_name}, All
-                                                          Rights Reserved.</p></div>
+                                                          &copy; ${new Date().getFullYear()} ${option.shop_name}. All rights reserved.</p></div>
                                                     </td>
                                                   </tr>
 

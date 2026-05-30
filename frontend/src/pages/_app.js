@@ -71,13 +71,6 @@ function MyApp({ Component, pageProps }) {
 
   return (
     <>
-      {/* Render TawkMessengerReact only if tawk_chat_status is enabled */}
-      {storeSetting?.tawk_chat_status && (
-        <TawkMessengerReact
-          propertyId={storeSetting?.tawk_chat_property_id || ""}
-          widgetId={storeSetting?.tawk_chat_widget_id || ""}
-        />
-      )}
       <QueryClientProvider client={queryClient}>
         <SessionProvider>
           <UserProvider>
@@ -95,6 +88,13 @@ function MyApp({ Component, pageProps }) {
           </UserProvider>
         </SessionProvider>
       </QueryClientProvider>
+      {/* Render TawkMessengerReact only if tawk_chat_status is enabled */}
+      {storeSetting?.tawk_chat_status && (
+        <TawkMessengerReact
+          propertyId={storeSetting?.tawk_chat_property_id || ""}
+          widgetId={storeSetting?.tawk_chat_widget_id || ""}
+        />
+      )}
     </>
   );
 }

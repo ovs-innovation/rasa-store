@@ -17,13 +17,12 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  // Customize notification here
-  const notificationTitle = payload.notification.title;
+  const notificationTitle = payload.notification?.title || payload.data?.title || 'New Notification';
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: payload.data.image || '/logo.png',
+    body: payload.notification?.body || payload.data?.body || payload.data?.description || '',
+    icon: payload.notification?.image || payload.data?.image || '/logo.png',
     data: {
-      url: payload.data.click_action || '/',
+      url: payload.data?.click_action || '/',
     }
   };
 

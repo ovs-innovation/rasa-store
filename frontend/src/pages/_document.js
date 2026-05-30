@@ -32,6 +32,7 @@ class MyDocument extends Document {
           <link rel="icon" href={favicon} />
           <link rel="shortcut icon" href={favicon} />
           <link rel="apple-touch-icon" href={favicon} />
+          <meta name="referrer" content="strict-origin-when-cross-origin" />
           <meta property="og:title" content={metaTitle} />
           <meta property="og:type" content="eCommerce Website" />
           <meta property="og:description" content={metaDescription} />

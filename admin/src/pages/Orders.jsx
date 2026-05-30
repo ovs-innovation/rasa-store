@@ -188,7 +188,7 @@ const Orders = () => {
     <>
       <PageTitle>{t("Orders")}</PageTitle>
 
-      <AnimatedContent className="overflow-x-hidden">
+      <AnimatedContent>
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5 items-stretch mb-5 bg-white border border-gray-100 rounded-3xl dark:bg-gray-800 shadow-sm p-7 md:p-10">
           <CardItem
             title="Total Order"

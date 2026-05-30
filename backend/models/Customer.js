@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const customerSchema = new mongoose.Schema(
   {
+    firebaseUid: {
+      type: String,
+      required: false,
+      unique: true,
+      sparse: true, // Allows null/missing values but enforces uniqueness for non-null
+    },
     name: {
       type: String,
       required: true,

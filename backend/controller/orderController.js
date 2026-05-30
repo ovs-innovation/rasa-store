@@ -4,52 +4,7 @@ const Customer = require("../models/Customer");
 const Product = require("../models/Product");
 const Admin = require("../models/Admin");
 const Brand = require("../models/Brand");
-
-// Helper function to populate taxRate and HSN in cart items from Product collection
-const populateCartTaxFields = async (cart) => {
-  if (!cart || cart.length === 0) return cart;
-  
-  // Get all unique product IDs from cart items
-  const productIds = [...new Set(
-    cart
-      .filter(item => item.productId || item.id || item._id)
-      .map(item => item.productId || item.id || item._id)
-      .filter(id => mongoose.Types.ObjectId.isValid(id))
-  )];
-  
-  // Fetch product tax fields if there are product IDs
-  if (productIds.length > 0) {
-    const products = await Product.find({ _id: { $in: productIds } }).select('_id taxRate hsnCode mrp originalPrice batchNo expDate');
-    const productMap = {};
-    products.forEach(product => {
-      productMap[product._id.toString()] = {
-        taxRate: product.taxRate || 0,
-        hsnCode: product.hsnCode || '',
-        mrp: product.mrp || product.originalPrice || 0,
-        batchNo: product.batchNo || '',
-        expDate: product.expDate || ''
-      };
-    });
-    
-    // Add taxRate, hsnCode, mrp, batchNo, and expDate to cart items
-    cart = cart.map(item => {
-      const productId = item.productId || item.id || item._id;
-      if (productId && productMap[productId]) {
-        return { 
-          ...item, 
-          taxRate: item.taxRate || productMap[productId].taxRate,
-          hsn: item.hsn || item.hsnCode || productMap[productId].hsnCode,
-          mrp: item.mrp || productMap[productId].mrp || productMap[productId].originalPrice,
-          batchNo: item.batchNo || productMap[productId].batchNo,
-          expDate: item.expDate || productMap[productId].expDate
-        };
-      }
-      return item;
-    });
-  }
-  
-  return cart;
-};
+const { populateCartTaxFields } = require("../utils/cartTaxUtils");
 
 const getAllOrders = async (req, res) => {
   const {
@@ -324,6 +279,9 @@ const getOrderById = async (req, res) => {
 };
 
 const { ORDER_STATUS, VALID_TRANSITIONS } = require("../utils/orderStatus");
+const {
+  sendRefundCompletedNotifications,
+} = require("../lib/order-refund-notifications");
 
 const updateOrder = async (req, res) => {
   try {
@@ -333,6 +291,8 @@ const updateOrder = async (req, res) => {
     if (!order) {
       return res.status(404).send({ message: "Order not found" });
     }
+
+    const previousStatus = order.status;
 
     // Validate status transition
     if (status && order.status !== status) {
@@ -374,6 +334,19 @@ const updateOrder = async (req, res) => {
       updateQuery,
       { new: true }
     );
+
+    if (
+      status === "Refunded" &&
+      previousStatus !== "Refunded" &&
+      !order.refundEmailSent
+    ) {
+      sendRefundCompletedNotifications(updatedOrder).catch((err) => {
+        console.error(
+          `[refund] Notification failed for order ${updatedOrder._id}:`,
+          err.message || err
+        );
+      });
+    }
 
     res.status(200).send({
       message: "Order Updated Successfully!",

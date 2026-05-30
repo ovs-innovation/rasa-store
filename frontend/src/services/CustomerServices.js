@@ -17,6 +17,12 @@ const CustomerServices = {
   loginWithPhone: async (body) => {
     return requests.post("/customer/login-phone", body);
   },
+  sendPhoneOtp: async (body) => {
+    return requests.post("/customer/send-phone-otp", body);
+  },
+  verifyPhoneOtp: async (body) => {
+    return requests.post("/customer/verify-phone-otp", body);
+  },
 
   registerCustomer: async (token, body) => {
     return requests.post(`/customer/register/${token}`, body);
@@ -137,23 +143,7 @@ const CustomerServices = {
   /** Update FCM token for push notifications */
   updateFcmToken: async (id, fcmToken) => {
     return requests.put(`/customer/update-fcm-token/${id}`, { fcmToken });
-  },
-
-  /** Verify Email with OTP */
-  verifyEmailOTP: async (body) => {
-    return requests.post("/customer/verify-email-otp", body);
-  },
-
-  /** Resend Verification Email */
-  resendVerificationEmail: async (body) => {
-    return requests.post("/customer/resend-verification", body);
-  },
-  sendPhoneEmailOTP: async (body) => {
-    return requests.post("/customer/login/send-phone-email-otp", body);
-  },
-  verifyPhoneEmailOTP: async (body) => {
-    return requests.post("/customer/login/verify-phone-email-otp", body);
-  },
+  }
 };
 
 export default CustomerServices;

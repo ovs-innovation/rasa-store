@@ -3,9 +3,6 @@ require("dotenv").config();
 
 /**
  * Utility to send SMS/WhatsApp notifications via MSG91 Flow API.
- * @param {string} to - The recipient's phone number (with country code, e.g., 919999999999)
- * @param {string} message - Fallback message string (if not using template variables)
- * @param {object} variables - Variables for the MSG91 Flow template (e.g., { name: 'John', order_id: '123' })
  */
 const sendSMS = async (to, message, variables = {}) => {
   try {
@@ -18,7 +15,6 @@ const sendSMS = async (to, message, variables = {}) => {
       return false;
     }
 
-    // Ensure 'to' has country code (MSG91 requires it, default to 91 if 10 digits)
     let mobile = to.replace(/\D/g, "");
     if (mobile.length === 10) {
       mobile = "91" + mobile;
@@ -32,38 +28,100 @@ const sendSMS = async (to, message, variables = {}) => {
         {
           mobiles: mobile,
           ...variables,
-          // If no variables provided, we try to pass the message as 'message' 
-          // in case the template has a single ##message## variable
-          ...(Object.keys(variables).length === 0 ? { message: message } : {})
-        }
-      ]
+          ...(Object.keys(variables).length === 0 ? { message: message } : {}),
+        },
+      ],
     };
 
-    console.log(`[MSG91] Attempting to send notification to ${mobile}...`);
-    // console.log(`[MSG91] Payload:`, JSON.stringify(payload, null, 2));
+    console.log(`[MSG91] Flow SMS to ${mobile}...`);
 
     const response = await axios.post("https://api.msg91.com/api/v5/flow/", payload, {
       headers: {
-        "authkey": authKey,
-        "content-type": "application/json"
-      }
+        authkey: authKey,
+        "content-type": "application/json",
+      },
     });
 
     if (response.data && response.data.type === "success") {
-      console.log(`[MSG91] Notification sent successfully to ${mobile}`);
+      console.log(`[MSG91] Flow SMS sent to ${mobile}`);
       return true;
-    } else {
-      console.error("[MSG91] API returned an error:", JSON.stringify(response.data, null, 2));
-      return false;
     }
+
+    console.error("[MSG91] Flow API error:", JSON.stringify(response.data, null, 2));
+    return false;
   } catch (error) {
     if (error.response) {
-      console.error("[MSG91] SMS sending failed (HTTP Error):", error.response.status, JSON.stringify(error.response.data, null, 2));
+      console.error(
+        "[MSG91] Flow SMS failed:",
+        error.response.status,
+        JSON.stringify(error.response.data, null, 2)
+      );
     } else {
-      console.error("[MSG91] SMS sending failed (Network Error):", error.message);
+      console.error("[MSG91] Flow SMS failed:", error.message);
     }
     return false;
   }
 };
 
-module.exports = { sendSMS };
+/** Send 4-digit login OTP via MSG91 OTP API (not Flow API) */
+const sendLoginOtpSms = async (to, otp) => {
+  const authKey = process.env.MSG91_AUTH_KEY;
+  const templateId = process.env.MSG91_OTP_TEMPLATE_ID;
+
+  if (!authKey || !templateId) {
+    console.warn("[MSG91] MSG91_AUTH_KEY or MSG91_OTP_TEMPLATE_ID missing — cannot send login OTP SMS.");
+    return { ok: false, error: "MSG91 OTP not configured" };
+  }
+
+  try {
+    let mobile = String(to || "").replace(/\D/g, "");
+    if (mobile.length === 10) mobile = "91" + mobile;
+    if (!mobile.startsWith("91") && mobile.length > 10) {
+      mobile = mobile.replace(/^0+/, "");
+    }
+
+    const payload = {
+      template_id: templateId,
+      mobile,
+      otp: String(otp),
+      otp_length: 4,
+      otp_expiry: 10,
+    };
+
+    console.log(`[MSG91] Sending login OTP to ${mobile}...`);
+
+    const response = await axios.post("https://control.msg91.com/api/v5/otp", payload, {
+      headers: {
+        authkey: authKey,
+        "content-type": "application/json",
+      },
+    });
+
+    const data = response.data || {};
+    const ok = data.type === "success";
+
+    if (ok) {
+      console.log(`[MSG91] Login OTP sent to ${mobile}`, data.request_id || "");
+      return { ok: true, requestId: data.request_id };
+    }
+
+    console.warn("[MSG91] OTP API failed, trying Flow SMS fallback...");
+    const flowOk = await sendSMS(
+      mobile,
+      `Your Farmacykart login OTP is ${otp}. Valid for 10 minutes.`,
+      { otp, OTP: otp, VAR1: otp, var: otp, var1: otp }
+    );
+    if (flowOk) {
+      return { ok: true, channel: "flow" };
+    }
+
+    console.error("[MSG91] Login OTP API rejected:", JSON.stringify(data, null, 2));
+    return { ok: false, error: data.message || "MSG91 rejected OTP request" };
+  } catch (error) {
+    const detail = error.response?.data || error.message;
+    console.error("[MSG91] Login OTP SMS failed:", JSON.stringify(detail, null, 2));
+    return { ok: false, error: typeof detail === "string" ? detail : detail?.message || "SMS send failed" };
+  }
+};
+
+module.exports = { sendSMS, sendLoginOtpSms };

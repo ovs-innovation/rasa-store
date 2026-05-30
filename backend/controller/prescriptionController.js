@@ -255,10 +255,9 @@ const updatePrescriptionStatus = async (req, res) => {
 
       try {
         await sendEmail({
-          from: process.env.EMAIL_USER,
           to: prescription.user.email,
-          subject: `Prescription Update: ${
-            prescription.status === "processed" ? "Approved" : "Rejected"
+          subject: `Farmacykart – Prescription ${
+            prescription.status === "processed" ? "approved" : "update"
           }`,
           html: emailBody,
         });

@@ -528,7 +528,7 @@ const HomePage = (props) => {
                  <TabPanel>
                   <div className="max-w-3xl mx-auto">
                     <label className="block text-sm font-bold text-gray-700 mb-4">{t("SliderImages")} 1</label>
-                    <Uploader imageUrl={sliderImage} setImageUrl={setSliderImage} useOriginalSize={true} />
+                    <Uploader imageUrl={sliderImage} setImageUrl={setSliderImage} useOriginalSize={true} folder="settings/slider" />
                     <ProductSelector 
                       label="Link to Product (Optional)" 
                       value={sliderProductId} 
@@ -548,7 +548,7 @@ const HomePage = (props) => {
                 <TabPanel>
                   <div className="max-w-3xl mx-auto">
                     <label className="block text-sm font-bold text-gray-700 mb-4">{t("SliderImages")} 2</label>
-                    <Uploader imageUrl={sliderImageTwo} setImageUrl={setSliderImageTwo} useOriginalSize={true} />
+                    <Uploader imageUrl={sliderImageTwo} setImageUrl={setSliderImageTwo} useOriginalSize={true} folder="settings/slider" />
                     <ProductSelector 
                       label="Link to Product (Optional)" 
                       value={sliderProductIdTwo} 
@@ -568,7 +568,7 @@ const HomePage = (props) => {
                 <TabPanel>
                   <div className="max-w-3xl mx-auto">
                     <label className="block text-sm font-bold text-gray-700 mb-4">{t("SliderImages")} 3</label>
-                    <Uploader imageUrl={sliderImageThree} setImageUrl={setSliderImageThree} useOriginalSize={true} />
+                    <Uploader imageUrl={sliderImageThree} setImageUrl={setSliderImageThree} useOriginalSize={true} folder="settings/slider" />
                     <ProductSelector 
                       label="Link to Product (Optional)" 
                       value={sliderProductIdThree} 
@@ -588,7 +588,7 @@ const HomePage = (props) => {
                 <TabPanel>
                   <div className="max-w-3xl mx-auto">
                     <label className="block text-sm font-bold text-gray-700 mb-4">{t("SliderImages")} 4</label>
-                    <Uploader imageUrl={sliderImageFour} setImageUrl={setSliderImageFour} useOriginalSize={true} />
+                    <Uploader imageUrl={sliderImageFour} setImageUrl={setSliderImageFour} useOriginalSize={true} folder="settings/slider" />
                     <ProductSelector 
                       label="Link to Product (Optional)" 
                       value={sliderProductIdFour} 
@@ -608,7 +608,7 @@ const HomePage = (props) => {
                 <TabPanel>
                   <div className="max-w-3xl mx-auto">
                     <label className="block text-sm font-bold text-gray-700 mb-4">{t("SliderImages")} 5</label>
-                    <Uploader imageUrl={sliderImageFive} setImageUrl={setSliderImageFive} useOriginalSize={true} />
+                    <Uploader imageUrl={sliderImageFive} setImageUrl={setSliderImageFive} useOriginalSize={true} folder="settings/slider" />
                     <ProductSelector 
                       label="Link to Product (Optional)" 
                       value={sliderProductIdFive} 

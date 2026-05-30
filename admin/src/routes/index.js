@@ -114,6 +114,10 @@ const routes = [
     component: OrdersByStatus,
   },
   {
+    path: "/orders/refund-requested",
+    component: OrdersByStatus,
+  },
+  {
     path: "/orders/offline-payments",
     component: OrdersByStatus,
   },

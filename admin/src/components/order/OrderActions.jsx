@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@windmill/react-ui";
 import { FiMoreVertical } from "react-icons/fi";
 import { IoCloudDownloadOutline } from "react-icons/io5";
@@ -14,12 +15,21 @@ import InvoiceForDownload from "@/components/invoice/InvoiceForDownload";
 
 const OrderActions = ({ order }) => {
   const [open, setOpen] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
   const menuRef = useRef(null);
 
   const { currency, globalSetting, getNumberTwo } = useUtilsFunction();
 
-  const toggleMenu = () => {
+  const toggleMenu = (e) => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.right + window.scrollX - 176, // approx w-44 width
+      });
+    }
     setOpen((prev) => !prev);
   };
 
@@ -109,10 +119,11 @@ const OrderActions = ({ order }) => {
         <FiMoreVertical />
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
           ref={menuRef}
-          className="absolute z-40 right-0 mt-2 w-44 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-md shadow-lg text-sm"
+          className="absolute z-[9999] mt-2 w-44 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-md shadow-lg text-sm"
+          style={{ top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px` }}
         >
           <PDFDownloadLink
             document={
@@ -164,7 +175,8 @@ const OrderActions = ({ order }) => {
           >
             Cancel Order
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

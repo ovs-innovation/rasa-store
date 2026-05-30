@@ -11,9 +11,7 @@ const {
 const { sendEmail } = require("../lib/email-sender/sender");
 const Admin = require("../models/Admin");
 const Setting = require("../models/Setting");
-const {
-  forgetPasswordEmailBody,
-} = require("../lib/email-sender/templates/forget-password");
+const { simpleResetPasswordEmail } = require("../lib/email-sender/simple-templates");
 const {
   addStaffEmailBody,
 } = require("../lib/email-sender/templates/add-staff");
@@ -106,11 +104,16 @@ const forgetPassword = async (req, res) => {
       shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
     };
 
+    const { html, text } = simpleResetPasswordEmail({
+      ...option,
+      email: req.body.verifyEmail,
+    });
     const body = {
-      from: process.env.EMAIL_USER,
       to: `${req.body.verifyEmail}`,
-      subject: "Password Reset",
-      html: forgetPasswordEmailBody(option),
+      subject: "Farmacykart admin password reset",
+      html,
+      text,
+      emailType: "admin-password-reset",
     };
     const message = "Please check your email to reset password!";
     try {
@@ -175,11 +178,13 @@ const addStaff = async (req, res) => {
         shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
       };
 
+      const staffHtml = addStaffEmailBody(option);
       const body = {
-        from: globalSetting?.setting?.email || process.env.EMAIL_USER,
         to: `${req.body.email}`,
-        subject: "Staff Registration",
-        html: addStaffEmailBody(option),
+        subject: "Your Farmacykart staff account",
+        html: staffHtml,
+        text: `Hello,\n\nYour ${option.shop_name} staff account is ready.\nEmail: ${option.email}\n\nLogin at the admin panel.\n\n— ${option.shop_name}`,
+        emailType: "staff-welcome",
       };
 
       try {

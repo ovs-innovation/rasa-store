@@ -57,6 +57,7 @@ const STATUS_MAP = {
   canceled: "Cancel",
   "payment-failed": "Payment Failed",
   refunded: "Refunded",
+  "refund-requested": "Refund Requested",
   "offline-payments": "Offline Payments",
 };
 
@@ -71,6 +72,7 @@ const TITLE_MAP = {
   canceled: "Canceled Orders",
   "payment-failed": "Payment Failed Orders",
   refunded: "Refunded Orders",
+  "refund-requested": "Refund Requested Orders",
   "offline-payments": "Offline Payments",
 };
 
@@ -225,7 +227,7 @@ const OrdersByStatus = () => {
     <>
       <PageTitle>{pageTitle}</PageTitle>
 
-      <AnimatedContent className="overflow-x-hidden">
+      <AnimatedContent>
         {/* Stats Card */}
         <div className="mb-5 flex justify-start">
           <Card className="w-full max-w-xs border border-green-200/40 dark:border-green-900/20 bg-green-80/50 dark:bg-green-980/10 shadow-lg shadow-green-800/10 dark:shadow-green-900/5 rounded-2xl">            <CardBody>

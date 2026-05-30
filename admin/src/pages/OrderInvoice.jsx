@@ -17,8 +17,8 @@ import { SidebarContext } from "@/context/SidebarContext";
 import OrderServices from "@/services/OrderServices";
 import InvoiceLayout from "@/components/invoice/InvoiceLayout";
 import Loading from "@/components/preloader/Loading";
-import logoDark from "@/assets/img/logo/logo-color.png";
-import logoLight from "@/assets/img/logo/logo-color.png";
+import logoDark from "@/assets/img/logo/logo-color.svg";
+import logoLight from "@/assets/img/logo/logo-color.svg";
 import PageTitle from "@/components/Typography/PageTitle";
 import spinnerLoadingImage from "@/assets/img/spinner.gif";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
@@ -204,12 +204,21 @@ const OrderInvoice = () => {
         ) : error ? (
           <span className="text-center mx-auto text-red-500">{error}</span>
         ) : (
-          <InvoiceLayout
-            data={data}
-            currency={currency}
-            globalSetting={globalSetting}
-            getNumberTwo={getNumberTwo}
-            printRef={printRef} />
+          <>
+            {data?.refund?.reason && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
+                <h3 className="text-red-800 font-bold text-lg mb-1">Refund Requested</h3>
+                <p className="text-red-700"><strong>Reason:</strong> {data.refund.reason}</p>
+                {data.refund.note && <p className="text-red-700"><strong>Note:</strong> {data.refund.note}</p>}
+              </div>
+            )}
+            <InvoiceLayout
+              data={data}
+              currency={currency}
+              globalSetting={globalSetting}
+              getNumberTwo={getNumberTwo}
+              printRef={printRef} />
+          </>
         )}
       </div>
     </>
