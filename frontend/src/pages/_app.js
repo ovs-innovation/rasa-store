@@ -36,6 +36,28 @@ function MyApp({ Component, pageProps }) {
   const router = useRouter();
   const [storeSetting, setStoreSetting] = useState(null);
 
+  // Dev safety: unregister any previously installed PWA service workers.
+  // Old SWs can cache API/HTML and cause "backend content" to appear after refresh.
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator)) return;
+
+    (async () => {
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      } catch (_) {}
+
+      try {
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+      } catch (_) {}
+    })();
+  }, []);
+
   useEffect(() => {
     const fetchStoreSettings = async () => {
       try {

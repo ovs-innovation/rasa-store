@@ -56,20 +56,18 @@ const Layout = ({ title, description, children, hideMobileHeader }) => {
           <link rel="shortcut icon" href={favicon} />
           <link rel="apple-touch-icon" href={favicon} />
         </Head>
-        {/* Desktop header */}
-        <div className="hidden lg:block">
-          <NavBarTop />
-        </div>
-
         {/* Mobile header bar (fixed) */}
         {!hideMobileHeader && <MobileFooter />}
 
         {/* Mobile Bottom Navigation */}
         {!hideMobileHeader && <MobileBottomNavigation />}
 
-        {/* Add top padding on mobile so content doesn't sit behind fixed header */}
         <div className={`${hideMobileHeader ? "pt-0" : "pt-16"} lg:pt-0 lg:mt-0 pb-16 lg:pb-0`}>
-          <Navbar />
+          {/* Desktop: one sticky header — top bar + navbar + categories shift on scroll */}
+          <div className="hidden lg:block sticky top-0 z-[70] bg-white shadow-sm">
+            <NavBarTop />
+            <Navbar />
+          </div>
           {children}
         </div>
         <div className="  w-full">

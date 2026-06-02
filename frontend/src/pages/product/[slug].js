@@ -1019,14 +1019,6 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         return notifyError("Insufficient stock");
       }
 
-      // Check if user is logged in
-      const userInfo = session?.user || null;
-
-      if (!userInfo) {
-        // Optional: redirect to login or allow guest checkout
-        // For now, we'll allow it as the checkout page handles guest logic
-      }
-
       // Check if variants need to be selected
       const hasVariants = product?.variants && product.variants.length > 0;
       if (
@@ -1081,11 +1073,14 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
       };
 
       // Replace entire cart with only this product (Flipkart style - Buy Now replaces cart)
-      // Using setItems to avoid multiple re-renders
       setItems([newItem]);
 
-      // Redirect directly to checkout after state update
+      // Flipkart-style: login first if needed, then existing checkout page
       setTimeout(() => {
+        if (!userInfo?.token) {
+          router.push("/auth/login?redirectUrl=checkout");
+          return;
+        }
         router.push("/checkout");
       }, 150);
     } catch (error) {

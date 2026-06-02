@@ -126,7 +126,7 @@ const useLoginSubmit = () => {
             notifyError(msg);
             setLoading(false);
             setTimeout(() => {
-              router.push("/auth/signup");
+              router.push("/auth/login");
             }, 1500);
             return;
           }

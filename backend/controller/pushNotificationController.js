@@ -37,6 +37,17 @@ const addPushNotification = async (req, res) => {
     tokens = [...new Set(tokens)];
 
     if (tokens.length > 0) {
+      if (!admin.apps.length) {
+        console.warn("Firebase Admin not initialized — cannot send FCM messages");
+        return res.status(200).send({
+          message:
+            "Notification saved but Firebase Admin is not configured on the server. Add FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY to backend/.env",
+          data: newNotification,
+          sentCount: 0,
+          recipientCount: tokens.length,
+        });
+      }
+
       // 3. Prepare FCM message
       const message = {
         notification: {

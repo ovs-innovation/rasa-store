@@ -38,6 +38,10 @@ const {
   resendVerificationEmail,
   sendPhoneEmailOTP,
   verifyPhoneEmailOTP,
+  signupPhone,
+  completeProfile,
+  sendProfileEmailOtp,
+  verifyProfileEmailOtp,
 } = require("../controller/customerController");
 const {
   passwordVerificationLimit,
@@ -68,8 +72,8 @@ router.post("/register/:token", registerCustomer);
 //register a user directly
 router.post("/signup", registerCustomerDirect);
 
-// Wholesaler registration - accepts JSON (with Cloudinary URLs) or multipart files (handled in controller)
-router.post("/wholesaler", createWholesaler);
+// Wholesaler accounts: admin panel only (not public storefront)
+router.post("/wholesaler", isAuth, isAdmin, createWholesaler);
 
 // Delete uploaded Cloudinary asset
 router.post("/cloudinary-delete", deleteCloudinaryAsset);
@@ -116,6 +120,15 @@ router.get("/wholesalers", isAuth, isAdmin, getAllWholesalers);
 
 //login a user
 router.post("/login", loginCustomer);
+router.post("/signup-phone", signupPhone);
+router.post("/complete-profile", isAuth, completeProfile);
+router.post(
+  "/profile/send-email-otp",
+  isAuth,
+  emailVerificationLimit,
+  sendProfileEmailOtp
+);
+router.post("/profile/verify-email-otp", isAuth, verifyProfileEmailOtp);
 
 //register or login with google and fb
 router.post("/signup/oauth", signUpWithOauthProvider);

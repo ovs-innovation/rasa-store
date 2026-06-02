@@ -2,11 +2,22 @@ import { useState, useCallback } from "react";
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { auth } from "@lib/firebase";
 
+const RECAPTCHA_CONTAINER_ID = "recaptcha-container";
+
 const LOCALHOST_OTP_HINT =
   "Phone OTP does not work on localhost. Open http://127.0.0.1:3000/auth/login instead, and add 127.0.0.1 in Firebase → Authentication → Settings → Authorized domains.";
 
 export const getFirebasePhoneAuthErrorMessage = (err) => {
   const code = err?.code || "";
+  const raw = err?.message || "";
+
+  if (
+    raw.includes("already been rendered") ||
+    raw.includes("reCAPTCHA has already been")
+  ) {
+    return "Please wait a moment and tap Get OTP again.";
+  }
+
   if (code === "auth/invalid-app-credential") {
     if (typeof window !== "undefined" && window.location.hostname === "localhost") {
       return LOCALHOST_OTP_HINT;
@@ -16,12 +27,12 @@ export const getFirebasePhoneAuthErrorMessage = (err) => {
     );
   }
   if (code === "auth/captcha-check-failed") {
-    return "reCAPTCHA failed. Refresh the page and try again.";
+    return "Verification check failed. Please try again.";
   }
   if (code === "auth/too-many-requests") {
     return "Too many attempts. Please wait a few minutes and try again.";
   }
-  return err?.message || "Failed to send OTP. Please try again.";
+  return raw || "Failed to send OTP. Please try again.";
 };
 
 /** Firebase blocks phone auth on hostname `localhost` — use 127.0.0.1 in dev. */
@@ -44,18 +55,27 @@ const formatIndianPhone = (phone) => {
   return `+91${digits}`;
 };
 
+const emptyRecaptchaContainer = () => {
+  const el = document.getElementById(RECAPTCHA_CONTAINER_ID);
+  if (el) el.innerHTML = "";
+};
+
 export default function useFirebasePhoneOtp() {
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const clearRecaptcha = useCallback(() => {
-    if (typeof window !== "undefined" && window.recaptchaVerifier) {
+    if (typeof window === "undefined") return;
+    if (window.recaptchaVerifier) {
       try {
         window.recaptchaVerifier.clear();
-      } catch (_) {}
+      } catch (_) {
+        /* verifier may already be cleared */
+      }
       window.recaptchaVerifier = null;
     }
+    emptyRecaptchaContainer();
   }, []);
 
   const getRecaptchaVerifier = useCallback(async () => {
@@ -65,16 +85,29 @@ export default function useFirebasePhoneOtp() {
       );
     }
 
-    clearRecaptcha();
+    if (typeof window === "undefined") {
+      throw new Error("Browser environment required for OTP.");
+    }
 
-    const verifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+    const container = document.getElementById(RECAPTCHA_CONTAINER_ID);
+    if (!container) {
+      throw new Error("Verification is loading. Please try again in a second.");
+    }
+
+    if (window.recaptchaVerifier) {
+      return window.recaptchaVerifier;
+    }
+
+    emptyRecaptchaContainer();
+
+    const verifier = new RecaptchaVerifier(auth, container, {
       size: "invisible",
     });
 
     await verifier.render();
     window.recaptchaVerifier = verifier;
     return verifier;
-  }, [clearRecaptcha]);
+  }, []);
 
   const sendOtp = useCallback(
     async (phoneNumber) => {
@@ -100,8 +133,13 @@ export default function useFirebasePhoneOtp() {
         return confirmation;
       } catch (err) {
         const msg = getFirebasePhoneAuthErrorMessage(err);
+        if (
+          String(err?.message || "").includes("already been rendered") ||
+          err?.code === "auth/captcha-check-failed"
+        ) {
+          clearRecaptcha();
+        }
         setError(msg);
-        clearRecaptcha();
         throw new Error(msg);
       } finally {
         setLoading(false);
@@ -155,4 +193,4 @@ export default function useFirebasePhoneOtp() {
     resetOtpSession,
     clearRecaptcha,
   };
-}
+};

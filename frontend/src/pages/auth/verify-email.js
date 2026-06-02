@@ -22,7 +22,7 @@ const VerifyEmail = () => {
 
   useEffect(() => {
     if (router.isReady && !email) {
-      router.push("/auth/signup");
+      router.push("/auth/login");
     }
   }, [router.isReady, email]);
 
@@ -48,7 +48,7 @@ const VerifyEmail = () => {
       const user = auth?.currentUser;
       if (!user) {
         notifyError("Session expired. Please sign up again.");
-        router.push("/auth/signup");
+        router.push("/auth/login");
         return;
       }
 
@@ -95,7 +95,7 @@ const VerifyEmail = () => {
       const user = auth?.currentUser;
       if (!user) {
         notifyError("Session expired. Please sign up again.");
-        router.push("/auth/signup");
+        router.push("/auth/login");
         return;
       }
       await sendEmailVerification(user);

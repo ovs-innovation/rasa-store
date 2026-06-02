@@ -23,10 +23,7 @@ const Cart = () => {
     if (items?.length <= 0) {
       closeCartDrawer();
     } else {
-      if (!userInfo) {
-        // console.log("userInfo::", userInfo, "history");
-
-        // Redirect to login page with returnUrl query parameter
+      if (!userInfo?.token) {
         router.push(`/auth/login?redirectUrl=checkout`);
         closeCartDrawer();
       } else {

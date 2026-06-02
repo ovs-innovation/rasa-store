@@ -296,11 +296,10 @@ const HeroBanner = () => {
           transition={{ delay: 0.5 }}
           className="relative z-50 w-full flex flex-col items-center  "
         >
-          <div className="w-full max-w-4xl">
-            <form onSubmit={handleSubmit} className="w-full relative flex items-center bg-white rounded-full shadow-lg border border-gray-600 transition-all duration-300 z-30 p-1.5">
-              {/* Location Button */}
-              <div className="border-r  border-gray-200 mr-1 md:mr-2 relative z-50">
-                <LocationPickerDropdown className="!px-2 md:!px-4 !border-none" />
+          <div id="hero-search-anchor" className="w-full max-w-4xl scroll-mt-32">
+            <form onSubmit={handleSubmit} className="w-full relative flex items-center bg-white rounded-full shadow-lg border border-gray-200 transition-all duration-300 z-30 p-1.5">
+              <div className="relative z-50 shrink-0 mr-1 md:mr-2">
+                <LocationPickerDropdown hideDivider className="!px-2 md:!px-4 !border-none" />
               </div>
               
               {/* Search Input */}

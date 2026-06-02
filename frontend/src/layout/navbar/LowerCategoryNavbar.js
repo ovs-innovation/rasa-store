@@ -1,54 +1,27 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { IoChevronDown } from "react-icons/io5";
 
-export default function LowerCategoryNavbar({ categories = [], showingTranslateValue }) {
-  const [activeCategory, setActiveCategory] = useState(null);
+export default function LowerCategoryNavbar({
+  categories = [],
+  showingTranslateValue,
+  variant = "row",
+}) {
+  const [activeCategoryId, setActiveCategoryId] = useState(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef(null);
-  const timeoutRef = useRef(null);
+  const closeTimerRef = useRef(null);
+  const isInline = variant === "inline";
 
-  // Close dropdown when clicking outside
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setActiveCategory(null);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    setMounted(true);
   }, []);
 
-  const handleMouseEnter = (id) => {
-    if (window.innerWidth > 1024) {
-      clearTimeout(timeoutRef.current);
-      setActiveCategory(id);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (window.innerWidth > 1024) {
-      timeoutRef.current = setTimeout(() => {
-        setActiveCategory(null);
-      }, 150);
-    }
-  };
-
-  const [dropdownTop, setDropdownTop] = useState(130);
-
-  const handleToggle = (id, e) => {
-    if (window.innerWidth <= 1024) {
-      e.stopPropagation();
-      if (activeCategory === id) {
-        setActiveCategory(null);
-      } else {
-        const rect = e.currentTarget.getBoundingClientRect();
-        setDropdownTop(rect.bottom + 5);
-        setActiveCategory(id);
-      }
-    }
-  };
+  const getId = (cat) => String(cat?._id ?? "");
 
   const createSlug = (name) => {
     if (!name) return "";
@@ -62,92 +35,169 @@ export default function LowerCategoryNavbar({ categories = [], showingTranslateV
   const getName = (cat) => {
     return showingTranslateValue
       ? showingTranslateValue(cat?.name)
-      : (cat?.name?.en || cat?.name);
+      : cat?.name?.en || cat?.name;
   };
+
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  const scheduleClose = () => {
+    clearCloseTimer();
+    closeTimerRef.current = setTimeout(() => setActiveCategoryId(null), 250);
+  };
+
+  const openMenu = useCallback((category, anchorEl) => {
+    clearCloseTimer();
+    const id = getId(category);
+    if (!anchorEl) return;
+
+    const rect = anchorEl.getBoundingClientRect();
+    setMenuPos({
+      top: rect.bottom + 6,
+      left: rect.left + rect.width / 2,
+    });
+    setActiveCategoryId(id);
+  }, []);
+
+  useEffect(() => {
+    if (!activeCategoryId) return;
+
+    const updatePos = () => {
+      const btn = dropdownRef.current?.querySelector(
+        `[data-category-id="${activeCategoryId}"]`
+      );
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        setMenuPos({ top: rect.bottom + 6, left: rect.left + rect.width / 2 });
+      }
+    };
+
+    window.addEventListener("scroll", updatePos, true);
+    window.addEventListener("resize", updatePos);
+    return () => {
+      window.removeEventListener("scroll", updatePos, true);
+      window.removeEventListener("resize", updatePos);
+    };
+  }, [activeCategoryId]);
+
+  useEffect(() => {
+    const onDocDown = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        const portal = document.getElementById("category-nav-dropdown-portal");
+        if (portal && portal.contains(e.target)) return;
+        setActiveCategoryId(null);
+      }
+    };
+    document.addEventListener("mousedown", onDocDown);
+    return () => document.removeEventListener("mousedown", onDocDown);
+  }, []);
 
   if (!categories || categories.length === 0) return null;
 
-  return (
-    <div className="w-full bg-white border-b border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)] sticky top-[64px] lg:top-[80px] z-[60] transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 relative">
-        <nav
-          ref={dropdownRef}
-          className="flex items-center lg:justify-center gap-1 md:gap-4 lg:gap-8 py-1.5 overflow-x-auto lg:overflow-visible no-scrollbar whitespace-nowrap"
-        >
-          {categories.map((category) => (
-            <div
-              key={category._id}
-              className="relative group"
-              onMouseEnter={() => handleMouseEnter(category._id)}
-              onMouseLeave={handleMouseLeave}
-            >
-              <button
-                onClick={(e) => handleToggle(category._id, e)}
-                className={`flex items-center gap-1.5 px-3 md:px-5 py-2.5 text-[13px] md:text-[14px] font-semibold tracking-wide transition-all duration-200 rounded-lg whitespace-nowrap
-                  ${activeCategory === category._id
-                    ? "text-store-600 bg-store-50"
-                    : "text-gray-600 hover:text-store-600 hover:bg-gray-50 bg-white/50 backdrop-blur-sm"}`}>
-                {getName(category)}
+  const activeCategory = categories.find((c) => getId(c) === activeCategoryId);
+  const hasChildren = activeCategory?.children?.length > 0;
 
-                {category?.children?.length > 0 && (
-                  <IoChevronDown
-                    className={`text-[10px] transition-transform duration-300 ${activeCategory === category._id ? "rotate-180 text-store-500" : "text-gray-400"}`}
-                  />
-                )}
-              </button>
-
-              {/* Enhanced Subcategory Dropdown */}
-              {category?.children?.length > 0 && activeCategory === category._id && (
-                <div
-                  style={{ top: typeof window !== "undefined" && window.innerWidth <= 1024 ? `${dropdownTop}px` : undefined }}
-                  className="fixed lg:absolute lg:top-full lg:!top-full z-[100] left-4 right-4 lg:left-1/2 lg:right-auto lg:-translate-x-1/2 lg:mt-2 lg:w-64 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200"
+  const dropdownMenu =
+    mounted && activeCategory && (
+      <div
+        id="category-nav-dropdown-portal"
+        className="fixed z-[9999] w-72 -translate-x-1/2"
+        style={{ top: menuPos.top, left: menuPos.left }}
+        onMouseEnter={clearCloseTimer}
+        onMouseLeave={scheduleClose}
+      >
+        <div className="bg-white shadow-[0_12px_48px_rgba(0,0,0,0.15)] rounded-xl border border-gray-200 py-2 overflow-hidden">
+          <Link
+            href={`/search?category=${activeCategory.slug || createSlug(getName(activeCategory))}&_id=${activeCategory._id}`}
+            className="px-5 py-3 text-sm font-bold text-store-600 uppercase tracking-wide block border-b border-gray-100 hover:bg-store-50"
+            onClick={() => setActiveCategoryId(null)}
+          >
+            View All {getName(activeCategory)}
+          </Link>
+          {hasChildren ? (
+            <div className="max-h-[60vh] overflow-y-auto">
+              {activeCategory.children.map((sub) => (
+                <Link
+                  key={sub._id}
+                  href={`/search?category=${sub.slug || createSlug(getName(sub))}&_id=${sub._id}`}
+                  onClick={() => setActiveCategoryId(null)}
+                  className="block px-5 py-2.5 text-sm text-gray-700 hover:bg-store-50 hover:text-store-700"
                 >
-                  <div className="bg-white shadow-[0_10px_40px_rgba(0,0,0,0.12)] rounded-xl border border-gray-100 py-3 backdrop-blur-sm bg-white/95">
-                    <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
-                      {/* Optional "Shop All" link can be added here if needed */}
-                      <Link
-                        href={`/search?category=${category.slug || createSlug(getName(category))}&_id=${category._id}`}
-                        className="px-5 py-3 text-[13px] md:text-[14px] font-bold text-store-600 uppercase tracking-widest block border-b border-gray-50 mb-1 hover:bg-store-50 transition-colors"
-                        onClick={() => setActiveCategory(null)}
-                      >
-                        View All {getName(category)}
-                      </Link>
-
-                      {category.children.map((sub) => (
-                        <Link
-                          key={sub._id}
-                          href={`/search?category=${sub.slug || createSlug(getName(sub))}&_id=${sub._id}`}
-                          onClick={() => setActiveCategory(null)}
-                          className="group flex items-center justify-between px-5 py-3 md:py-3.5 text-[14px] md:text-[15px] text-gray-700 hover:bg-store-50 hover:text-store-600 transition-all border-l-4 border-transparent hover:border-store-500"
-                        >
-                          <span className="font-medium group-hover:translate-x-1 transition-transform duration-200">
-                            {getName(sub)}
-                          </span>
-                          <div className="w-1.5 h-1.5 rounded-full bg-store-400 opacity-0 group-hover:opacity-100 transition-all scale-0 group-hover:scale-100" />
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
+                  {getName(sub)}
+                </Link>
+              ))}
             </div>
-          ))}
+          ) : (
+            <p className="px-5 py-2 text-xs text-gray-500">Browse all products in this category</p>
+          )}
+        </div>
+      </div>
+    );
+
+  const wrapperClass = isInline
+    ? "w-full min-w-0 relative"
+    : "w-full border-t border-gray-100 bg-white relative";
+
+  return (
+    <div className={wrapperClass} ref={dropdownRef}>
+      <div className={isInline ? "" : "max-w-screen-2xl mx-auto px-4 sm:px-8"}>
+        <nav className="flex items-center justify-center gap-1 md:gap-3 lg:gap-6 py-1 overflow-x-auto no-scrollbar">
+          {categories.map((category) => {
+            const id = getId(category);
+            const isActive = activeCategoryId === id;
+            const showChevron = category?.children?.length > 0;
+
+            return (
+              <div
+                key={id}
+                className="relative shrink-0"
+                onMouseEnter={(e) => {
+                  if (window.innerWidth >= 1024) {
+                    openMenu(category, e.currentTarget);
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (window.innerWidth >= 1024) scheduleClose();
+                }}
+              >
+                <button
+                  type="button"
+                  data-category-id={id}
+                  onClick={(e) => {
+                    if (window.innerWidth < 1024) {
+                      if (isActive) setActiveCategoryId(null);
+                      else openMenu(category, e.currentTarget);
+                      return;
+                    }
+                    if (showChevron) {
+                      if (isActive) setActiveCategoryId(null);
+                      else openMenu(category, e.currentTarget);
+                    } else {
+                      window.location.href = `/search?category=${category.slug || createSlug(getName(category))}&_id=${category._id}`;
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 font-semibold whitespace-nowrap rounded-lg transition-colors
+                    ${isInline ? "px-2.5 py-2 text-sm" : "px-4 py-2.5 text-sm"}
+                    ${isActive ? "text-store-700 bg-store-50" : "text-gray-600 hover:text-store-700 hover:bg-store-50"}`}
+                >
+                  {getName(category)}
+                  <IoChevronDown
+                    className={`text-xs transition-transform ${isActive ? "rotate-180 text-store-600" : "text-gray-400"}`}
+                  />
+                </button>
+              </div>
+            );
+          })}
         </nav>
       </div>
+
+      {mounted && dropdownMenu && createPortal(dropdownMenu, document.body)}
+
       <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #e5e7eb;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #d1d5db;
-        }
         .no-scrollbar::-webkit-scrollbar {
           display: none;
         }

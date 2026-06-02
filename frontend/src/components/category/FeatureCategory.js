@@ -83,17 +83,17 @@ const FeatureCategory = ({ initialSelectedCategory }) => {
         <p className="text-sm text-gray-500">Find what you're looking for</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-0 lg:gap-6">
+      <div className="flex flex-col lg:grid lg:grid-cols-[18rem_1fr] xl:grid-cols-[20rem_1fr] lg:gap-6 lg:items-stretch">
 
         {/* Left Sidebar - Parent Categories */}
-        <div className="w-full lg:w-72 xl:w-80 mb-4 lg:mb-0">
+        <div className="w-full mb-4 lg:mb-0 flex flex-col min-h-0">
           {/* Desktop Sidebar */}
-          <div className="hidden lg:block bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-5">
-              <h2 className="text-xl font-bold text-white">Categories</h2>
+          <div className="hidden lg:flex lg:flex-col bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex-1 min-h-0">
+            <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 py-5 flex-shrink-0 min-h-[5.5rem] flex flex-col justify-center">
+              <h2 className="text-xl font-bold text-white leading-tight">Categories</h2>
               <p className="text-emerald-100 text-sm mt-1">Explore our collection</p>
             </div>
-            <div className="p-3 max-h-[600px] overflow-y-auto custom-scrollbar">
+            <div className="p-3 flex-1 overflow-y-auto custom-scrollbar min-h-0">
               <div className="space-y-2">
                 {parentCategories.map((category) => {
                   const isActive = selectedLeft?._id === category._id;
@@ -102,8 +102,8 @@ const FeatureCategory = ({ initialSelectedCategory }) => {
                       key={category._id}
                       onClick={() => setSelectedLeft(category)}
                       className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-300 group ${isActive
-                        ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-200/50 scale-[1.02]"
-                        : "hover:bg-emerald-50 text-gray-700 hover:scale-[1.01]"
+                        ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-200/50"
+                        : "hover:bg-emerald-50 text-gray-700"
                         }`}
                     >
                       <div
@@ -198,27 +198,27 @@ const FeatureCategory = ({ initialSelectedCategory }) => {
         </div>
 
         {/* Right Content Area - Subcategories */}
-        <div className="flex-1 min-w-0">
-          <div className="bg-[#E5F5EE] rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            {/* Header */}
-            <div className="bg-[#E5F5EE] px-4 lg:px-8 py-4 sm:py-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    {showingTranslateValue(selectedLeft?.name)}
+        <div className="flex-1 min-w-0 w-full flex flex-col min-h-0">
+          <div className="bg-[#E5F5EE] rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col flex-1 min-h-0 lg:min-h-full">
+            {/* Header — same height band as left "Categories" header */}
+            <div className="bg-[#E5F5EE] px-6 py-5 border-b border-gray-100 flex-shrink-0 min-h-[5.5rem] flex items-center">
+              <div className="flex items-center justify-between gap-4 w-full min-w-0">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2 leading-tight">
+                    <span className="truncate">{showingTranslateValue(selectedLeft?.name)}</span>
                     {rightCategories.length > 0 && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                      <span className="inline-flex flex-shrink-0 items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
                         {rightCategories.length}
                       </span>
                     )}
                   </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                  <p className="text-sm text-gray-500 mt-1">
                     Choose from our selection
                   </p>
                 </div>
-                <div className="hidden sm:block">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-200/50">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="hidden sm:flex flex-shrink-0">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-md shadow-emerald-200/50">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
                   </div>
@@ -227,7 +227,7 @@ const FeatureCategory = ({ initialSelectedCategory }) => {
             </div>
 
             {/* Subcategories Grid */}
-            <div className="p-3 sm:p-4 lg:p-6 xl:p-8">
+            <div className="p-3 sm:p-4 lg:p-6 xl:p-8 flex-1 min-h-0">
               {rightCategories.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5">
                   {rightCategories.map((child) => (

@@ -21,8 +21,37 @@ const {
   customerInvoiceEmailBody,
   orderConfirmationBody 
 } = require("../lib/email-sender/templates/order-to-customer");
+const { newOrderAdminEmailBody } = require("../lib/email-sender/templates/order-to-admin/new-order");
 const { sendSMS } = require("../lib/sms-sender/sender");
 const { populateCartTaxFields } = require("../utils/cartTaxUtils");
+
+const PLACEHOLDER_EMAIL_DOMAIN = "phone.farmacykart.com";
+const isPlaceholderEmail = (email) =>
+  !!email && String(email).toLowerCase().endsWith(`@${PLACEHOLDER_EMAIL_DOMAIN}`);
+const getRealEmail = (email) => {
+  if (!email) return "";
+  const normalized = String(email).trim().toLowerCase();
+  if (!normalized || isPlaceholderEmail(normalized)) return "";
+  return normalized;
+};
+
+const getEmailLogoUrl = async () => {
+  try {
+    const storeCustomizationSetting = await Setting.findOne(
+      { name: "storeCustomizationSetting" },
+      { "setting.navbar.logo": 1, "setting.seo.favicon": 1, _id: 0 }
+    );
+    const adminLogo =
+      storeCustomizationSetting?.setting?.navbar?.logo ||
+      storeCustomizationSetting?.setting?.seo?.favicon ||
+      "";
+    if (adminLogo && String(adminLogo).trim()) return String(adminLogo).trim();
+  } catch (_) {}
+
+  if (process.env.STORE_LOGO_URL) return process.env.STORE_LOGO_URL;
+  const base = (process.env.STORE_URL || "https://farmacykart.com").replace(/\/$/, "");
+  return `${base}/favicon.png`;
+};
 
 const sendOrderNotifications = async (order) => {
   try {
@@ -30,9 +59,11 @@ const sendOrderNotifications = async (order) => {
     const shopName = globalSetting?.setting?.shop_name || "Farmacykart";
     const contactEmail = globalSetting?.setting?.email || "support@farmacykart.com";
     const currency = order.company_info?.currency || "₹";
+    const logo = await getEmailLogoUrl();
+    const customerEmail = getRealEmail(order.user_info?.email);
 
-    // 1. Send Email Confirmation
-    if (!order.confirmationEmailSent) {
+    // 1) Customer confirmation: Email if real email else SMS
+    if (customerEmail && !order.confirmationEmailSent) {
       const emailOption = {
         name: order.user_info.name,
         invoice: order.invoice,
@@ -44,13 +75,15 @@ const sendOrderNotifications = async (order) => {
         trackingUrl: `${process.env.STORE_URL}/user/dashboard`,
         contact_email: contactEmail,
         shop_name: shopName,
+        logo,
       };
 
       const emailBody = {
-        to: order.user_info.email,
+        to: customerEmail,
         replyTo: contactEmail,
         subject: `Farmacykart – Order #${order.invoice} confirmed`,
         html: orderConfirmationBody(emailOption),
+        emailType: "order-confirmation",
       };
 
       try {
@@ -61,8 +94,7 @@ const sendOrderNotifications = async (order) => {
       }
     }
 
-    // 2. Send SMS/WhatsApp Confirmation
-    if (!order.confirmationSmsSent && order.user_info.contact) {
+    if (!customerEmail && !order.confirmationSmsSent && order.user_info.contact) {
       const smsMessage = `Hi ${order.user_info.name}, your order #${order.invoice} of ${currency}${order.total} has been placed successfully at ${shopName}. Track here: ${process.env.STORE_URL}/user/dashboard`;
       
       const variables = {
@@ -74,6 +106,75 @@ const sendOrderNotifications = async (order) => {
       const smsSent = await sendSMS(order.user_info.contact, smsMessage, variables);
       if (smsSent) {
         order.confirmationSmsSent = true;
+      }
+    }
+
+    // 2) Customer invoice: Email PDF if real email
+    if (customerEmail && !order.invoiceEmailSent) {
+      try {
+        const pdf = await handleCreateInvoice(order, `${order.invoice}.pdf`);
+        const option = {
+          name: order.user_info.name,
+          invoice: order.invoice,
+          total: order.total,
+          currency,
+          date: new Date(order.createdAt).toLocaleDateString(),
+          paymentStatus:
+            order.paymentMethod === "Cash On Delivery" ? "Pending" : "Confirmed",
+          status: order.status || "Order Placed",
+          trackingUrl: `${process.env.STORE_URL}/user/dashboard`,
+          contact_email: contactEmail,
+          shop_name: shopName,
+          logo,
+        };
+
+        await sendEmail({
+          to: customerEmail,
+          replyTo: contactEmail,
+          subject: `Farmacykart – Invoice #${order.invoice}`,
+          html: customerInvoiceEmailBody(option),
+          attachments: [
+            {
+              filename: `${order.invoice}.pdf`,
+              content: pdf,
+              contentType: "application/pdf",
+            },
+          ],
+          emailType: "invoice",
+        });
+        order.invoiceEmailSent = true;
+      } catch (err) {
+        console.error("Invoice email failed:", err.message);
+      }
+    }
+
+    // 3) Company/admin notification email for every order
+    if (contactEmail && !order.adminNewOrderEmailSent) {
+      try {
+        const adminBody = {
+          to: contactEmail,
+          subject: `New Order #${order.invoice} – ${shopName}`,
+          html: newOrderAdminEmailBody({
+            shop_name: shopName,
+            logo,
+            invoice: order.invoice,
+            currency,
+            total: order.total,
+            paymentMethod: order.paymentMethod,
+            createdAt: new Date(order.createdAt).toLocaleString(),
+            customerName: order.user_info?.name,
+            customerPhone: order.user_info?.contact,
+            customerEmail,
+            address: order.user_info?.address,
+            trackingUrl: `${process.env.STORE_URL}/admin/orders`,
+            cart: order.cart || [],
+          }),
+          emailType: "admin-new-order",
+        };
+        await sendEmail(adminBody);
+        order.adminNewOrderEmailSent = true;
+      } catch (err) {
+        console.error("Admin order email failed:", err.message);
       }
     }
 
@@ -90,6 +191,8 @@ const sendOrderNotifications = async (order) => {
       $set: { 
         confirmationEmailSent: order.confirmationEmailSent,
         confirmationSmsSent: order.confirmationSmsSent,
+        invoiceEmailSent: order.invoiceEmailSent,
+        adminNewOrderEmailSent: order.adminNewOrderEmailSent,
         trackingHistory: order.trackingHistory
       } 
     });

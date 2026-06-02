@@ -84,7 +84,7 @@ const ForgetPassword = () => {
                 </form>
                 <BottomNavigation
                   or={true}
-                  route={"/auth/signup"}
+                  route={"/auth/login"}
                   pageName={"Sign Up"}
                   loginTitle="Sign Up"
                 />

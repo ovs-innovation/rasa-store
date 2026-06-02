@@ -282,6 +282,37 @@ const { ORDER_STATUS, VALID_TRANSITIONS } = require("../utils/orderStatus");
 const {
   sendRefundCompletedNotifications,
 } = require("../lib/order-refund-notifications");
+const Setting = require("../models/Setting");
+const { sendEmail } = require("../lib/email-sender/sender");
+const { sendSMS } = require("../lib/sms-sender/sender");
+const { orderStatusUpdateBody } = require("../lib/email-sender/templates/order-to-customer/status-update");
+
+const PLACEHOLDER_EMAIL_DOMAIN = "phone.farmacykart.com";
+const isPlaceholderEmail = (email) =>
+  !!email && String(email).toLowerCase().endsWith(`@${PLACEHOLDER_EMAIL_DOMAIN}`);
+const getRealEmail = (email) => {
+  if (!email) return "";
+  const normalized = String(email).trim().toLowerCase();
+  if (!normalized || isPlaceholderEmail(normalized)) return "";
+  return normalized;
+};
+const getEmailLogoUrl = async () => {
+  try {
+    const storeCustomizationSetting = await Setting.findOne(
+      { name: "storeCustomizationSetting" },
+      { "setting.navbar.logo": 1, "setting.seo.favicon": 1, _id: 0 }
+    );
+    const adminLogo =
+      storeCustomizationSetting?.setting?.navbar?.logo ||
+      storeCustomizationSetting?.setting?.seo?.favicon ||
+      "";
+    if (adminLogo && String(adminLogo).trim()) return String(adminLogo).trim();
+  } catch (_) {}
+
+  if (process.env.STORE_LOGO_URL) return process.env.STORE_LOGO_URL;
+  const base = (process.env.STORE_URL || "https://farmacykart.com").replace(/\/$/, "");
+  return `${base}/favicon.png`;
+};
 
 const updateOrder = async (req, res) => {
   try {
@@ -334,6 +365,58 @@ const updateOrder = async (req, res) => {
       updateQuery,
       { new: true }
     );
+
+    // Customer notification on status change (email if real email else SMS)
+    if (status && previousStatus !== status) {
+      (async () => {
+        try {
+          const globalSetting = await Setting.findOne({ name: "globalSetting" });
+          const shopName = globalSetting?.setting?.shop_name || "Farmacykart";
+          const contactEmail = globalSetting?.setting?.email || "support@farmacykart.com";
+          const logo = await getEmailLogoUrl();
+
+          const customerEmail = getRealEmail(updatedOrder.user_info?.email);
+          const phone = updatedOrder.user_info?.contact;
+          const dashUrl = `${process.env.STORE_URL}/user/dashboard`;
+
+          // avoid repeat sends for same status
+          if (updatedOrder.lastStatusNotified === status) return;
+
+          if (customerEmail) {
+            await sendEmail({
+              to: customerEmail,
+              replyTo: contactEmail,
+              subject: `Farmacykart – Order #${updatedOrder.invoice} ${status}`,
+              html: orderStatusUpdateBody({
+                shop_name: shopName,
+                logo,
+                name: updatedOrder.user_info?.name,
+                invoice: updatedOrder.invoice,
+                status,
+                message: message || `Your order status is now ${status}.`,
+                trackingUrl: dashUrl,
+                contact_email: contactEmail,
+              }),
+              emailType: "order-status-update",
+            });
+          } else if (phone) {
+            const smsMessage = `Hi ${updatedOrder.user_info?.name || ""}, order #${updatedOrder.invoice} update: ${status}. Track: ${dashUrl}`;
+            await sendSMS(phone, smsMessage, {
+              name: updatedOrder.user_info?.name,
+              orderid: updatedOrder.invoice,
+              status,
+            });
+          }
+
+          await Order.updateOne(
+            { _id: updatedOrder._id },
+            { $set: { lastStatusNotified: status } }
+          );
+        } catch (err) {
+          console.error("[order] status notification failed:", err.message || err);
+        }
+      })();
+    }
 
     if (
       status === "Refunded" &&

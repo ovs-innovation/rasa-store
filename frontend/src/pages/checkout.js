@@ -1,4 +1,5 @@
-import React,{useState, useRef, useContext} from "react";
+import React,{useState, useRef, useContext, useEffect} from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -35,6 +36,7 @@ import LocationServices from "@services/LocationServices";
 import SwitchToggle from "@components/form/SwitchToggle";
 import { notifySuccess, notifyError } from "@utils/toast";
 import { UserContext } from "@context/UserContext";
+import { isProfileComplete, getDisplayEmail } from "@utils/profileAuth";
 
 const Checkout = () => {
   const { t } = useTranslation();
@@ -45,6 +47,7 @@ const Checkout = () => {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const formRef = useRef(null);
+  const [portalReady, setPortalReady] = useState(false);
   const [addressForm, setAddressForm] = useState({
     name: "",
     address: "",
@@ -57,6 +60,26 @@ const Checkout = () => {
   });
   const userInfo = getUserSession();
   const { showingTranslateValue, currency } = useUtilsFunction();
+
+  useEffect(() => {
+    if (!userInfo?.token) {
+      router.replace("/auth/login?redirectUrl=checkout");
+      return;
+    }
+  }, [userInfo, router]);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!showAddressModal) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showAddressModal]);
   const { storeCustomizationSetting } = useGetSetting();
   const { state } = useContext(UserContext) || {};
   const isWholesaler = state?.userInfo?.role && state.userInfo.role.toString().toLowerCase() === "wholesaler";
@@ -135,7 +158,7 @@ const Checkout = () => {
       const nameParts = (selectedAddress.name || "").split(" ");
       setValue("firstName", nameParts[0] || "");
       setValue("lastName", nameParts.slice(1).join(" ") || "");
-      setValue("email", userInfo?.email || "");
+      setValue("email", getDisplayEmail(userInfo) || "");
       setValue("contact", selectedAddress.phone || "");
       setValue("address", selectedAddress.address || "");
       setValue("address2", "");
@@ -420,10 +443,10 @@ const Checkout = () => {
   return (
     <>
       <Layout title="Checkout" description="this is checkout page">
-        <div className="mx-auto max-w-screen-2xl px-3 sm:px-10">
-          <div className="py-10 lg:py-12 px-0 2xl:max-w-screen-2xl w-full xl:max-w-screen-xl flex flex-col md:flex-row lg:flex-row">
-            <div className="md:w-full lg:w-3/5 flex h-full flex-col  ">
-              <div className="mt-5 md:mt-0 md:col-span-2">
+        <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 lg:px-10">
+          <div className="py-6 sm:py-10 lg:py-12 w-full flex flex-col lg:flex-row lg:gap-10 xl:gap-14">
+            <div className="w-full lg:w-3/5 flex flex-col min-w-0">
+              <div className="mt-2 lg:mt-0">
                 <form ref={formRef} onSubmit={handleSubmit(submitHandler)}>
                   {hasShippingAddress && (
                     <div className="flex justify-end my-2">
@@ -441,13 +464,13 @@ const Checkout = () => {
                         storeCustomizationSetting?.checkout?.personal_details
                       )}
                     </h2>
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                      <div className="flex justify-between items-center mb-4">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 sm:p-6">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
                         <h3 className="text-sm font-medium text-gray-900">Select Delivery Address</h3>
                         <button
                           type="button"
                           onClick={handleAddAddress}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-store-500 hover:bg-store-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-store-500"
+                          className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-store-500 hover:bg-store-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-store-500 w-full sm:w-auto shrink-0"
                         >
                           <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -474,7 +497,7 @@ const Checkout = () => {
                                   const nameParts = (address.name || "").split(" ");
                                   setValue("firstName", nameParts[0] || "");
                                   setValue("lastName", nameParts.slice(1).join(" ") || "");
-                                  setValue("email", userInfo?.email || "");
+                                  setValue("email", getDisplayEmail(userInfo) || "");
                                   setValue("contact", address.phone || "");
                                   setValue("address", address.address || "");
                                   setValue("address2", "");
@@ -483,14 +506,14 @@ const Checkout = () => {
                                   setValue("country", address.country || "India");
                                   setValue("zipCode", address.zipCode || "");
                                 }}
-                                className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                                className={`border-2 rounded-lg p-3 sm:p-4 cursor-pointer transition-all ${
                                   isSelected
                                     ? ' border-gray-200 ring-2 ring-store-300'
                                     : 'border-gray-200 bg-white hover:border-store-300 hover:shadow-sm'
                                 }`}
                               >
-                                <div className="flex items-start justify-between">
-                                  <div className="flex items-start gap-3 flex-1">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                  <div className="flex items-start gap-3 flex-1 min-w-0">
                                     {/* Radio Button */}
                                     <div className="flex-shrink-0 mt-1">
                                       <input
@@ -502,7 +525,7 @@ const Checkout = () => {
                                           const nameParts = (address.name || "").split(" ");
                                           setValue("firstName", nameParts[0] || "");
                                           setValue("lastName", nameParts.slice(1).join(" ") || "");
-                                          setValue("email", userInfo?.email || "");
+                                          setValue("email", getDisplayEmail(userInfo) || "");
                                           setValue("contact", address.phone || "");
                                           setValue("address", address.address || "");
                                           setValue("address2", "");
@@ -532,7 +555,7 @@ const Checkout = () => {
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2 ml-4">
+                                  <div className="flex items-center gap-2 sm:ml-4 shrink-0 self-end sm:self-start">
                                     <div className="flex flex-col items-end gap-1">
                                       <button
                                         type="button"
@@ -583,7 +606,7 @@ const Checkout = () => {
                   </div>
 
                   {/* Cart Items Section */}
-                  <div className="form-group mt-12 max-h-[500px] overflow-y-auto scrollbar-hide">
+                  <div className="form-group mt-8 sm:mt-12 max-h-[420px] sm:max-h-[500px] overflow-y-auto scrollbar-hide">
                     <h2 className="font-semibold font-serif text-base text-gray-700 pb-3">
                       
                       Order Items
@@ -659,8 +682,8 @@ const Checkout = () => {
               </div>
             </div>
 
-            <div className="md:w-full lg:w-2/5 lg:ml-10 xl:ml-14 md:ml-6 flex flex-col h-full md:sticky lg:sticky top-28 md:order-2 lg:order-2">
-              <div className="border p-5 lg:px-8 lg:py-8 rounded-lg bg-white order-1 sm:order-2">
+            <div className="w-full lg:w-2/5 flex flex-col self-start mt-8 lg:mt-0 lg:sticky lg:top-28 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto min-w-0">
+              <div className="border p-4 sm:p-5 lg:px-8 lg:py-8 rounded-lg bg-white">
                 <h2 className="font-semibold font-serif text-lg pb-4">
                   {showingTranslateValue(
                     storeCustomizationSetting?.checkout?.order_summary
@@ -898,9 +921,9 @@ const Checkout = () => {
                 <div className="mt-6 bg-gray-50 rounded-lg p-4">
                   {/* Payment Method Selection */}
                   <div className="mb-4">
-                    <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-white rounded-lg p-3 border border-gray-200">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
                           <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                           </svg>
@@ -937,7 +960,7 @@ const Checkout = () => {
                         </div>
                       </div>
                       {selectedPaymentMethod && (
-                        <div className="text-sm font-medium text-gray-700">
+                        <div className="text-sm font-medium text-gray-700 shrink-0">
                           {selectedPaymentMethod === 'Cash' ? 'COD' : selectedPaymentMethod === 'RazorPay' ? 'UPI' : ''}
                         </div>
                       )}
@@ -995,7 +1018,7 @@ const Checkout = () => {
                       onChange={(e) => setAgreeToTerms(e.target.checked)}
                       className="mt-1 h-4 w-4 text-store-600 focus:ring-store-500 border-gray-300 rounded cursor-pointer"
                     />
-                    <label htmlFor="agreeToTerms" className="text-sm text-gray-900 font-semibold cursor-pointer">
+                    <label htmlFor="agreeToTerms" className="text-xs sm:text-sm text-gray-900 font-semibold cursor-pointer leading-relaxed">
                       By placing the order, you agree to our{" "}
                       <Link href="/terms" className="text-store-700 hover:text-store-800 hover:underline font-bold">
                         Terms & Conditions
@@ -1013,21 +1036,21 @@ const Checkout = () => {
         </div>
       </Layout>
 
-      {/* Address Modal */}
-      {showAddressModal && (
-        <div className="fixed inset-0 z-[60] overflow-hidden">
+      {/* Address Modal — portal + high z-index so it sits above header/categories */}
+      {portalReady && showAddressModal && createPortal(
+        <div className="fixed inset-0 z-[10050]">
           {/* Overlay */}
           <div 
             className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
             onClick={() => setShowAddressModal(false)}
           />
           
-          {/* Modal Panel - Slide from right */}
-          <div className="absolute inset-y-0 right-0 max-w-full w-full md:max-w-lg">
-            <div className="h-full flex flex-col bg-white shadow-xl">
+          {/* Modal Panel - full screen on mobile, below header on desktop */}
+          <div className="absolute right-0 w-full sm:max-w-md lg:max-w-lg flex flex-col top-16 h-[calc(100dvh-4rem)] lg:top-[148px] lg:h-[calc(100dvh-148px)]">
+            <div className="flex flex-col flex-1 min-h-0 bg-white shadow-xl">
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">
+              <div className="flex-shrink-0 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 pr-2">
                   {editingAddress ? "Edit Shipping Address" : "Add Shipping Address"}
                 </h3>
                 <button
@@ -1052,8 +1075,11 @@ const Checkout = () => {
                 </button>
               </div>
 
-              {/* Form */}
-              <form onSubmit={handleAddressSubmit} className="flex-1 overflow-y-auto scrollbar-hide px-6 py-4">
+              <form
+                onSubmit={handleAddressSubmit}
+                className="flex flex-col flex-1 min-h-0"
+              >
+                <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4">
                 <div className="space-y-4">
                   {/* Use Current Location Button */}
                   <div className="mb-4">
@@ -1102,7 +1128,7 @@ const Checkout = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         City
@@ -1164,7 +1190,7 @@ const Checkout = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Address Type
@@ -1181,7 +1207,7 @@ const Checkout = () => {
                       </select>
                     </div>
 
-                    <div className="flex items-center pt-7">
+                    <div className="flex items-center pt-0 sm:pt-7">
                       <input
                         type="checkbox"
                         name="isDefault"
@@ -1195,27 +1221,31 @@ const Checkout = () => {
                     </div>
                   </div>
                 </div>
+                </div>
 
-                {/* Footer Buttons */}
-                <div className="mt-6 flex space-x-3">
+                {/* Footer Buttons - always visible */}
+                <div className="flex-shrink-0 border-t border-gray-200 px-4 sm:px-6 py-3 sm:py-4 bg-white pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:space-x-3 sm:gap-0">
                   <button
                     type="button"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-store-500"
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-store-500"
                     onClick={() => setShowAddressModal(false)}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-store-500 hover:bg-store-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-store-500"
+                    className="flex-1 px-4 py-2.5 border border-transparent rounded-md text-sm font-medium text-white bg-store-500 hover:bg-store-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-store-500"
                   >
                     {editingAddress ? "Update Address" : "Save Address"}
                   </button>
                 </div>
+                </div>
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

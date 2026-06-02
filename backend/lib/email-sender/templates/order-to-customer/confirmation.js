@@ -6,8 +6,9 @@ const orderConfirmationBody = (option) => {
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f9f9f9; }
         .container { max-width: 600px; margin: 20px auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { color: #10b981; margin: 0; }
+        .header { text-align: center; margin-bottom: 22px; }
+        .logo { width: 64px; height: 64px; object-fit: contain; margin: 0 auto 10px; display:block; }
+        .header h1 { color: #16a34a; margin: 0; font-size: 24px; }
         .order-details { background: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
         .order-details table { width: 100%; }
         .order-details td { padding: 5px 0; }
@@ -20,8 +21,9 @@ const orderConfirmationBody = (option) => {
 <body>
     <div class="container">
         <div class="header">
-            <h1>Order Confirmed!</h1>
-            <p>Hi ${option.name}, your order has been successfully placed.</p>
+            <img class="logo" src="${option.logo || "https://farmacykart.com/favicon.png"}" alt="${option.shop_name}" />
+            <h1>Order confirmed</h1>
+            <p style="margin-top:8px;color:#475569;">Hi ${option.name}, your order has been successfully placed.</p>
         </div>
 
         <div class="order-details">
@@ -37,10 +39,10 @@ const orderConfirmationBody = (option) => {
         <p>We are processing your order and will notify you as soon as it's shipped. You can track your order status in your dashboard.</p>
 
         <div style="text-align: center;">
-            <a href="${option.trackingUrl}" class="btn">Track Your Order</a>
+            <a href="${option.trackingUrl}" class="btn">Track your order</a>
         </div>
 
-        <p style="margin-top: 25px;">If you have any questions, please contact our support team at ${option.contact_email}.</p>
+        <p style="margin-top: 25px;color:#475569;">If you have any questions, reply to this email or contact us at ${option.contact_email}.</p>
 
         <div class="footer">
             <p>&copy; ${new Date().getFullYear()} ${option.shop_name}. All rights reserved.</p>

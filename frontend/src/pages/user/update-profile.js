@@ -7,6 +7,8 @@ import Label from "@components/form/Label";
 import Error from "@components/form/Error";
 import Dashboard from "@pages/user/dashboard";
 import InputArea from "@components/form/InputArea";
+import EmailVerificationField from "@components/user/EmailVerificationField";
+import { isPlaceholderEmail } from "@utils/profileAuth";
 import useGetSetting from "@hooks/useGetSetting";
 import CustomerServices from "@services/CustomerServices";
 import Uploader from "@components/image-uploader/Uploader";
@@ -24,14 +26,23 @@ const UpdateProfile = () => {
   const { showingTranslateValue } = useUtilsFunction();
 
   const userInfo = userState?.userInfo || session?.user;
-  const isPhoneLogin = userInfo?.email?.includes("@farmcykart.com");
+  const [verifiedEmail, setVerifiedEmail] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
+
+  const hasVerifiedRealEmail =
+    userInfo?.email &&
+    !isPlaceholderEmail(userInfo.email) &&
+    userInfo.emailVerified;
 
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm();
+
+  const emailValue = watch("email");
 
   const onSubmit = async (data) => {
     if (!imageUrl && !userInfo?.image) {
@@ -39,11 +50,23 @@ const UpdateProfile = () => {
       return;
     }
 
+    const emailTrimmed = (data.email || "").trim();
+    if (
+      emailTrimmed &&
+      !hasVerifiedRealEmail &&
+      (!emailVerified || emailTrimmed.toLowerCase() !== verifiedEmail.toLowerCase())
+    ) {
+      notifyError("Please verify your email with the code we sent, or leave email blank.");
+      return;
+    }
+
     setLoading(true);
 
     const userData = {
       name: data.name,
-      email: data.email,
+      email: hasVerifiedRealEmail
+        ? userInfo.email
+        : emailTrimmed || userInfo?.email,
       phone: data.phone,
       image: imageUrl || userInfo?.image || "",
     };
@@ -59,9 +82,10 @@ const UpdateProfile = () => {
       const updatedUserInfo = {
         ...userInfo,
         name: data.name,
-        email: data.email,
+        email: response?.email || userData.email,
         phone: data.phone,
         image: userData.image,
+        emailVerified: response?.emailVerified ?? userInfo?.emailVerified,
       };
 
       Cookies.set("userInfo", JSON.stringify(updatedUserInfo), { expires: 1 });
@@ -91,9 +115,21 @@ const UpdateProfile = () => {
   useEffect(() => {
     if (userInfo) {
       setValue("name", userInfo?.name);
-      setValue("email", userInfo?.email);
+      const existingEmail = isPlaceholderEmail(userInfo.email)
+        ? ""
+        : userInfo.email || "";
+      setValue("email", existingEmail);
       setValue("phone", userInfo?.phone);
       setImageUrl(userInfo?.image || "");
+
+      if (
+        existingEmail &&
+        userInfo.emailVerified &&
+        !isPlaceholderEmail(userInfo.email)
+      ) {
+        setVerifiedEmail(existingEmail);
+        setEmailVerified(true);
+      }
     }
   }, [userInfo, setValue]);
 
@@ -163,18 +199,44 @@ const UpdateProfile = () => {
               </div>
 
               <div className="md:col-span-2 space-y-1">
-                <InputArea
-                  register={register}
-                  name="email"
-                  type="email"
-                  readOnly={true}
-                  label={showingTranslateValue(
-                    storeCustomizationSetting?.dashboard?.user_email
-                  )}
-                  placeholder="Your Email Address"
-                  required={true}
-                />
-                <p className="text-[10px] text-gray-400 mt-1 italic">Email cannot be changed as it is linked to your account identity.</p>
+                {hasVerifiedRealEmail ? (
+                  <>
+                    <InputArea
+                      register={register}
+                      name="email"
+                      type="email"
+                      readOnly={true}
+                      label={showingTranslateValue(
+                        storeCustomizationSetting?.dashboard?.user_email
+                      )}
+                      placeholder="Your Email Address"
+                      required={false}
+                    />
+                    <p className="text-[10px] text-green-600 mt-1">
+                      Verified email on your account.
+                    </p>
+                  </>
+                ) : (
+                  <EmailVerificationField
+                    register={register}
+                    errors={errors}
+                    emailValue={emailValue}
+                    verifiedEmail={verifiedEmail}
+                    isVerified={emailVerified}
+                    onVerified={({ email }) => {
+                      setVerifiedEmail(email);
+                      setEmailVerified(true);
+                      setValue("email", email);
+                      const next = {
+                        ...userInfo,
+                        email,
+                        emailVerified: true,
+                      };
+                      Cookies.set("userInfo", JSON.stringify(next), { expires: 1 });
+                      dispatch({ type: "USER_LOGIN", payload: next });
+                    }}
+                  />
+                )}
                 <Error errorName={errors.email} />
               </div>
             </div>

@@ -8,6 +8,22 @@ const CustomerServices = {
     return requests.post("/customer/login", body);
   },
 
+  signupPhone: async (body) => {
+    return requests.post("/customer/signup-phone", body);
+  },
+
+  completeProfile: async (body) => {
+    return requests.post("/customer/complete-profile", body);
+  },
+
+  sendProfileEmailOtp: async (body) => {
+    return requests.post("/customer/profile/send-email-otp", body);
+  },
+
+  verifyProfileEmailOtp: async (body) => {
+    return requests.post("/customer/profile/verify-email-otp", body);
+  },
+
   verifyEmailAddress: async (body) => {
     return requests.post("/customer/verify-email", body);
   },
@@ -22,6 +38,9 @@ const CustomerServices = {
   },
   verifyPhoneOtp: async (body) => {
     return requests.post("/customer/verify-phone-otp", body);
+  },
+  checkPhoneRegistered: async (phone) => {
+    return requests.post("/customer/check-user", { phone });
   },
 
   registerCustomer: async (token, body) => {

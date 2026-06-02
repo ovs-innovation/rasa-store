@@ -39,6 +39,34 @@ class MyDocument extends Document {
           <meta name="keywords" content={metaKeywords} />
           <meta property="og:url" content={metaUrl} />
           <meta property="og:image" content={metaImage} />
+          {/* Dev-only: prevent stale PWA cache showing old UI on refresh */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function () {
+                  try {
+                    if (!/localhost|127\\.0\\.0\\.1/.test(location.hostname)) return;
+                    if (!('serviceWorker' in navigator)) return;
+                    var key = '__sw_cleared_once__';
+                    if (sessionStorage.getItem(key)) return;
+                    sessionStorage.setItem(key, '1');
+                    navigator.serviceWorker.getRegistrations()
+                      .then(function (regs) { return Promise.all(regs.map(function (r) { return r.unregister(); })); })
+                      .catch(function () {});
+                    if ('caches' in window) {
+                      caches.keys()
+                        .then(function (keys) { return Promise.all(keys.map(function (k) { return caches.delete(k); })); })
+                        .catch(function () {});
+                    }
+                    if (navigator.serviceWorker.controller) {
+                      // If a SW was controlling, reload once to get fresh assets.
+                      setTimeout(function () { location.reload(); }, 50);
+                    }
+                  } catch (e) {}
+                })();
+              `,
+            }}
+          />
         </Head>
         <body>
           <Main />

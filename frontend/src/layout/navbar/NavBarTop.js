@@ -145,7 +145,7 @@ const NavBarTop = () => {
                
                
               <Link
-                href={userInfo?.email ? "/user/my-account" : "/auth/login"}
+                href={userInfo?.token ? "/user/my-account" : "/auth/login"}
                 className={`font-medium hover:text-store-600`}
               >
                 {showingTranslateValue(
@@ -153,7 +153,7 @@ const NavBarTop = () => {
                 )}
               </Link>
               <span className="mx-2">|</span>
-              {userInfo?.email ? (
+              {userInfo?.token ? (
                 <button
                   onClick={handleLogOut}
                   className={`flex items-center font-medium hover:text-store-600`}

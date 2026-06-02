@@ -37,10 +37,24 @@ const usePushNotificationSubmit = (id) => {
         notifySuccess("Notification sent successfully");
         setTimeout(() => window.location.reload(), 2000);
       } else {
-        await PushNotificationServices.addPushNotification(pushNotificationData);
+        const res = await PushNotificationServices.addPushNotification(pushNotificationData);
         setIsSubmitting(false);
-        notifySuccess("Notification sent successfully");
-        setTimeout(() => window.location.reload(), 2000);
+        const sent = res?.sentCount ?? 0;
+        const recipients = res?.recipientCount ?? 0;
+        if (recipients === 0) {
+          notifyError(
+            res?.message ||
+              "No devices registered. Users must allow notifications and log in on the website or admin panel."
+          );
+        } else if (sent === 0) {
+          notifyError(
+            res?.message ||
+              "Notification saved but delivery failed. Check Firebase configuration on the server."
+          );
+        } else {
+          notifySuccess(`Notification sent to ${sent} of ${recipients} device(s)`);
+          setTimeout(() => window.location.reload(), 2000);
+        }
       }
     } catch (err) {
       setIsSubmitting(false);

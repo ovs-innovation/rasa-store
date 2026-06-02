@@ -139,7 +139,7 @@ const Dashboard = ({ title, description, children }) => {
                       {userInfo?.name}
                     </h2>
                     <span className="text-sm text-gray-500">
-                      {userInfo?.email || userInfo?.phone}
+                      {userInfo?.email || userInfo?.phone || "—"}
                     </span>
                   </div>
                   <button
@@ -161,7 +161,7 @@ const Dashboard = ({ title, description, children }) => {
                       {userInfo?.name}
                     </h2>
                     <p className="text-sm text-gray-500 text-center line-clamp-1">
-                      {userInfo?.email || userInfo?.phone}
+                      {userInfo?.email || userInfo?.phone || "—"}
                     </p>
                   </div>
 

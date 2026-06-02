@@ -6,7 +6,7 @@ import { notifyError, notifySuccess } from "@utils/toast";
 import { useGeolocated } from "react-geolocated";
 import LocationServices from "@services/LocationServices";
 
-const LocationPickerDropdown = ({ className = "" }) => {
+const LocationPickerDropdown = ({ className = "", hideDivider = false }) => {
   const [location, setLocation] = useState(null);
   const [shouldGetLocation, setShouldGetLocation] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -193,7 +193,7 @@ const LocationPickerDropdown = ({ className = "" }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-center gap-1 md:gap-2 h-full px-3 md:px-3 text-sm font-sans text-gray-700 hover:bg-gray-50 border-r border-gray-200 transition-colors ${className}`}
+        className={`flex items-center justify-center gap-1 md:gap-2 h-full px-3 md:px-3 text-sm font-sans text-gray-700 hover:bg-gray-50 transition-colors ${hideDivider ? "" : "border-r border-gray-200"} ${className}`}
       >
         <FiMapPin className="text-store-500 flex-shrink-0" size={18} />
         <span className="truncate max-w-[150px] font-medium hidden md:block">{truncatedText}</span>

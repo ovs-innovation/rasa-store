@@ -153,6 +153,7 @@ const PushNotification = () => {
                         {...register("target", { required: "Target is required" })}
                         className="border-[#e5e7eb] focus:border-teal-400 focus:ring-0 h-10"
                       >
+                        <option value="All">All</option>
                         <option value="Customer">Customer</option>
                         <option value="Store">Store</option>
                         <option value="Driver">Driver</option>

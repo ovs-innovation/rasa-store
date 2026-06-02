@@ -74,6 +74,18 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    phoneVerified: {
+      type: Boolean,
+      default: false,
+    },
+    profileComplete: {
+      type: Boolean,
+      default: false,
+    },
+    authProvider: {
+      type: String,
+      default: "email",
+    },
     password: {
       type: String,
       required: false,
@@ -193,6 +205,11 @@ const customerSchema = new mongoose.Schema(
     fcmToken: {
       type: String,
       required: false,
+    },
+    pendingEmail: {
+      type: String,
+      required: false,
+      lowercase: true,
     },
     emailVerified: {
       type: Boolean,

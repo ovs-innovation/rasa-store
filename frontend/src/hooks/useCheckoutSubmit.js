@@ -16,6 +16,7 @@ import useUtilsFunction from "./useUtilsFunction";
 import CouponServices from "@services/CouponServices";
 import { notifyError, notifySuccess } from "@utils/toast";
 import CustomerServices from "@services/CustomerServices";
+import { isProfileComplete, getDisplayEmail } from "@utils/profileAuth";
 import NotificationServices from "@services/NotificationServices";
 import ShiprocketServices from "@services/ShiprocketServices";
 import useCartDB from "@hooks/useCartDB";
@@ -82,10 +83,11 @@ const useCheckoutSubmit = (storeSetting) => {
       setDiscountPercentage(coupon.discountType);
       setMinimumAmount(coupon.minimumAmount);
     }
-    if (userInfo?.email) {
-      setValue("email", userInfo.email);
+    const displayEmail = getDisplayEmail(userInfo);
+    if (displayEmail) {
+      setValue("email", displayEmail);
     }
-  }, [setValue, userInfo?.email]);
+  }, [setValue, userInfo]);
 
   //remove coupon if total value less then minimum amount of coupon
   useEffect(() => {
@@ -207,6 +209,34 @@ const useCheckoutSubmit = (storeSetting) => {
 
   const submitHandler = async (data) => {
     try {
+      // Keep the old checkout flow: take details on checkout itself
+      // and (if needed) complete the customer profile in the background.
+      if (userInfo?.token && !isProfileComplete(userInfo)) {
+        try {
+          const profilePayload = {
+            name:
+              `${data.firstName || ""} ${data.lastName || ""}`.trim() ||
+              userInfo?.name,
+            phone: data.contact,
+            address: data.address,
+            city: data.city,
+            country: data.country,
+            zipCode: data.zipCode,
+          };
+
+          await CustomerServices.completeProfile(profilePayload);
+        } catch (err) {
+          // If profile completion fails, block placing order and show message
+          notifyError(
+            err?.response?.data?.message ||
+              err?.message ||
+              "Please check your delivery details and try again."
+          );
+          setIsCheckoutSubmit(false);
+          return;
+        }
+      }
+
       // Validate payment method is selected
       if (!data.paymentMethod) {
         notifyError("Please select a payment method.");

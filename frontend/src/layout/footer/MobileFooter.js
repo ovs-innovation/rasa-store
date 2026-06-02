@@ -16,14 +16,11 @@ import useGetSetting from "@hooks/useGetSetting";
 import useWishlist from "@hooks/useWishlist";
 import LocationButton from "@components/location/LocationButton";
 import SearchSuggestions from "@components/search/SearchSuggestions";
-import WholesalerModal from "@components/modal/WholesalerModal";
-
 const MobileFooter = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showSignDropdown, setShowSignDropdown] = useState(false);
-  const [wholesalerModalOpen, setWholesalerModalOpen] = useState(false);
   const searchInputRef = useRef(null);
   const { toggleCategoryDrawer, showSearch, setShowSearch } = useContext(SidebarContext);
   const userInfo = getUserSession();
@@ -122,10 +119,10 @@ const MobileFooter = () => {
             ) : (
               <div className="relative">
                 <Link
-                  href="/auth/signup"
+                  href="/auth/login"
                   className="bg-store-500 text-white px-4 py-2 rounded-full flex items-center gap-2 font-bold text-sm hover:bg-store-600 transition-colors"
                 >
-                  <IoLockClosedOutline className="text-lg" /> Sign In
+                  <IoLockClosedOutline className="text-lg" /> Login
                 </Link>
               </div>
             )}
@@ -186,7 +183,6 @@ const MobileFooter = () => {
           </form>
         </div>
       )}
-      <WholesalerModal modalOpen={wholesalerModalOpen} setModalOpen={setWholesalerModalOpen} />
     </>
   );
 };

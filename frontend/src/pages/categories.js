@@ -1,5 +1,4 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import Layout from "@layout/Layout";
 import FeatureCategory from "@components/category/FeatureCategory";
 import SliderCarousel from "@components/carousel/SliderCarousel";
@@ -25,16 +24,6 @@ const Categories = () => {
   const isWholesaler = state?.userInfo?.role && state.userInfo.role.toString().toLowerCase() === "wholesaler";
   const [parentCategories, setParentCategories] = useState([]);
 
-  // Palette for section backgrounds (cycles through these colors)
-  const sectionPalette = [
-    'bg-emerald-50',
-    'bg-rose-50',
-    'bg-amber-50',
-    'bg-cyan-50',
-    'bg-lime-50',
-    'bg-purple-50',
-  ];
-
   const getCategoryName = (cat) => {
     if (!cat) return "";
     if (cat?.name?.en) return cat.name.en;
@@ -49,8 +38,6 @@ const Categories = () => {
     queryKey: ["category"],
     queryFn: async () => await CategoryServices.getShowingCategory(),
   });
-
-  const router = useRouter();
 
   const getLevel1Categories = (categories) => {
     if (!categories || !Array.isArray(categories) || categories.length === 0) return [];
@@ -91,18 +78,6 @@ const Categories = () => {
 
   const bestSellingProducts = bestSellingData || [];
 
-  const handleViewAll = (parent) => {
-    const name = getCategoryName(parent) || "";
-    router.push(
-      {
-        pathname: "/search",
-        query: { category: name },
-      },
-      `/search?category=${encodeURIComponent(name)}`,
-      { shallow: false }
-    );
-  };
-
   useEffect(() => {
     setIsLoading(isLoading);
   }, [isLoading, setIsLoading]);
@@ -115,27 +90,10 @@ const Categories = () => {
         </div>
         <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-10 pb-10">
           {parentCategories.length === 0 ? (
-            <p>Loading categories...</p>
+            <p className="text-gray-500 text-center py-8">Loading categories...</p>
           ) : (
-            <div className="space-y-8">
-              {parentCategories.map((parent, idx) => {
-                const sectionBg = sectionPalette[idx % sectionPalette.length];
-                return (
-                  <section key={parent._id} className={`mb-4 ${sectionBg} rounded-lg p-2 shadow-sm`}>
-                    <div className="mb-4 flex items-center justify-between">
-                      <h2 className="text-lg md:text-2xl font-bold text-gray-800">{getCategoryName(parent)}</h2>
-                      <button
-                        onClick={() => handleViewAll(parent)}
-                        className="text-sm font-semibold text-emerald-700 hover:underline px-4 py-2 border border-emerald-700 rounded-full focus:outline-none"
-                        aria-label={`View all products in ${getCategoryName(parent)}`}
-                      >
-                        View all
-                      </button>
-                    </div>
-                    <FeatureCategory initialSelectedCategory={parent} />
-                  </section>
-                );
-              })}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-0">
+              <FeatureCategory initialSelectedCategory={parentCategories[0]} />
             </div>
           )}
 

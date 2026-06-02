@@ -13,7 +13,13 @@ const FcmTokenHandler = () => {
   useEffect(() => {
     const setupFcm = async () => {
       try {
-        if (typeof window === "undefined" || !app) return;
+        if (!adminInfo?._id) return;
+        if (typeof window === "undefined" || !app) {
+          console.warn(
+            "Firebase not configured in admin. Add VITE_APP_FIREBASE_* keys to admin/.env"
+          );
+          return;
+        }
 
         const supported = await isSupported();
         if (!supported) {

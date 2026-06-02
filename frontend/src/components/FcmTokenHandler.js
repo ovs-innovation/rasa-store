@@ -14,7 +14,20 @@ const FcmTokenHandler = () => {
   useEffect(() => {
     const setupFcm = async () => {
       try {
-        if (typeof window === 'undefined' || !app) return;
+        if (!userInfo?._id) return;
+        if (typeof window === 'undefined' || !app) {
+          console.warn(
+            'Firebase not configured. Add NEXT_PUBLIC_FIREBASE_* keys to frontend/.env'
+          );
+          return;
+        }
+
+        if (!process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY) {
+          console.warn(
+            'FCM VAPID key missing. Add NEXT_PUBLIC_FIREBASE_VAPID_KEY to frontend/.env'
+          );
+          return;
+        }
 
         const supported = await isSupported();
         if (!supported) {

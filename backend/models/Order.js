@@ -140,6 +140,9 @@ const orderSchema = new mongoose.Schema(
     shipmentStatus: { type: String },
     confirmationEmailSent: { type: Boolean, default: false },
     confirmationSmsSent: { type: Boolean, default: false },
+    invoiceEmailSent: { type: Boolean, default: false },
+    adminNewOrderEmailSent: { type: Boolean, default: false },
+    lastStatusNotified: { type: String, default: "" },
     refundEmailSent: { type: Boolean, default: false },
     refundNotifiedAt: { type: Date },
     refund: {

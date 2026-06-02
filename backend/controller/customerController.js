@@ -14,6 +14,68 @@ const {
 } = require("../lib/email-sender/simple-templates");
 const { sendVerificationCode } = require("../lib/phone-verification/sender");
 
+const PLACEHOLDER_EMAIL_DOMAIN = "phone.farmacykart.com";
+
+const normalizePhone = (phone) => {
+  if (!phone) return "";
+  const digits = String(phone).replace(/\D/g, "");
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+};
+
+const buildPlaceholderEmail = (phone) => {
+  const p = normalizePhone(phone);
+  return `${p || Date.now()}@${PLACEHOLDER_EMAIL_DOMAIN}`;
+};
+
+const isPlaceholderEmail = (email) =>
+  !!email && String(email).toLowerCase().endsWith(`@${PLACEHOLDER_EMAIL_DOMAIN}`);
+
+const computeProfileComplete = (customer) => {
+  if (!customer) return false;
+  const hasName =
+    customer.name &&
+    customer.name.trim().length > 1 &&
+    !/^user\s+\d+$/i.test(customer.name.trim());
+  const hasPhone = !!normalizePhone(customer.phone);
+  const hasAddress =
+    !!(customer.address && String(customer.address).trim()) ||
+    (Array.isArray(customer.shippingAddress) && customer.shippingAddress.length > 0);
+  return !!(hasName && hasPhone && hasAddress);
+};
+
+const sendCustomerAuthResponse = async (res, customer, message, extra = {}) => {
+  const customerWithCart = await Customer.findById(customer._id).populate({
+    path: "cart.productId",
+    select: "title prices image slug",
+  });
+
+  const profileComplete =
+    customerWithCart.profileComplete === true ||
+    computeProfileComplete(customerWithCart);
+
+  if (customerWithCart.profileComplete !== profileComplete) {
+    customerWithCart.profileComplete = profileComplete;
+    await customerWithCart.save();
+  }
+
+  res.send({
+    token: signInToken(customerWithCart),
+    _id: customerWithCart._id,
+    name: customerWithCart.name,
+    email: customerWithCart.email,
+    address: customerWithCart.address,
+    phone: customerWithCart.phone,
+    image: customerWithCart.image,
+    role: customerWithCart.role || "customer",
+    cart: customerWithCart.cart,
+    phoneVerified: !!customerWithCart.phoneVerified,
+    emailVerified: !!customerWithCart.emailVerified,
+    profileComplete,
+    message,
+    ...extra,
+  });
+};
+
 const verifyEmailAddress = async (req, res) => {
   const isAdded = await Customer.findOne({ email: req.body.email });
   if (isAdded) {
@@ -92,27 +154,54 @@ const verifyPhoneNumber = async (req, res) => {
   }
 };
 
+const findCustomerByPhone = async (phoneNumber) => {
+  const phoneNorm = normalizePhone(phoneNumber);
+  if (!phoneNorm || phoneNorm.length < 10) return null;
+  return Customer.findOne({
+    $or: [{ phone: phoneNorm }, { phone: String(phoneNumber).replace(/\D/g, "") }],
+  });
+};
+
 const sendPhoneEmailOTP = async (req, res) => {
   try {
-    const { phoneNumber } = req.body;
+    const { phoneNumber, intent: rawIntent } = req.body;
+    const intent = rawIntent === "signup" ? "signup" : "login";
 
     if (!phoneNumber) {
       return res.status(400).send({ message: "Phone number is required." });
     }
 
-    // Find user by phone (allowing for full number or last 10 digits)
-    const user = await Customer.findOne({
-      $or: [
-        { phone: phoneNumber },
-        { phone: phoneNumber.slice(-10) }
-      ]
-    });
+    const phoneNorm = normalizePhone(phoneNumber);
+    if (!phoneNorm || phoneNorm.length < 10) {
+      return res.status(400).send({ message: "Valid 10-digit phone number is required." });
+    }
 
-    if (!user) {
-      return res.status(404).send({
-        message: "Account with this phone number does not exist. Please register first.",
-        error: "USER_NOT_FOUND",
+    let user = await findCustomerByPhone(phoneNumber);
+
+    if (intent === "signup" && user) {
+      return res.status(409).send({
+        message: "This mobile number is already registered. Please login instead.",
+        code: "PHONE_ALREADY_REGISTERED",
       });
+    }
+
+    if (intent === "login" && !user) {
+      return res.status(404).send({
+        message: "No account found with this number. Please sign up first.",
+        code: "PHONE_NOT_REGISTERED",
+      });
+    }
+
+    if (!user && intent === "signup") {
+      user = new Customer({
+        name: `User ${phoneNorm.slice(-4)}`,
+        email: buildPlaceholderEmail(phoneNorm),
+        phone: phoneNorm,
+        phoneVerified: false,
+        authProvider: "phone",
+        profileComplete: false,
+      });
+      await user.save();
     }
 
     // Check resend cooldown (60 seconds)
@@ -193,22 +282,33 @@ const sendPhoneEmailOTP = async (req, res) => {
 
 const verifyPhoneEmailOTP = async (req, res) => {
   try {
-    const { phoneNumber, otp } = req.body;
+    const { phoneNumber, otp, intent: rawIntent } = req.body;
+    const intent = rawIntent === "signup" ? "signup" : "login";
 
     if (!phoneNumber || !otp) {
       return res.status(400).send({ message: "Phone number and OTP are required." });
     }
 
-    const user = await Customer.findOne({
-      $or: [
-        { phone: phoneNumber },
-        { phone: phoneNumber.slice(-10) }
-      ]
-    });
+    const user = await findCustomerByPhone(phoneNumber);
 
     if (!user) {
-      return res.status(404).send({ message: "User not found." });
+      return res.status(404).send({
+        message:
+          intent === "login"
+            ? "No account found with this number. Please sign up first."
+            : "Please request an OTP first.",
+        code: intent === "login" ? "PHONE_NOT_REGISTERED" : undefined,
+      });
     }
+
+    if (intent === "signup" && user.phoneVerified) {
+      return res.status(409).send({
+        message: "This mobile number is already registered. Please login instead.",
+        code: "PHONE_ALREADY_REGISTERED",
+      });
+    }
+
+    const wasVerified = !!user.phoneVerified;
 
     // Check if OTP exists and is not expired
     if (!user.loginOtp || !user.loginOtpExpires || new Date() > user.loginOtpExpires) {
@@ -233,29 +333,17 @@ const verifyPhoneEmailOTP = async (req, res) => {
     user.loginOtp = undefined;
     user.loginOtpExpires = undefined;
     user.loginOtpAttempts = 0;
+    user.phoneVerified = true;
     user.lastLogin = new Date();
     await user.save();
 
-    // Fetch user with cart to return complete profile
-    const customerWithCart = await Customer.findById(user._id).populate({
-      path: "cart.productId",
-      select: "title prices image slug",
-    });
-
-    const token = signInToken(customerWithCart);
-    res.send({
-      token,
-      _id: customerWithCart._id,
-      name: customerWithCart.name,
-      email: customerWithCart.email,
-      phone: customerWithCart.phone,
-      address: customerWithCart.address || "",
-      image: customerWithCart.image || "",
-      role: customerWithCart.role || "customer",
-      cart: customerWithCart.cart,
-      message: "Login Successful!",
-    });
-
+    const isNewUser = !wasVerified;
+    await sendCustomerAuthResponse(
+      res,
+      user,
+      isNewUser ? "Account created!" : "Login Successful!",
+      { isNewUser }
+    );
   } catch (err) {
     console.error("verifyPhoneEmailOTP error:", err);
     res.status(500).send({ message: err.message });
@@ -880,28 +968,305 @@ const loginCustomer = async (req, res) => {
     await customer.save();
 
     // Fetch fresh customer data with populated cart to ensure we have latest details
-    const customerWithCart = await Customer.findById(customer._id).populate({
-      path: "cart.productId",
-      select: "title prices image slug",
-    });
-
-    const token = signInToken(customerWithCart);
-    res.send({
-      token,
-      _id: customerWithCart._id,
-      name: customerWithCart.name,
-      email: customerWithCart.email,
-      address: customerWithCart.address,
-      phone: customerWithCart.phone,
-      image: customerWithCart.image,
-      role: customerWithCart.role || "customer",
-      cart: customerWithCart.cart,
-      message: "Login Successful!"
-    });
+    await sendCustomerAuthResponse(res, customer, "Login Successful!");
   } catch (err) {
     res.status(500).send({
       message: err.message,
     });
+  }
+};
+
+const signupPhone = async (req, res) => {
+  try {
+    const { idToken, intent: rawIntent } = req.body;
+    const intent = rawIntent === "signup" ? "signup" : "login";
+
+    if (!idToken) {
+      return res.status(400).send({ message: "Firebase ID token is required." });
+    }
+
+    const admin = require("../config/firebase-admin");
+    let decodedToken;
+    try {
+      if (!admin.apps.length) throw new Error("Firebase Admin not initialized");
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+    } catch (verifyErr) {
+      return res.status(401).send({ message: "Invalid or expired Firebase token." });
+    }
+
+    const { email: tokenEmail, phone_number: tokenPhone, uid } = decodedToken;
+    const phoneNorm = normalizePhone(tokenPhone || req.body.phone);
+    if (!phoneNorm || phoneNorm.length < 10) {
+      return res.status(400).send({ message: "Valid phone number is required." });
+    }
+
+    const queryConds = [{ firebaseUid: uid }, { phone: phoneNorm }];
+    if (tokenEmail) queryConds.push({ email: tokenEmail.toLowerCase() });
+    queryConds.push({ email: buildPlaceholderEmail(phoneNorm) });
+
+    let customer = await Customer.findOne({ $or: queryConds });
+    let isNewUser = false;
+
+    if (intent === "signup" && customer) {
+      return res.status(409).send({
+        message: "This mobile number is already registered. Please login instead.",
+        code: "PHONE_ALREADY_REGISTERED",
+      });
+    }
+
+    if (intent === "login" && !customer) {
+      return res.status(404).send({
+        message: "No account found with this number. Please sign up first.",
+        code: "PHONE_NOT_REGISTERED",
+      });
+    }
+
+    if (!customer) {
+      isNewUser = true;
+      customer = new Customer({
+        name: `User ${phoneNorm.slice(-4)}`,
+        email: buildPlaceholderEmail(phoneNorm),
+        phone: phoneNorm,
+        firebaseUid: uid,
+        role: "customer",
+        phoneVerified: true,
+        profileComplete: false,
+        authProvider: "phone",
+        emailVerified: false,
+      });
+      await customer.save();
+    } else {
+      customer.firebaseUid = uid;
+      customer.phoneVerified = true;
+      if (!customer.phone) customer.phone = phoneNorm;
+      if (!customer.authProvider) customer.authProvider = "phone";
+      customer.lastLogin = new Date();
+      await customer.save();
+    }
+
+    if (customer.role === "wholesaler") {
+      if (customer.wholesalerStatus === "pending") {
+        return res.status(403).send({
+          message:
+            "Your account is currently under verification. You will be notified once approved.",
+          wholesalerStatus: "pending",
+        });
+      }
+      if (customer.wholesalerStatus === "rejected") {
+        return res.status(403).send({
+          message: "Your wholesaler application has been rejected.",
+          wholesalerStatus: "rejected",
+        });
+      }
+    }
+
+    await sendCustomerAuthResponse(res, customer, isNewUser ? "Account created!" : "Login Successful!", {
+      isNewUser,
+    });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(403).send({ message: "Phone or email already registered." });
+    }
+    res.status(500).send({ message: err.message });
+  }
+};
+
+const sendProfileEmailOtp = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+
+    const { email } = req.body;
+    if (!email || !String(email).trim()) {
+      return res.status(400).send({ message: "Email is required." });
+    }
+
+    const normalizedEmail = String(email).toLowerCase().trim();
+    if (isPlaceholderEmail(normalizedEmail)) {
+      return res.status(400).send({ message: "Please enter a valid email address." });
+    }
+
+    const customer = await Customer.findById(userId);
+    if (!customer) {
+      return res.status(404).send({ message: "Customer not found." });
+    }
+
+    if (
+      customer.emailVerified &&
+      customer.email === normalizedEmail &&
+      !isPlaceholderEmail(customer.email)
+    ) {
+      return res.status(400).send({ message: "This email is already verified on your account." });
+    }
+
+    const existingEmail = await Customer.findOne({
+      email: normalizedEmail,
+      _id: { $ne: customer._id },
+    });
+    if (existingEmail) {
+      return res.status(400).send({ message: "Email already in use by another account." });
+    }
+
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    customer.pendingEmail = normalizedEmail;
+    customer.emailVerificationOtp = otp;
+    customer.emailVerificationExpires = otpExpires;
+    await customer.save();
+
+    const globalSetting = await Setting.findOne({ name: "globalSetting" });
+    const shopName = globalSetting?.setting?.shop_name || "Farmacykart";
+    const otpMail = simpleOtpEmail({
+      name: customer.name,
+      email: normalizedEmail,
+      otp,
+      shop_name: shopName,
+      purpose: "email verification",
+      expiresMinutes: 15,
+    });
+
+    await sendEmail({
+      to: normalizedEmail,
+      subject: `${shopName} verification code`,
+      html: otpMail.html,
+      text: otpMail.text,
+      emailType: "profile-email-verify-otp",
+    });
+
+    res.send({ message: "Verification code sent to your email." });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
+const verifyProfileEmailOtp = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).send({ message: "Email and verification code are required." });
+    }
+
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const customer = await Customer.findById(userId);
+    if (!customer) {
+      return res.status(404).send({ message: "Customer not found." });
+    }
+
+    const pending = (customer.pendingEmail || "").toLowerCase();
+    if (!pending || pending !== normalizedEmail) {
+      return res.status(400).send({
+        message: "Please request a verification code for this email first.",
+      });
+    }
+
+    if (customer.emailVerificationOtp !== String(otp).trim()) {
+      return res.status(400).send({ message: "Invalid verification code." });
+    }
+
+    if (!customer.emailVerificationExpires || new Date() > customer.emailVerificationExpires) {
+      return res.status(400).send({ message: "Code expired. Please request a new one." });
+    }
+
+    const existingEmail = await Customer.findOne({
+      email: normalizedEmail,
+      _id: { $ne: customer._id },
+    });
+    if (existingEmail) {
+      return res.status(400).send({ message: "Email already in use." });
+    }
+
+    customer.email = normalizedEmail;
+    customer.emailVerified = true;
+    customer.pendingEmail = undefined;
+    customer.emailVerificationOtp = undefined;
+    customer.emailVerificationExpires = undefined;
+    await customer.save();
+
+    res.send({
+      message: "Email verified successfully!",
+      email: customer.email,
+      emailVerified: true,
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
+const completeProfile = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+
+    const { name, email, address, phone, city, zipCode, country } = req.body;
+
+    if (!name || !String(name).trim()) {
+      return res.status(400).send({ message: "Name is required." });
+    }
+    if (!address || !String(address).trim()) {
+      return res.status(400).send({ message: "Address is required." });
+    }
+    if (!phone || !normalizePhone(phone)) {
+      return res.status(400).send({ message: "Valid phone number is required." });
+    }
+
+    const customer = await Customer.findById(userId);
+    if (!customer) {
+      return res.status(404).send({ message: "Customer not found." });
+    }
+
+    const emailInput = email ? String(email).toLowerCase().trim() : "";
+    if (emailInput) {
+      if (isPlaceholderEmail(emailInput)) {
+        return res.status(400).send({ message: "Please enter a valid email address." });
+      }
+      if (!customer.emailVerified || customer.email !== emailInput) {
+        return res.status(400).send({
+          message: "Please verify your email with the code we sent before saving.",
+          code: "EMAIL_NOT_VERIFIED",
+        });
+      }
+    }
+
+    customer.name = String(name).trim();
+    customer.address = String(address).trim();
+    if (phone) customer.phone = normalizePhone(phone);
+    if (city) customer.city = city;
+    if (country) customer.country = country;
+    if (zipCode) customer.zipCode = zipCode;
+
+    const shipPhone = normalizePhone(phone) || customer.phone;
+    if (!customer.shippingAddress?.length) {
+      customer.shippingAddress = [
+        {
+          name: customer.name,
+          address: customer.address,
+          city: city || customer.city || "",
+          country: country || customer.country || "India",
+          zipCode: zipCode || "",
+          phone: shipPhone,
+          isDefault: true,
+          addressType: "Home",
+        },
+      ];
+    }
+
+    customer.profileComplete = computeProfileComplete(customer);
+    customer.lastLogin = new Date();
+    await customer.save();
+
+    await sendCustomerAuthResponse(res, customer, "Profile completed successfully!");
+  } catch (err) {
+    res.status(500).send({ message: err.message });
   }
 };
 
@@ -1498,22 +1863,19 @@ const updateCustomer = async (req, res) => {
       });
     }
 
-    // Check if the email already exists and does not belong to the current customer
+    // Email can only be changed via profile email OTP verification
     if (email) {
-      const existingCustomer = await Customer.findOne({ email });
-      if (
-        existingCustomer &&
-        existingCustomer._id.toString() !== customer._id.toString()
-      ) {
+      const normalizedEmail = String(email).toLowerCase().trim();
+      if (normalizedEmail !== String(customer.email).toLowerCase()) {
         return res.status(400).send({
-          message: "Email already exists.",
+          message: "Verify your new email with the code we sent before saving.",
+          code: "EMAIL_CHANGE_REQUIRES_VERIFICATION",
         });
       }
     }
 
     // Update customer details
     if (name) customer.name = name;
-    if (email) customer.email = email;
     if (address) customer.address = address;
     if (phone) customer.phone = phone;
     if (image) customer.image = image;
@@ -1565,6 +1927,7 @@ const updateCustomer = async (req, res) => {
       phone: updatedUser.phone,
       image: updatedUser.image,
       role: updatedUser.role || "customer",
+      emailVerified: !!updatedUser.emailVerified,
       message: "Customer updated successfully!",
     });
   } catch (err) {
@@ -1870,20 +2233,22 @@ const clearCart = async (req, res) => {
 const checkCustomerExistance = async (req, res) => {
   try {
     const { email, phone } = req.body;
-    let query = {};
-    if (email) query.email = email;
-    if (phone) query.phone = phone;
 
-    if (Object.keys(query).length === 0) {
+    if (!email && !phone) {
       return res.status(400).send({ message: "Email or Phone is required" });
     }
 
-    const customer = await Customer.findOne(query);
+    let customer = null;
+    if (phone) {
+      customer = await findCustomerByPhone(phone);
+    } else if (email) {
+      customer = await Customer.findOne({ email: String(email).toLowerCase().trim() });
+    }
+
     if (customer) {
       return res.send({ exists: true, name: customer.name });
-    } else {
-      return res.send({ exists: false });
     }
+    return res.send({ exists: false });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -1906,6 +2271,10 @@ const updateFcmToken = async (req, res) => {
 module.exports = {
   checkCustomerExistance,
   loginCustomer,
+  signupPhone,
+  completeProfile,
+  sendProfileEmailOtp,
+  verifyProfileEmailOtp,
   // ... rest of exports
   loginWithPhone,
   verifyPhoneNumber,
