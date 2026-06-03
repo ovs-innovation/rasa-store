@@ -1,6 +1,6 @@
 import LanguageServices from "@/services/LanguageServices";
 import SettingServices from "@/services/SettingServices";
-import { resolveCloudinaryUrl } from "@/utils/cloudinaryUrl";
+import { ADMIN_BRAND_LOGO } from "@/utils/cloudinaryUrl";
 import { useQuery } from "@tanstack/react-query";
 import Cookies from "js-cookie";
 import { createContext, useEffect, useMemo, useRef, useState } from "react";
@@ -122,16 +122,15 @@ export const SidebarProvider = ({ children }) => {
   // console.log("globalSetting", globalSetting, "languages", languages);
 
   useEffect(() => {
-    const faviconHref = resolveCloudinaryUrl(globalSetting?.favicon);
-    if (faviconHref) {
-      const link =
-        document.querySelector("link[rel*='icon']") ||
-        document.createElement("link");
-      link.type = "image/x-icon";
-      link.rel = "shortcut icon";
-      link.href = faviconHref;
-      document.getElementsByTagName("head")[0].appendChild(link);
-    }
+    ["icon", "shortcut icon", "apple-touch-icon"].forEach((rel) => {
+      let link = document.querySelector(`link[rel="${rel}"]`);
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = rel;
+        document.head.appendChild(link);
+      }
+      link.href = ADMIN_BRAND_LOGO;
+    });
     if (globalSetting?.company_name) {
       document.title = globalSetting.company_name + " | Admin Dashboard";
     }

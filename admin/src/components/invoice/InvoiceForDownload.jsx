@@ -360,7 +360,7 @@ const InvoiceForDownload = ({
             <View style={{ width: "34%", paddingRight: 10 }}>
               {/* Original Logo */}
               <Image
-                src={logo || globalSetting?.logo || "/favicon.png"}
+                src={logo || globalSetting?.logo || "/favicon-transparent.png"}
                 style={{ width: 90, height: 35, marginBottom: 4, objectFit: "contain" }}
               />
 

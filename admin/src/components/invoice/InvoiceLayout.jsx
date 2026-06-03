@@ -78,7 +78,7 @@ const InvoiceLayout = ({ data, printRef, globalSetting, currency, getNumberTwo }
                 <img
                   width={120}
                   height={40}
-                  src={globalSetting?.logo || "/favicon.png"}
+                  src={globalSetting?.logo || "/favicon-transparent.png"}
                   alt="logo"
                 />
               </a>

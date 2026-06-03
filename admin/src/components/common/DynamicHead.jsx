@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import SettingServices from "@/services/SettingServices";
-import { resolveCloudinaryUrl } from "@/utils/cloudinaryUrl";
+import { ADMIN_BRAND_LOGO } from "@/utils/cloudinaryUrl";
 
 const DynamicHead = () => {
   const { data: globalSetting } = useQuery({
@@ -33,9 +33,7 @@ const DynamicHead = () => {
     const metaUrl = storeCustomizationSetting?.seo?.meta_url || website;
     const metaKeywords = storeCustomizationSetting?.seo?.meta_keywords || "ecommerce, admin, dashboard";
     const metaImage = storeCustomizationSetting?.seo?.meta_img || "";
-    const favicon =
-      resolveCloudinaryUrl(storeCustomizationSetting?.seo?.favicon) ||
-      "/favicon.png";
+    const favicon = ADMIN_BRAND_LOGO;
 
     // Update document title
     if (metaTitle) {

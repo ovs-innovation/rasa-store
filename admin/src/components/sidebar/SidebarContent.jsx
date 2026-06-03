@@ -2,23 +2,20 @@ import React, { useContext, useState } from "react";
 import { NavLink, Route } from "react-router-dom";
 import Cookies from "js-cookie";
 import { useTranslation } from "react-i18next";
-import { Button, WindmillContext } from "@windmill/react-ui";
+import { Button } from "@windmill/react-ui";
 import { IoLogOutOutline } from "react-icons/io5";
 
 //internal import
 import sidebar from "@/routes/sidebar";
 // import SidebarSubMenu from "SidebarSubMenu";
-import logoDark from "@/assets/img/logo/favicon.png";
-import logoLight from "@/assets/img/logo/favicon.png";
 import { AdminContext } from "@/context/AdminContext";
 import { SidebarContext } from "@/context/SidebarContext";
 import SidebarSubMenu from "@/components/sidebar/SidebarSubMenu";
 import useGetCData from "@/hooks/useGetCData";
-import { resolveCloudinaryUrl } from "@/utils/cloudinaryUrl";
+import { ADMIN_BRAND_LOGO } from "@/utils/cloudinaryUrl";
 
 const SidebarContent = () => {
   const { t } = useTranslation();
-  const { mode } = useContext(WindmillContext);
   const { dispatch } = useContext(AdminContext);
   const { globalSetting } = useContext(SidebarContext);
   const { accessList, role } = useGetCData();
@@ -75,25 +72,11 @@ const SidebarContent = () => {
   return (
     <div className="py-4 text-gray-500 dark:text-[#9fb1b1]">
       <a className="block px-6 text-gray-900 dark:text-gray-200" href="/dashboard">
-        {resolveCloudinaryUrl(globalSetting?.logo) ? (
-            <img
-              src={resolveCloudinaryUrl(globalSetting?.logo)}
-              alt="Logo"
-              className="h-16 w-auto max-w-[150px] object-contain mix-blend-multiply"
-            />
-          ) : mode === "dark" ? (
-            <img
-              src={logoLight}
-              alt="Farmacykart"
-              className="h-16 w-auto max-w-[150px] object-contain mix-blend-multiply"
-            />
-          ) : (
-            <img
-              src={logoDark}
-              alt="Farmacykart"
-              className="h-16 w-auto max-w-[150px] object-contain mix-blend-multiply"
-            />
-          )}
+        <img
+          src={ADMIN_BRAND_LOGO}
+          alt={globalSetting?.company_name || "Farmacykart"}
+          className="h-14 w-14 object-contain"
+        />
       </a>
       <ul className="mt-8">
         {updatedSidebar?.map((route) =>

@@ -1,7 +1,9 @@
 /** Old Cloudinary accounts — images return 401 after account change */
 const LEGACY_CLOUD_NAMES = ["dhqcwkpzp", "ahossain"];
 
-export const CLOUDINARY_PLACEHOLDER = "/favicon-transparent.png";
+/** Admin panel favicon + sidebar/login logo */
+export const ADMIN_BRAND_LOGO = "/favicon-transparent.png";
+export const CLOUDINARY_PLACEHOLDER = ADMIN_BRAND_LOGO;
 
 /**
  * Returns a safe image URL for <img src>. Blocks legacy cloud URLs so the browser

@@ -8,12 +8,11 @@ import { useTranslation } from "react-i18next";
 import Error from "@/components/form/others/Error";
 import LabelArea from "@/components/form/selectOption/LabelArea";
 import InputArea from "@/components/form/input/InputArea";
-import ImageLight from "@/assets/img/logo/favicon.png";
-import ImageDark from "@/assets/img/logo/favicon.png";
 import useLoginSubmit from "@/hooks/useLoginSubmit";
 import CMButton from "@/components/form/button/CMButton";
 import { SidebarContext } from "@/context/SidebarContext";
 import { useContext } from "react";
+import { ADMIN_BRAND_LOGO } from "@/utils/cloudinaryUrl";
 
 const Login = () => {
   const { t } = useTranslation();
@@ -26,30 +25,13 @@ const Login = () => {
       <div className="flex items-center min-h-screen p-6 bg-gray-50 dark:bg-gray-900">
         <div className="flex-1 h-full max-w-2xl mx-auto overflow-hidden bg-white rounded-lg shadow-xl dark:bg-gray-800">
           <div className="flex flex-col overflow-y-auto">
-            <div className="w-full flex justify-center p-0">
-              {globalSetting?.logo ? (
-                <img
-                  aria-hidden="true"
-                  className="object-contain h-24"
-                  src={globalSetting?.logo}
-                  alt="Logo"
-                />
-              ) : (
-                <>
-                  <img
-                    aria-hidden="true"
-                    className="object-contain h-24 dark:hidden"
-                    src={ImageLight}
-                    alt="Office"
-                  />
-                  <img
-                    aria-hidden="true"
-                    className="hidden object-contain h-24 dark:block"
-                    src={ImageDark}
-                    alt="Office"
-                  />
-                </>
-              )}
+            <div className="w-full flex justify-center p-6">
+              <img
+                aria-hidden="true"
+                className="object-contain h-20 w-20"
+                src={ADMIN_BRAND_LOGO}
+                alt={globalSetting?.company_name || "Farmacykart"}
+              />
             </div>
             <main className="flex items-center justify-center p-6 sm:p-12">
               <div className="w-full max-w-sm">

@@ -43,7 +43,7 @@ const ReviewTable = ({ reviews }) => {
                     className="w-[30px] h-[30px] object-cover rounded shadow-sm border border-gray-100"
                   />
                 ) : (
-                   <div className="w-[30px] h-[30px] bg-[#f8fafc] rounded-md shadow-sm border border-gray-100 flex items-center justify-center p-1"><img src="/favicon.png" className="w-full h-full object-contain opacity-50" /></div>
+                   <div className="w-[30px] h-[30px] bg-[#f8fafc] rounded-md shadow-sm border border-gray-100 flex items-center justify-center p-1"><img src="/favicon-transparent.png" className="w-full h-full object-contain opacity-50" /></div>
                 )}
                 <div>
                   <p className="text-[13px] font-bold text-[#1e293b]">
