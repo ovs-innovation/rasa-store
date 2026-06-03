@@ -14,6 +14,7 @@ import useGetSetting from "@hooks/useGetSetting";
 import { getPalette } from "@utils/themeColors";
 import useCartSync from "@hooks/useCartSync";
 import FloatingWhatsApp from "@components/common/FloatingWhatsApp";
+import { pickBrandLogo } from "@utils/brandAssets";
 
 const Layout = ({ title, description, children, hideMobileHeader }) => {
   const { storeCustomizationSetting, globalSetting } = useGetSetting();
@@ -25,7 +26,11 @@ const Layout = ({ title, description, children, hideMobileHeader }) => {
 
   // Get dynamic title and favicon from settings
   const siteTitle = storeCustomizationSetting?.seo?.meta_title || globalSetting?.shop_name || "Farmacykart";
-  const favicon = storeCustomizationSetting?.seo?.favicon || globalSetting?.logo || "/favicon.png";
+  const favicon = pickBrandLogo(
+    storeCustomizationSetting?.seo?.favicon,
+    globalSetting?.logo,
+    storeCustomizationSetting?.navbar?.logo
+  );
   const defaultDescription = storeCustomizationSetting?.seo?.meta_description || description || "Discover personalized merchandise, branded giveaways, and advertising essentials. Ideal for businesses, events, and promotions";
 
   return (

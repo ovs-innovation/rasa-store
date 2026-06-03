@@ -6,6 +6,7 @@ import { SidebarContext } from "@/context/SidebarContext";
 import LanguageServices from "@/services/LanguageServices";
 import SettingServices from "@/services/SettingServices";
 import { useQuery } from "@tanstack/react-query";
+import { resolveCloudinaryUrl } from "@/utils/cloudinaryUrl";
 
 const useUtilsFunction = () => {
   const { lang } = useContext(SidebarContext);
@@ -69,7 +70,7 @@ const useUtilsFunction = () => {
   }, [lang, globalSetting?.default_language]);
 
   const showingImage = (data) => {
-    return data !== undefined && data;
+    return resolveCloudinaryUrl(data) || undefined;
   };
 
   const showingUrl = (data) => {

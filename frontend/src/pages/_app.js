@@ -20,6 +20,8 @@ import DefaultSeo from "@components/common/DefaultSeo";
 import { SidebarProvider } from "@context/SidebarContext";
 import SettingServices from "@services/SettingServices";
 import FcmTokenHandler from "@components/FcmTokenHandler";
+import { AnnouncementsProvider } from "@context/AnnouncementsContext";
+import { fetchWebsiteAnnouncements } from "@lib/fetchAnnouncements";
 
 let persistor = persistStore(store);
 
@@ -32,7 +34,7 @@ const queryClient = new QueryClient({
   },
 });
 
-function MyApp({ Component, pageProps }) {
+function MyApp({ Component, pageProps, announcements = [] }) {
   const router = useRouter();
   const [storeSetting, setStoreSetting] = useState(null);
 
@@ -99,11 +101,13 @@ function MyApp({ Component, pageProps }) {
             <Provider store={store}>
               <PersistGate loading={null} persistor={persistor}>
                 <SidebarProvider>
-                  <CartProvider>
-                    <DefaultSeo />
-                    <FcmTokenHandler />
-                    <Component {...pageProps} />
-                  </CartProvider>
+                  <AnnouncementsProvider announcements={announcements}>
+                    <CartProvider>
+                      <DefaultSeo />
+                      <FcmTokenHandler />
+                      <Component {...pageProps} />
+                    </CartProvider>
+                  </AnnouncementsProvider>
                 </SidebarProvider>
               </PersistGate>
             </Provider>
@@ -120,5 +124,10 @@ function MyApp({ Component, pageProps }) {
     </>
   );
 }
+
+MyApp.getInitialProps = async () => {
+  const announcements = await fetchWebsiteAnnouncements(5);
+  return { announcements };
+};
 
 export default MyApp;

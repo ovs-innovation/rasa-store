@@ -25,6 +25,7 @@ import { SidebarContext } from "@/context/SidebarContext";
 import useNotification from "@/hooks/useNotification";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
 import NotFoundTwo from "@/components/table/NotFoundTwo";
+import { resolveCloudinaryUrl } from "@/utils/cloudinaryUrl";
 import NotificationServices from "@/services/NotificationServices";
 import OrderServices from "@/services/OrderServices";
 import SelectLanguage from "@/components/form/selectOption/SelectLanguage";
@@ -446,7 +447,7 @@ const Header = () => {
                                 >
                                   <Avatar
                                     className="mr-2 md:block bg-gray-50 border border-gray-200"
-                                    src={value.image}
+                                    src={resolveCloudinaryUrl(value.image) || "/favicon-transparent.png"}
                                     alt="image"
                                   />
 
@@ -525,10 +526,10 @@ const Header = () => {
                 className="rounded-full dark:bg-gray-500 bg-store-500 text-white h-8 w-8 font-medium mx-auto focus:outline-none"
                 onClick={handleProfileOpen}
               >
-                {adminInfo.image ? (
+                {resolveCloudinaryUrl(adminInfo.image) ? (
                   <Avatar
                     className="align-middle"
-                    src={`${adminInfo.image}`}
+                    src={resolveCloudinaryUrl(adminInfo.image)}
                     aria-hidden="true"
                   />
                 ) : (

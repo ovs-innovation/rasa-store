@@ -141,7 +141,7 @@ const sidebar = [
   // },
   {
     icon: FiBox,
-    name: "Product Setup",
+    name: "ProductSetup",
     routes: [
       {
         path: "/products/add",

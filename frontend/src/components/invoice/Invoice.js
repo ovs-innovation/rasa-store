@@ -6,6 +6,7 @@ import Image from "next/image";
 import OrderTable from "@components/order/OrderTable";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import useGetSetting from "@hooks/useGetSetting";
+import { pickBrandLogo } from "@utils/brandAssets";
 import { UserContext } from "@context/UserContext";
 
 const Invoice = ({ data, printRef, globalSetting, currency }) => {
@@ -75,7 +76,10 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
                 <Image
                   width={120}
                   height={40}
-                  src={storeCustomizationSetting?.navbar?.logo || "/logo/logo.png"}
+                  src={pickBrandLogo(
+                    storeCustomizationSetting?.navbar?.logo,
+                    storeCustomizationSetting?.footer?.block4_logo
+                  )}
                   alt="logo"
                 />
               </Link>

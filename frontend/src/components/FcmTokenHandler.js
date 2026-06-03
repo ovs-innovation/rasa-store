@@ -67,6 +67,10 @@ const FcmTokenHandler = () => {
           }
           lastMessageId.current = payload.messageId;
 
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("customerNotificationsUpdated"));
+          }
+
           // Extract data
           const title = payload.notification?.title || payload.data?.title || "New Notification";
           const body = payload.notification?.body || payload.data?.body || payload.data?.description || "";

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import useGetSetting from "@hooks/useGetSetting";
+import { pickBrandLogo } from "@utils/brandAssets";
 import { FaPrescriptionBottleAlt } from "react-icons/fa";
 import { FiShield, FiTruck, FiClock, FiCheck } from "react-icons/fi";
 
@@ -23,10 +24,11 @@ const AuthPageShell = ({
 }) => {
   const { storeCustomizationSetting, globalSetting } = useGetSetting();
   const shopName = globalSetting?.shop_name || "Farmacykart";
-  const logoSrc =
-    storeCustomizationSetting?.navbar?.logo ||
-    storeCustomizationSetting?.seo?.favicon ||
-    null;
+  const logoSrc = pickBrandLogo(
+    storeCustomizationSetting?.navbar?.logo,
+    storeCustomizationSetting?.seo?.favicon,
+    globalSetting?.logo
+  );
 
   return (
     <div className="min-h-[calc(100vh-10rem)] bg-[#f1f3f6] pb-20 lg:pb-0">

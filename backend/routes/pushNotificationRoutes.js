@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { isAuth, isAdmin } = require("../config/auth");
 const {
   addPushNotification,
   getAllPushNotifications,
@@ -10,7 +11,8 @@ const {
   deleteManyPushNotifications,
 } = require("../controller/pushNotificationController");
 
-// Add a push notification and send via FCM
+router.use(isAuth, isAdmin);
+
 router.post("/add", addPushNotification);
 
 // Get all push notifications

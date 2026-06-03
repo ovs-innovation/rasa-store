@@ -1,11 +1,22 @@
 import Cookies from 'js-cookie';
 import React, { createContext, useReducer } from 'react';
+import { resolveCloudinaryUrl } from '@/utils/cloudinaryUrl';
 
 export const AdminContext = createContext();
 
+const sanitizeAdminInfo = (info) => {
+  if (!info) return null;
+  if (info.image && !resolveCloudinaryUrl(info.image)) {
+    const next = { ...info, image: '' };
+    Cookies.set('adminInfo', JSON.stringify(next));
+    return next;
+  }
+  return info;
+};
+
 const initialState = {
   adminInfo: Cookies.get('adminInfo')
-    ? JSON.parse(Cookies.get('adminInfo'))
+    ? sanitizeAdminInfo(JSON.parse(Cookies.get('adminInfo')))
     : null,
 };
 

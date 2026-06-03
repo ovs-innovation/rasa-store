@@ -16,6 +16,8 @@ import useGetSetting from "@hooks/useGetSetting";
 import useWishlist from "@hooks/useWishlist";
 import LocationButton from "@components/location/LocationButton";
 import SearchSuggestions from "@components/search/SearchSuggestions";
+import CustomerNotificationBell from "@components/notification/CustomerNotificationBell";
+import { pickBrandLogo } from "@utils/brandAssets";
 const MobileFooter = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -83,21 +85,33 @@ const MobileFooter = () => {
             href="/"
             className="flex items-center justify-center"
             rel="noreferrer"
-            aria-label="Home"
+            aria-label={t("Home") || "Home"}
           >
-            <div className="relative w-16 h-16">
+            <div className="relative w-[72px] h-[72px]">
               <Image
-                src={storeCustomizationSetting?.navbar?.logo || "/logo/logo.png"}
+                src={pickBrandLogo(
+                  storeCustomizationSetting?.navbar?.logo,
+                  storeCustomizationSetting?.seo?.favicon
+                )}
                 alt="logo"
                 fill
                 className="object-contain"
-                sizes="64px"
+                sizes="72px"
                 priority
               />
             </div>
           </Link>
+          <Link
+            href="/"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-900 hover:bg-gray-100 hover:text-black shrink-0 ml-6"
+            aria-label="Home"
+            title="Home"
+          >
+            <FiHome className="w-5 h-5" />
+          </Link>
         </div>
         <div className="flex items-center gap-4">
+          <CustomerNotificationBell />
           <div className="flex items-center justify-center relative">
             {userInfo?.image ? (
               <Link href="/user/dashboard" className="relative top-1 w-8 h-8 block">

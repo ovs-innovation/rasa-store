@@ -12,19 +12,43 @@ import Pica from "pica";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
 import Container from "@/components/image-uploader/Container";
 import { FiCheck } from "react-icons/fi";
+import requests from "@/services/httpService";
+import { resolveCloudinaryUrl } from "@/utils/cloudinaryUrl";
 
 const getCloudinaryErrorMessage = (err) => {
   const apiMessage = err?.response?.data?.error?.message;
   if (apiMessage) return apiMessage;
+  if (err?.response?.data?.message) return err.response.data.message;
   if (err?.message) return err.message;
   return "Error uploading image";
+};
+
+const fileToDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+const uploadViaBackend = async (file, folder, publicId) => {
+  const dataUrl = await fileToDataUrl(file);
+  const res = await requests.post("/customer/cloudinary-upload", {
+    file: dataUrl,
+    folder,
+    publicId: publicId ? `${folder}/${publicId}` : undefined,
+  });
+  return {
+    secure_url: res.url,
+    public_id: res.publicId,
+  };
 };
 
 const Uploader = ({
   setImageUrl,
   imageUrl,
   product,
-  folder = "settings",
+  folder = "farmacykart",
   targetWidth = 800, // Set default fixed width
   targetHeight = 800, // Set default fixed height
   useOriginalSize = false,
@@ -151,6 +175,7 @@ const Uploader = ({
         setLoading(true);
         setError("Uploading....");
 
+        const safeFolder = folder && folder !== "undefined" ? folder : "farmacykart";
         const name = file.name.replaceAll(/\s/g, "");
         const basePublicId = name?.substring(0, name.lastIndexOf("."));
         const public_id = uniquePublicId ? `${basePublicId}_${Date.now()}` : basePublicId;
@@ -158,9 +183,7 @@ const Uploader = ({
         const formData = new FormData();
         formData.append("file", file);
         formData.append("upload_preset", uploadPreset);
-        if (folder) {
-          formData.append("folder", folder);
-        }
+        formData.append("folder", safeFolder);
         if (public_id) {
           formData.append("public_id", public_id);
         }
@@ -170,27 +193,48 @@ const Uploader = ({
             ? baseUrl.replace("/image/upload", "/auto/upload")
             : baseUrl;
 
+        const finishUpload = (payload) => {
+          showAlert("Image Uploaded successfully!", "success");
+          setLoading(false);
+          setFiles([]);
+          if (typeof onUploadComplete === "function") {
+            onUploadComplete(payload);
+          }
+          if (product) {
+            setImageUrl((imgUrl) => [...imgUrl, payload.secure_url]);
+          } else {
+            setImageUrl(payload.secure_url);
+          }
+        };
+
         axios({
           url: uploadUrl,
           method: "POST",
           data: formData,
         })
-          .then((res) => {
-            showAlert("Image Uploaded successfully!", "success");
-            setLoading(false);
-            setFiles([]);
-            if (typeof onUploadComplete === "function") {
-              onUploadComplete(res.data);
-            }
-            if (product) {
-              setImageUrl((imgUrl) => [...imgUrl, res.data.secure_url]);
+          .then((res) => finishUpload(res.data))
+          .catch(async (err) => {
+            const msg = err?.response?.data?.error?.message || "";
+            const presetMissing =
+              msg.toLowerCase().includes("preset") ||
+              err?.response?.status === 400;
+
+            if (presetMissing) {
+              try {
+                const payload = await uploadViaBackend(file, safeFolder, public_id);
+                return finishUpload(payload);
+              } catch (backendErr) {
+                console.error("Backend Cloudinary upload error:", backendErr);
+                showAlert(
+                  getCloudinaryErrorMessage(backendErr) +
+                    " — Run: node script/ensureCloudinaryPreset.js in backend folder.",
+                  "error"
+                );
+              }
             } else {
-              setImageUrl(res.data.secure_url);
+              console.error("Cloudinary upload error:", err?.response?.data || err);
+              showAlert(getCloudinaryErrorMessage(err), "error");
             }
-          })
-          .catch((err) => {
-            console.error("Cloudinary upload error:", err?.response?.data || err);
-            showAlert(getCloudinaryErrorMessage(err), "error");
             setLoading(false);
             setFiles([]);
           });
@@ -282,7 +326,7 @@ const Uploader = ({
             ) : (
               <img
                 className="inline-flex border rounded-md border-gray-100 dark:border-gray-600 w-24 max-h-24 p-2"
-                src={imageUrl}
+                src={resolveCloudinaryUrl(imageUrl) || "/favicon-transparent.png"}
                 alt="product"
               />
             )}

@@ -2,7 +2,10 @@ import React, { useContext, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCart } from "react-use-cart";
-import { FiHome, FiShoppingCart, FiHeart, FiFileText, FiSearch } from "react-icons/fi";
+import { FiHome, FiShoppingCart, FiHeart, FiFileText, FiSearch, FiBell } from "react-icons/fi";
+import { useQuery } from "@tanstack/react-query";
+import useCustomerAuth from "@hooks/useCustomerAuth";
+import CustomerNotificationServices from "@services/CustomerNotificationServices";
 import { SidebarContext } from "@context/SidebarContext";
 import useWishlist from "@hooks/useWishlist";
 import useGetSetting from "@hooks/useGetSetting";
@@ -13,9 +16,17 @@ const MobileBottomNavigation = () => {
   const { count: wishlistCount } = useWishlist();
   const { toggleCartDrawer, toggleSearch, showSearch } = useContext(SidebarContext);
   const { storeCustomizationSetting } = useGetSetting();
-  const storeColor = storeCustomizationSetting?.theme?.color || "emerald";
+  const { isLoggedIn, userId } = useCustomerAuth();
 
-  // Helper to check if link is active
+  const { data: notifData } = useQuery({
+    queryKey: ["customerNotifications", userId, "badge"],
+    queryFn: () => CustomerNotificationServices.getUnreadCount(),
+    enabled: isLoggedIn,
+    refetchInterval: 60000,
+  });
+
+  const unreadCount = notifData?.unreadCount || 0;
+
   const isActive = (href) => router.pathname === href;
 
   return (
@@ -27,10 +38,26 @@ const MobileBottomNavigation = () => {
           <span className="text-[10px] font-medium">Home</span>
         </Link>
 
+        {/* Notifications */}
+        <Link
+          href={isLoggedIn ? "/user/notifications" : "/auth/login"}
+          className={`flex flex-col items-center justify-center w-full relative ${isActive("/user/notifications") ? "text-store-500" : "text-gray-500"}`}
+        >
+          <div className="relative">
+            <FiBell className="w-6 h-6 mb-1" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-0.5 flex items-center justify-center">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] font-medium">Alerts</span>
+        </Link>
+
         {/* My Orders */}
         <Link href="/user/my-orders" className={`flex flex-col items-center justify-center w-full ${isActive("/user/my-orders") ? "text-store-500" : "text-gray-500"}`}>
           <FiFileText className="w-6 h-6 mb-1" />
-          <span className="text-[10px] font-medium">My Orders</span>
+          <span className="text-[10px] font-medium">Orders</span>
         </Link>
 
         {/* Cart */}

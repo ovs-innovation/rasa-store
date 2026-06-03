@@ -14,10 +14,20 @@ const pushNotificationSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    notificationType: {
+      type: String,
+      enum: ["general", "offer", "announcement", "order"],
+      default: "general",
+    },
     target: {
       type: String,
       required: true,
-      enum: ["Customer", "Store", "Driver", "All"],
+      enum: ["Customer", "Store", "Driver", "All", "Single"],
+    },
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      required: false,
     },
     zone: {
       type: String,
@@ -30,15 +40,21 @@ const pushNotificationSchema = new mongoose.Schema(
       default: "show",
       enum: ["show", "hide"],
     },
-    sentCount: {
-      type: Number,
-      required: false,
-      default: 0,
+    channels: {
+      push: { type: Boolean, default: true },
+      sms: { type: Boolean, default: true },
+      email: { type: Boolean, default: true },
     },
     clickAction: {
       type: String,
       required: false,
     },
+    recipientCount: { type: Number, default: 0 },
+    sentCount: { type: Number, default: 0 },
+    pushSentCount: { type: Number, default: 0 },
+    smsSentCount: { type: Number, default: 0 },
+    emailSentCount: { type: Number, default: 0 },
+    deliverySummary: { type: String, default: "" },
   },
   {
     timestamps: true,

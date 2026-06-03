@@ -1,5 +1,6 @@
 import LanguageServices from "@/services/LanguageServices";
 import SettingServices from "@/services/SettingServices";
+import { resolveCloudinaryUrl } from "@/utils/cloudinaryUrl";
 import { useQuery } from "@tanstack/react-query";
 import Cookies from "js-cookie";
 import { createContext, useEffect, useMemo, useRef, useState } from "react";
@@ -121,13 +122,14 @@ export const SidebarProvider = ({ children }) => {
   // console.log("globalSetting", globalSetting, "languages", languages);
 
   useEffect(() => {
-    if (globalSetting?.favicon) {
+    const faviconHref = resolveCloudinaryUrl(globalSetting?.favicon);
+    if (faviconHref) {
       const link =
         document.querySelector("link[rel*='icon']") ||
         document.createElement("link");
       link.type = "image/x-icon";
       link.rel = "shortcut icon";
-      link.href = globalSetting.favicon;
+      link.href = faviconHref;
       document.getElementsByTagName("head")[0].appendChild(link);
     }
     if (globalSetting?.company_name) {

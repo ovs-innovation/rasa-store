@@ -20,7 +20,7 @@ const otpEmailBody = (option) => {
   <body>
     <div class="container">
       <div class="logo">
-         <img src="https://res.cloudinary.com/dhqcwkpzp/image/upload/v1763967128/logojwellary_seceuo.png" alt="${option.shop_name}" />
+         <img src="${option.logo || "https://res.cloudinary.com/dse9adftu/image/upload/v1780479335/farmacykart/brand/logo.png"}" alt="${option.shop_name}" />
       </div>
       <div class="content">
         <h2 style="margin-top: 0;">Hello ${option.name},</h2>

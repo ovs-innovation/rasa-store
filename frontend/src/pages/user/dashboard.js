@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import React, { useContext, useEffect, useState } from "react";
 import { IoLockOpenOutline } from "react-icons/io5";
 import {
+  FiBell,
   FiCheck,
   FiFileText,
   FiGrid,
@@ -86,6 +87,11 @@ const Dashboard = ({ title, description, children }) => {
       ),
       href: "/user/my-orders",
       icon: FiList,
+    },
+    {
+      title: "Notifications",
+      href: "/user/notifications",
+      icon: FiBell,
     },
     {
       title: "My Account",

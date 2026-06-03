@@ -32,6 +32,7 @@ import {
 //internal import
 import { getUserSession } from "@lib/auth";
 import useGetSetting from "@hooks/useGetSetting";
+import { pickBrandLogo } from "@utils/brandAssets";
 import CMSkeleton from "@components/preloader/CMSkeleton";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import FeatureCard from "@components/feature-card/FeatureCard";
@@ -175,10 +176,11 @@ const Footer = () => {
           <Link href="/" className="inline-block" rel="noreferrer">
             <div className="relative w-32 sm:w-40 transition-transform duration-300 hover:scale-105">
               <Image
-                src={
-                  storeCustomizationSetting?.footer?.block4_logo ||
-                  "/logo/logo.png"
-                }
+                src={pickBrandLogo(
+                  storeCustomizationSetting?.footer?.block4_logo,
+                  storeCustomizationSetting?.navbar?.logo,
+                  storeCustomizationSetting?.seo?.favicon
+                )}
                 alt="logo"
                 fill
                 className="object-contain"

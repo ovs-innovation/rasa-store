@@ -8,6 +8,7 @@ const {
   tokenForVerify,
   handleEncryptData,
 } = require("../config/auth");
+const { mergeAccessList } = require("../config/adminAccessList");
 const { sendEmail } = require("../lib/email-sender/sender");
 const Admin = require("../models/Admin");
 const Setting = require("../models/Setting");
@@ -60,10 +61,8 @@ const loginAdmin = async (req, res) => {
       }
       const token = signInToken(admin);
 
-      const { data, iv } = handleEncryptData([
-        ...admin?.access_list,
-        admin.role,
-      ]);
+      const effectiveAccess = mergeAccessList(admin.role, admin?.access_list);
+      const { data, iv } = handleEncryptData([...effectiveAccess, admin.role]);
       res.send({
         token,
         _id: admin._id,

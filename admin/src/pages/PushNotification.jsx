@@ -13,7 +13,8 @@ import {
   Textarea,
   Label,
 } from "@windmill/react-ui";
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect, useCallback } from "react";
+import CustomerServices from "@/services/CustomerServices";
 import { FiEdit, FiPlus, FiSearch, FiTrash2, FiDownload, FiInfo } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 
@@ -41,6 +42,12 @@ const PushNotification = () => {
   const { toggleDrawer, lang } = useContext(SidebarContext);
 
   const [activeId, setActiveId] = useState(null);
+  const [isCheckAll, setIsCheckAll] = useState(false);
+  const [isCheck, setIsCheck] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [titleCount, setTitleCount] = useState(0);
+  const [descCount, setDescCount] = useState(0);
 
   const {
     data,
@@ -48,10 +55,16 @@ const PushNotification = () => {
     error
   } = useAsync(PushNotificationServices.getAllPushNotifications);
 
-  const [isCheckAll, setIsCheckAll] = useState(false);
-  const [isCheck, setIsCheck] = useState([]);
-
   const { allId, serviceId, handleDeleteMany, handleUpdateMany } = useToggleDrawer();
+
+  const {
+    dataTable,
+    serviceData,
+    totalResults,
+    resultsPerPage,
+    handleChangePage,
+    setSearchCoupon,
+  } = useFilter(data);
 
   const {
     register,
@@ -64,7 +77,28 @@ const PushNotification = () => {
     handleReset,
     setValue,
     watch,
+    channels,
+    toggleChannel,
+    targetWatch,
   } = usePushNotificationSubmit(activeId);
+
+  const loadCustomers = useCallback(async () => {
+    setLoadingCustomers(true);
+    try {
+      const list = await CustomerServices.getAllCustomers({ searchText: "" });
+      setCustomers(Array.isArray(list) ? list : []);
+    } catch {
+      setCustomers([]);
+    } finally {
+      setLoadingCustomers(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (targetWatch === "Single") {
+      loadCustomers();
+    }
+  }, [targetWatch, loadCustomers]);
 
   const titleValue = watch("title") || "";
   const descriptionValue = watch("description") || "";
@@ -77,15 +111,6 @@ const PushNotification = () => {
     setDescCount(descriptionValue.length);
   }, [descriptionValue]);
 
-  const {
-    dataTable,
-    serviceData,
-    totalResults,
-    resultsPerPage,
-    handleChangePage,
-    setSearchCoupon,
-  } = useFilter(data);
-
   const handleSelectAll = () => {
     setIsCheckAll(!isCheckAll);
     setIsCheck(data?.map((li) => li._id));
@@ -94,9 +119,6 @@ const PushNotification = () => {
     }
   };
 
-  const [titleCount, setTitleCount] = useState(0);
-  const [descCount, setDescCount] = useState(0);
-
   const handleUpdate = (id) => {
     setActiveId(id);
     toggleDrawer();
@@ -104,7 +126,7 @@ const PushNotification = () => {
 
   return (
     <>
-      <PageTitle>Push Notification</PageTitle>
+      <PageTitle>Notifications</PageTitle>
 
       <DeleteModal
         ids={allId}
@@ -115,14 +137,11 @@ const PushNotification = () => {
 
       <AnimatedContent>
         {/* Warning Alert */}
-        <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6 rounded flex items-center gap-3">
-          <div className="flex-shrink-0">
-            <FiInfo className="text-orange-400 h-5 w-5" />
-          </div>
-          <div className="ml-3">
-            <p className="text-sm text-orange-700">
-              Setup Push Notification Messages for customer. Must setup <span className="text-blue-600 font-semibold cursor-pointer">Firebase Configuration</span> page to work notifications.
-            </p>
+        <div className="bg-teal-50 border-l-4 border-teal-500 p-4 mb-6 rounded flex items-start gap-3">
+          <FiInfo className="text-teal-600 h-5 w-5 shrink-0 mt-0.5" />
+          <div className="text-sm text-teal-900 space-y-1">
+            <p className="font-semibold">Send offers &amp; alerts via Push + SMS + Email</p>
+            <p>Push needs Firebase on server. SMS uses MSG91. Email uses Resend/Gmail from backend .env.</p>
           </div>
         </div>
 
@@ -130,37 +149,102 @@ const PushNotification = () => {
         <Card className="mb-8 border border-gray-100 dark:border-gray-700 shadow-sm overflow-visible">
           <CardBody>
             <h2 className="text-xl font-semibold mb-1">Send Notification</h2>
-            <p className="text-sm text-gray-500 mb-6 font-medium">Configure settings to send push notifications to targeted users in specific zones.</p>
+            <p className="text-sm text-gray-500 mb-2 font-medium">
+              Choose channels and audience — one customer or everyone.
+            </p>
+            <p className="text-xs text-teal-700 mb-6 font-medium">
+              New images upload to Cloudinary:{" "}
+              <strong>{import.meta.env.VITE_APP_CLOUD_NAME || "not set"}</strong>
+              {" "}(check admin/.env). Old links from <code className="text-orange-600">dhqcwkpzp</code> in
+              history will show 401 until you re-upload.
+            </p>
 
             <form onSubmit={handleSubmit(onSubmit)}>
+              <div className="mb-6 flex flex-wrap gap-4">
+                <Label className="text-sm font-semibold w-full">Channels</Label>
+                {[
+                  { key: "push", label: "Push (Firebase)" },
+                  { key: "sms", label: "SMS (MSG91)" },
+                  { key: "email", label: "Email" },
+                ].map(({ key, label }) => (
+                  <label
+                    key={key}
+                    className="inline-flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={channels[key]}
+                      onChange={() => toggleChannel(key)}
+                      className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Left Side: Fields */}
                 <div className="md:col-span-2 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold">Zones <span className="text-red-500">*</span></Label>
+                      <Label className="text-sm font-semibold">Type</Label>
+                      <Select
+                        {...register("notificationType")}
+                        className="border-[#e5e7eb] focus:border-teal-400 focus:ring-0 h-10"
+                      >
+                        <option value="offer">Offer / Sale</option>
+                        <option value="announcement">Announcement</option>
+                        <option value="general">General</option>
+                        <option value="order">Order update</option>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Zone</Label>
                       <Select
                         {...register("zone", { required: "Zone is required" })}
                         className="border-[#e5e7eb] focus:border-teal-400 focus:ring-0 h-10"
                       >
                         <option value="All">All</option>
                       </Select>
-                      {errors.zone && <span className="text-red-400 text-xs">{errors.zone.message}</span>}
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm font-semibold">Targeted User <span className="text-red-500">*</span></Label>
+                      <Label className="text-sm font-semibold">Audience <span className="text-red-500">*</span></Label>
                       <Select
                         {...register("target", { required: "Target is required" })}
                         className="border-[#e5e7eb] focus:border-teal-400 focus:ring-0 h-10"
                       >
-                        <option value="All">All</option>
-                        <option value="Customer">Customer</option>
-                        <option value="Store">Store</option>
-                        <option value="Driver">Driver</option>
+                        <option value="All">All users</option>
+                        <option value="Customer">All customers</option>
+                        <option value="Store">All retailers</option>
+                        <option value="Driver">All drivers</option>
+                        <option value="Single">Single customer</option>
                       </Select>
-                      {errors.target && <span className="text-red-400 text-xs">{errors.target.message}</span>}
                     </div>
                   </div>
+
+                  {targetWatch === "Single" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Select customer <span className="text-red-500">*</span></Label>
+                      <Select
+                        {...register("customerId", {
+                          required: targetWatch === "Single" ? "Customer is required" : false,
+                        })}
+                        className="border-[#e5e7eb] focus:border-teal-400 focus:ring-0 h-10"
+                        disabled={loadingCustomers}
+                      >
+                        <option value="">— Choose customer —</option>
+                        {customers.map((c) => (
+                          <option key={c._id} value={c._id}>
+                            {(c.name?.en || c.name || "User") +
+                              (c.phone ? ` · ${c.phone}` : "") +
+                              (c.email ? ` · ${c.email}` : "")}
+                          </option>
+                        ))}
+                      </Select>
+                      {errors.customerId && (
+                        <span className="text-red-400 text-xs">{errors.customerId.message}</span>
+                      )}
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                     <div className="space-y-2">
@@ -225,7 +309,11 @@ const PushNotification = () => {
                   <Label className="text-sm font-semibold">Image</Label>
                   <p className="text-xs text-gray-400">Upload your cover image</p>
                   <div className="w-full bg-gray-50 border-2 border-dashed border-gray-200 rounded-lg p-6 flex flex-col items-center justify-center min-h-[200px]">
-                    <Uploader setImageUrl={setImageUrl} imageUrl={imageUrl} />
+                    <Uploader
+                      setImageUrl={setImageUrl}
+                      imageUrl={imageUrl}
+                      folder="notifications"
+                    />
                     <p className="text-[10px] text-gray-400 mt-4 text-center">JPEG, JPG, PNG, GIF, WEBP. Less Than 2MB <span className="font-bold">(2:1)</span></p>
                   </div>
                 </div>
@@ -313,7 +401,7 @@ const PushNotification = () => {
       </AnimatedContent>
 
       {loading ? (
-        <TableLoading row={8} col={9} width={140} height={20} />
+        <TableLoading row={8} col={11} width={140} height={20} />
       ) : error ? (
         <span className="text-center mx-auto text-red-500">{error}</span>
       ) : serviceData?.length !== 0 ? (
@@ -335,7 +423,9 @@ const PushNotification = () => {
                 <TableCell>Title</TableCell>
                 <TableCell>Description</TableCell>
                 <TableCell>Target</TableCell>
-                <TableCell>Zones</TableCell>
+                <TableCell>Push</TableCell>
+                <TableCell>SMS</TableCell>
+                <TableCell>Email</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell className="text-right">Action</TableCell>
               </tr>

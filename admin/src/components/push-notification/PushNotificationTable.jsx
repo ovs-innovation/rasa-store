@@ -14,6 +14,7 @@ import DeleteModal from "@/components/modal/DeleteModal";
 import useToggleDrawer from "@/hooks/useToggleDrawer";
 import ShowHideButton from "@/components/table/ShowHideButton";
 import PushNotificationServices from "@/services/PushNotificationServices";
+import { resolveCloudinaryUrl } from "@/utils/cloudinaryUrl";
 
 const PushNotificationTable = ({ 
     notifications, 
@@ -54,12 +55,16 @@ const PushNotificationTable = ({
 
             <TableCell>
               <div className="flex items-center">
-                {notification.image ? (
+                {resolveCloudinaryUrl(notification.image) ? (
                   <Avatar
                     className="mr-3 bg-gray-50 p-1"
-                    src={notification.image}
+                    src={resolveCloudinaryUrl(notification.image)}
                     alt="image"
                   />
+                ) : notification.image ? (
+                  <div className="bg-orange-100 text-orange-600 px-2 py-1 rounded-md text-[10px] font-semibold mr-2">
+                    Old cloud
+                  </div>
                 ) : (
                   <div className="bg-orange-100 text-orange-500 px-2 py-1 rounded-md text-xs font-semibold">
                       No Image
@@ -83,7 +88,19 @@ const PushNotificationTable = ({
             </TableCell>
 
             <TableCell>
-              <span className="text-sm font-semibold">{notification.zone}</span>
+              <span className="text-sm font-semibold text-teal-700">
+                {notification.pushSentCount ?? 0}
+              </span>
+            </TableCell>
+            <TableCell>
+              <span className="text-sm font-semibold text-blue-700">
+                {notification.smsSentCount ?? 0}
+              </span>
+            </TableCell>
+            <TableCell>
+              <span className="text-sm font-semibold text-purple-700">
+                {notification.emailSentCount ?? 0}
+              </span>
             </TableCell>
 
             <TableCell>

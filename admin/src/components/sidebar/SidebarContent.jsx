@@ -14,13 +14,26 @@ import { AdminContext } from "@/context/AdminContext";
 import { SidebarContext } from "@/context/SidebarContext";
 import SidebarSubMenu from "@/components/sidebar/SidebarSubMenu";
 import useGetCData from "@/hooks/useGetCData";
+import { resolveCloudinaryUrl } from "@/utils/cloudinaryUrl";
 
 const SidebarContent = () => {
   const { t } = useTranslation();
   const { mode } = useContext(WindmillContext);
   const { dispatch } = useContext(AdminContext);
   const { globalSetting } = useContext(SidebarContext);
-  const { accessList } = useGetCData();
+  const { accessList, role } = useGetCData();
+
+  const allSidebarRouteKeys = sidebar
+    .flatMap((route) => {
+      if (route.routes) {
+        return route.routes.map((r) => r.path?.split("?")[0].split("/")[1]);
+      }
+      if (route.path) {
+        return [route.path.split("?")[0].split("/")[1]];
+      }
+      return [];
+    })
+    .filter(Boolean);
 
   const handleLogOut = () => {
     dispatch({ type: "USER_LOGOUT" });
@@ -29,11 +42,11 @@ const SidebarContent = () => {
 
   // Filter out undefined values from the Effective Access List
   const effectiveAccessList =
-    Array.isArray(accessList) && accessList.length > 0
-      ? accessList.filter(Boolean) // Remove undefined or falsy values
-      : sidebar
-        .map((route) => route.path?.split("?")[0].split("/")[1])
-        .filter(Boolean);
+    role === "Super Admin" || role === "Admin"
+      ? allSidebarRouteKeys
+      : Array.isArray(accessList) && accessList.length > 0
+        ? accessList.filter(Boolean)
+        : allSidebarRouteKeys;
 
   const updatedSidebar = sidebar
     .map((route) => {
@@ -62,9 +75,9 @@ const SidebarContent = () => {
   return (
     <div className="py-4 text-gray-500 dark:text-[#9fb1b1]">
       <a className="block px-6 text-gray-900 dark:text-gray-200" href="/dashboard">
-        {globalSetting?.logo ? (
+        {resolveCloudinaryUrl(globalSetting?.logo) ? (
             <img
-              src={globalSetting?.logo}
+              src={resolveCloudinaryUrl(globalSetting?.logo)}
               alt="Logo"
               className="h-16 w-auto max-w-[150px] object-contain mix-blend-multiply"
             />

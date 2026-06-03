@@ -182,11 +182,11 @@ export default function LowerCategoryNavbar({
                   }}
                   className={`flex items-center gap-1.5 font-semibold whitespace-nowrap rounded-lg transition-colors
                     ${isInline ? "px-2.5 py-2 text-sm" : "px-4 py-2.5 text-sm"}
-                    ${isActive ? "text-store-700 bg-store-50" : "text-gray-600 hover:text-store-700 hover:bg-store-50"}`}
+                    ${isActive ? "text-gray-900 bg-gray-100" : "text-gray-800 hover:text-gray-900 hover:bg-gray-100"}`}
                 >
                   {getName(category)}
                   <IoChevronDown
-                    className={`text-xs transition-transform ${isActive ? "rotate-180 text-store-600" : "text-gray-400"}`}
+                    className={`text-xs transition-transform ${isActive ? "rotate-180 text-gray-900" : "text-gray-600"}`}
                   />
                 </button>
               </div>

@@ -4,7 +4,7 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import { useCart } from "react-use-cart";
-import { IoSearchOutline } from "react-icons/io5";
+import { IoSearchOutline, IoHome } from "react-icons/io5";
 import { FiShoppingCart, FiHeart } from "react-icons/fi";
 import { FaPrescriptionBottleAlt } from "react-icons/fa";
 import { useQuery } from "@tanstack/react-query";
@@ -18,21 +18,24 @@ import { SidebarContext } from "@context/SidebarContext";
 import CategoryServices from "@services/CategoryServices";
 import SearchSuggestions from "@components/search/SearchSuggestions";
 import LowerCategoryNavbar from "./LowerCategoryNavbar";
+import CustomerNotificationBell from "@components/notification/CustomerNotificationBell";
+import { pickBrandLogo } from "@utils/brandAssets";
 
 const NavbarLogo = () => {
   const { storeCustomizationSetting, globalSetting } = useGetSetting();
   const [imgError, setImgError] = useState(false);
   const siteName = globalSetting?.shop_name || "Farmacykart";
-  const logoSrc =
-    storeCustomizationSetting?.navbar?.logo ||
-    storeCustomizationSetting?.seo?.favicon ||
-    "/favicon.png";
+  const logoSrc = pickBrandLogo(
+    storeCustomizationSetting?.navbar?.logo,
+    storeCustomizationSetting?.seo?.favicon,
+    globalSetting?.logo
+  );
 
   if (imgError || !logoSrc) {
     return (
       <Link href="/" className="flex items-center gap-2 shrink-0" aria-label={siteName}>
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-store-600 text-white">
-          <FaPrescriptionBottleAlt className="text-lg" />
+        <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-store-600 text-white">
+          <FaPrescriptionBottleAlt className="text-xl" />
         </span>
         <span className="font-extrabold text-store-800 text-base hidden xl:block">{siteName}</span>
       </Link>
@@ -45,11 +48,25 @@ const NavbarLogo = () => {
         src={logoSrc}
         alt={siteName}
         onError={() => setImgError(true)}
-        className="h-11 w-auto max-w-[150px] object-contain object-left"
+        className="h-14 w-auto max-w-[200px] object-contain object-left sm:h-16 sm:max-w-[220px]"
       />
     </Link>
   );
 };
+
+/** Home icon — between logo & categories, or left of top search bar after scroll */
+const NavbarHomeIcon = ({ besideSearch = false }) => (
+  <Link
+    href="/"
+    className={`flex h-10 w-10 items-center justify-center rounded-lg text-green-800 hover:text-green-900 hover:bg-green-50 transition-colors shrink-0 ${
+      besideSearch ? "mr-1" : "ml-10 md:ml-14"
+    }`}
+    aria-label="Home"
+    title="Home"
+  >
+    <IoHome className="text-2xl" />
+  </Link>
+);
 
 const Navbar = () => {
   const { showingTranslateValue } = useUtilsFunction();
@@ -164,19 +181,23 @@ const Navbar = () => {
           >
             <NavbarLogo />
 
-            <div className="flex-1 min-w-0 transition-all duration-300">
+            {!showNavbarSearch && isHome && <NavbarHomeIcon />}
+
+            <div className="flex-1 min-w-0 flex items-center justify-center gap-2">
+              {showNavbarSearch && <NavbarHomeIcon besideSearch />}
+
               {showNavbarSearch ? (
                 <form
                   onSubmit={handleSearchSubmit}
-                  className="navbar-search-form flex items-center w-full max-w-3xl mx-auto rounded-full border border-gray-200 bg-white p-1 hover:border-store-300 focus-within:border-store-400 focus-within:ring-2 focus-within:ring-store-100 transition-all animate-in fade-in slide-in-from-top-1 duration-300"
+                  className="navbar-search-form flex items-center w-full max-w-3xl rounded-full border border-gray-200 bg-white p-1 hover:border-store-300 focus-within:border-store-400 focus-within:ring-2 focus-within:ring-store-100 transition-all"
                 >
                   <div className="flex-1 relative min-w-0 flex items-center min-h-[42px]">
-                    <IoSearchOutline className="absolute left-3 text-store-500 text-lg pointer-events-none z-10" />
+                    <IoSearchOutline className="absolute left-3 text-gray-700 text-lg pointer-events-none z-10" />
                     <input
                       ref={searchInputRef}
                       type="search"
                       placeholder="Search for medicine, healthcare & more..."
-                      className="navbar-search-input w-full h-full py-2 pl-10 pr-2 text-sm !bg-transparent !border-0 !border-none !shadow-none !ring-0 !outline-none focus:!ring-0 focus:!border-0 focus:!outline-none placeholder-gray-400"
+                      className="navbar-search-input w-full h-full py-2 pl-10 pr-2 text-sm !bg-transparent !border-0 !border-none !shadow-none !ring-0 !outline-none focus:!ring-0 focus:!border-0 focus:!outline-none placeholder-gray-500"
                       value={searchText}
                       onChange={(e) => handleSearchChange(e.target.value)}
                       onFocus={() => searchText.length > 0 && setShowSuggestions(true)}
@@ -218,6 +239,7 @@ const Navbar = () => {
             </div>
 
             <div className="flex items-center gap-1 shrink-0">
+              <CustomerNotificationBell />
               <Link
                 href="/wishlist"
                 className="relative p-2 text-gray-600 hover:text-store-600 rounded-lg hover:bg-store-50"

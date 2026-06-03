@@ -3,6 +3,7 @@ import { DefaultSeo as NextSeo } from "next-seo";
 
 //internal import
 import useGetSetting from "@hooks/useGetSetting";
+import { pickBrandLogo } from "@utils/brandAssets";
 
 const DefaultSeo = () => {
   const { globalSetting, storeCustomizationSetting } = useGetSetting();
@@ -11,8 +12,13 @@ const DefaultSeo = () => {
   const metaTitle = storeCustomizationSetting?.seo?.meta_title || globalSetting?.shop_name || "Farmacykart";
   const metaDescription = storeCustomizationSetting?.seo?.meta_description || "Discover personalized merchandise, branded giveaways, and advertising essentials. Ideal for businesses, events, and promotions";
   const metaUrl = storeCustomizationSetting?.seo?.meta_url || globalSetting?.website || "";
-  const metaImage = storeCustomizationSetting?.seo?.meta_img || storeCustomizationSetting?.seo?.favicon || "/logo/logo.png";
-  const favicon = storeCustomizationSetting?.seo?.favicon || globalSetting?.logo || "/favicon.png";
+  const brandLogo = pickBrandLogo(
+    storeCustomizationSetting?.navbar?.logo,
+    storeCustomizationSetting?.seo?.favicon,
+    globalSetting?.logo
+  );
+  const metaImage = storeCustomizationSetting?.seo?.meta_img || brandLogo;
+  const favicon = brandLogo;
 
   return (
     <NextSeo
