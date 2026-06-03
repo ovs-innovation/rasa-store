@@ -17,8 +17,6 @@ import { SidebarContext } from "@/context/SidebarContext";
 import OrderServices from "@/services/OrderServices";
 import InvoiceLayout from "@/components/invoice/InvoiceLayout";
 import Loading from "@/components/preloader/Loading";
-import logoDark from "@/assets/img/logo/logo-color.svg";
-import logoLight from "@/assets/img/logo/logo-color.svg";
 import PageTitle from "@/components/Typography/PageTitle";
 import spinnerLoadingImage from "@/assets/img/spinner.gif";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
