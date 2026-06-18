@@ -82,7 +82,7 @@ const getAllOrders = async (req, res) => {
   try {
     // If userRole is specified, get customer IDs with that role
     let customerIds = [];
-    if (userRole && (userRole === "customer" || userRole === "wholesaler")) {
+    if (userRole && userRole === "customer") {
       const customers = await Customer.find({ role: userRole }).select("_id");
       customerIds = customers.map((c) => c._id.toString());
       // Add user filter to query - match orders where user is in the customerIds list
@@ -287,7 +287,7 @@ const { sendEmail } = require("../lib/email-sender/sender");
 const { sendSMS } = require("../lib/sms-sender/sender");
 const { orderStatusUpdateBody } = require("../lib/email-sender/templates/order-to-customer/status-update");
 
-const PLACEHOLDER_EMAIL_DOMAIN = "phone.farmacykart.com";
+const PLACEHOLDER_EMAIL_DOMAIN = "phone.rasastore.com";
 const isPlaceholderEmail = (email) =>
   !!email && String(email).toLowerCase().endsWith(`@${PLACEHOLDER_EMAIL_DOMAIN}`);
 const getRealEmail = (email) => {
@@ -310,7 +310,7 @@ const getEmailLogoUrl = async () => {
   } catch (_) {}
 
   if (process.env.STORE_LOGO_URL) return process.env.STORE_LOGO_URL;
-  const base = (process.env.STORE_URL || "https://farmacykart.com").replace(/\/$/, "");
+  const base = (process.env.STORE_URL || "https://rasastore.com").replace(/\/$/, "");
   return `${base}/favicon.png`;
 };
 
@@ -371,8 +371,8 @@ const updateOrder = async (req, res) => {
       (async () => {
         try {
           const globalSetting = await Setting.findOne({ name: "globalSetting" });
-          const shopName = globalSetting?.setting?.shop_name || "Farmacykart";
-          const contactEmail = globalSetting?.setting?.email || "support@farmacykart.com";
+          const shopName = globalSetting?.setting?.shop_name || "RASA";
+          const contactEmail = globalSetting?.setting?.email || "support@rasastore.com";
           const logo = await getEmailLogoUrl();
 
           const customerEmail = getRealEmail(updatedOrder.user_info?.email);
@@ -386,7 +386,7 @@ const updateOrder = async (req, res) => {
             await sendEmail({
               to: customerEmail,
               replyTo: contactEmail,
-              subject: `Farmacykart – Order #${updatedOrder.invoice} ${status}`,
+              subject: `${shopName} – Order #${updatedOrder.invoice} ${status}`,
               html: orderStatusUpdateBody({
                 shop_name: shopName,
                 logo,

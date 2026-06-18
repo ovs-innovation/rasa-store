@@ -1,6 +1,0 @@
-productId,name,description,sku,barcode,price,originalPrice,discount,stock,images,tags,status,taxRate,isPriceInclusive,hsnCode,isWholesale,isCombination,slug,category,brand
-SKU_SAMPLE_03,Aloe Vera Gel,Soothing gel for skin & hair,SKU_SAMPLE_05,11223344,10,15,5,200,https://i.ibb.co/example3.jpg,"aloe,gel,skin",show,18,TRUE,HSN789,FALSE,FALSE,aloe-vera-gel,Personal care,Baby care
-SKU_SAMPLE_04,Charcoal Face Wash,Deep cleansing face wash,SKU_SAMPLE_06,44332211,12,18,6,120,https://i.ibb.co/example4.jpg,"charcoal,facewash",show,12,FALSE,HSN321,FALSE,FALSE,charcoal-face-wash,Personal care,Baby care
-SKU_SAMPLE_05,Hair Growth Oil,Ayurvedic oil for hair growth,SKU_SAMPLE_07,55667788,20,28,8,80,https://i.ibb.co/example5.jpg,"hair,oil,ayurvedic",show,18,TRUE,HSN654,TRUE,FALSE,hair-growth-oil,Personal care,Baby care
-SKU_SAMPLE_06,Sunscreen SPF 50,Broad spectrum UV protection,SKU_SAMPLE_08,99887766,18,25,7,60,https://i.ibb.co/example6.jpg,"sunscreen,spf50",show,18,TRUE,HSN987,FALSE,FALSE,sunscreen-spf-50,Personal care,Baby care
-SKU_SAMPLE_07,Night Repair Cream,Overnight skin repair cream,SKU_SAMPLE_09,66778899,22,30,8,40,https://i.ibb.co/example7.jpg,"night,cream,repair",show,12,FALSE,HSN159,FALSE,FALSE,night-repair-cream,Personal care,Baby care

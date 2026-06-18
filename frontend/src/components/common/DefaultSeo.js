@@ -9,8 +9,8 @@ const DefaultSeo = () => {
   const { globalSetting, storeCustomizationSetting } = useGetSetting();
 
   // Get dynamic SEO values from settings
-  const metaTitle = storeCustomizationSetting?.seo?.meta_title || globalSetting?.shop_name || "Farmacykart";
-  const metaDescription = storeCustomizationSetting?.seo?.meta_description || "Discover personalized merchandise, branded giveaways, and advertising essentials. Ideal for businesses, events, and promotions";
+  const metaTitle = storeCustomizationSetting?.seo?.meta_title || globalSetting?.shop_name || "Rasa Store";
+  const metaDescription = storeCustomizationSetting?.seo?.meta_description || "Authenticated sneakers, bags, and streetwear essentials.";
   const metaUrl = storeCustomizationSetting?.seo?.meta_url || globalSetting?.website || "";
   const brandLogo = pickBrandLogo(
     storeCustomizationSetting?.navbar?.logo,

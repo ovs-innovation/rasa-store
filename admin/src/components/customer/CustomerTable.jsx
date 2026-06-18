@@ -62,10 +62,10 @@ const CustomerTable = ({ customers }) => {
 
             <TableCell className="py-4">
               <Badge 
-                type={user.role === 'wholesaler' ? 'warning' : 'success'}
+                type="success"
                 className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
               >
-                {user.role || 'Customer'}
+                {user.role || "Customer"}
               </Badge>
             </TableCell>
 

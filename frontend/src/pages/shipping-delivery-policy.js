@@ -80,7 +80,7 @@ const ShippingDeliveryPolicy = () => {
                   <div>
                     <h3 className="text-base font-semibold text-gray-800 mb-2">Shipping Coverage</h3>
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      Farmacykart delivers medicines across India where permitted by law.
+                      Rasa Store delivers medicines across India where permitted by law.
                     </p>
                   </div>
                 </div>

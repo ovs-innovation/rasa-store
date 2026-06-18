@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@windmill/react-ui";
 import { useContext, useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { FiEdit, FiSearch, FiAlertTriangle, FiPackage, FiDownload, FiChevronDown, FiX } from "react-icons/fi";
 
 // internal import
@@ -17,6 +18,7 @@ import BrandServices from "@/services/BrandServices";
 import TableLoading from "@/components/preloader/TableLoading";
 import NotFound from "@/components/table/NotFound";
 import AnimatedContent from "@/components/common/AnimatedContent";
+import PageTitle from "@/components/Typography/PageTitle";
 import { SidebarContext } from "@/context/SidebarContext";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
 import useToggleDrawer from "@/hooks/useToggleDrawer";
@@ -27,6 +29,7 @@ const STOCK_THRESHOLD = 10;
 const RESULTS_PER_PAGE = 20;
 
 const LowStock = () => {
+  const { t } = useTranslation();
   const { lang, setIsUpdate, isUpdate } = useContext(SidebarContext);
   const { showingTranslateValue } = useUtilsFunction();
   const { serviceId, handleUpdate } = useToggleDrawer();
@@ -129,7 +132,9 @@ const LowStock = () => {
   };
 
   return (
-    <AnimatedContent>
+    <>
+      <PageTitle>{t("Low Stock")}</PageTitle>
+      <AnimatedContent>
       {/* Drawer for editing */}
       <MainDrawer>
         <ProductDrawer id={serviceId} />
@@ -334,6 +339,7 @@ const LowStock = () => {
         )}
       </div>
     </AnimatedContent>
+    </>
   );
 };
 

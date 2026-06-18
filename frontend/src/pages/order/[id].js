@@ -1,6 +1,6 @@
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import dynamic from "next/dynamic";
-import { useRef, useEffect, useState, useContext } from "react";
+import { useRef, useEffect, useState } from "react";
 import { IoCloudDownloadOutline, IoPrintOutline, IoCopyOutline } from "react-icons/io5";
 import { FiTruck, FiExternalLink } from "react-icons/fi";
 import { notifySuccess } from "@utils/toast";
@@ -20,13 +20,9 @@ import useUtilsFunction from "@hooks/useUtilsFunction";
 import InvoiceForDownload from "@components/invoice/InvoiceForDownload";
 import OrderTracking from "@components/order/OrderTracking";
 import { setToken } from "@services/httpServices";
-import { UserContext } from "@context/UserContext";
-
 const Order = ({ params }) => {
   const printRef = useRef();
   const orderId = params.id;
-  const { state } = useContext(UserContext) || {};
-  const isWholesaler = state?.userInfo?.role && state.userInfo.role.toString().toLowerCase() === "wholesaler";
 
   // Set auth token before fetching order
   useEffect(() => {
@@ -118,7 +114,6 @@ const Order = ({ params }) => {
                      globalSetting={globalSetting}
                      getNumberTwo={getNumberTwo}
                      logo={storeCustomizationSetting?.navbar?.logo}
-                     isWholesaler={isWholesaler}
                    />
                  }
                  fileName={`Invoice-${data.invoice}`}

@@ -1,5 +1,6 @@
 const fs = require('fs');
-const path = 'd:/farmcy_kart/backend/controller/customerController.js';
+const path = require('path');
+const customerPath = path.join(__dirname, 'customerController.js');
 let content = fs.readFileSync(path, 'utf8');
 
 const correctImports = `require("dotenv").config();
@@ -32,13 +33,13 @@ const verifyEmailAddress = async (req, res) => {
     const option = {
       name: req.body.name,
       email: req.body.email,
-      contact_email: globalSetting?.setting?.email || "support@farmacykart.com",
+      contact_email: globalSetting?.setting?.email || "support@RASA.com",
       token: token,
-      shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
+      shop_name: globalSetting?.setting?.shop_name || "RASA",
     };
     const body = {
       to: \`\${req.body.email}\`,
-      subject: "Farmacykart – Verify your email",
+      subject: "RASA – Verify your email",
       html: customerRegisterBody(option),
     };
 

@@ -105,7 +105,7 @@ const forgetPasswordEmailBody = (option) => {
                                           <img
                                             alt
                                             height="auto"
-                                            src="${option.logo || "https://res.cloudinary.com/dse9adftu/image/upload/v1780479335/farmacykart/brand/logo.png"}"
+                                            src="${option.logo || "https://res.cloudinary.com/dse9adftu/image/upload/v1780479335/rasa/brand/logo.png"}"
                                             style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:80px;font-size:13px;padding-bottom:30px;"
                                             width="80"
                                             height="80"
@@ -217,7 +217,7 @@ const forgetPasswordEmailBody = (option) => {
                               reset your password</p>
 
                             <a
-                            href="${process.env.STORE_URL || process.env.FRONTEND_URL || "https://farmacykart.com"}/auth/forget-password/${option.token}"
+                            href="${process.env.STORE_URL || process.env.FRONTEND_URL || "https://rasastore.com"}/auth/forget-password/${option.token}"
                               style="background:#22c55e;color:white;border:1px solid #22c55e; padding: 10px 15px; border-radius: 4px; text-decoration:none;"
                             >Reset Password </a>
 

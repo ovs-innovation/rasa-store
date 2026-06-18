@@ -21,14 +21,76 @@ const generateVariantSku = (baseSku, index) => {
   return `${sanitized}-${suffix}`;
 };
 
+const normalizeImageList = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.filter((item) => typeof item === "string" && item);
+  if (typeof val === "string" && val.trim()) return [val];
+  return [];
+};
+
+const mapStatusForForm = (status) => {
+  if (status === "show") return "Published";
+  if (status === "hide" || status === "hidden") return "Hidden";
+  if (status === "draft") return "Draft";
+  if (status === "out-of-stock" || status === "Out Of Stock") return "Out Of Stock";
+  return status || "Published";
+};
+
+const mapStatusForApi = (status) => {
+  if (status === "Published") return "show";
+  if (status === "Hidden") return "hide";
+  if (status === "Draft") return "draft";
+  if (status === "Out Of Stock") return "out-of-stock";
+  return status || "show";
+};
+
+const sumVariantStock = (variantList = []) =>
+  variantList.reduce((total, variant) => {
+    const sizes = Array.isArray(variant.sizes) ? variant.sizes : [];
+    return (
+      total +
+      sizes.reduce(
+        (sizeTotal, size) =>
+          sizeTotal +
+          (size.enabled === false ? 0 : Number(size.quantity || size.stock || 0)),
+        0
+      )
+    );
+  }, 0);
+
 const ensureVariantsHaveSku = (variantList, baseSku) =>
-  (variantList || []).map((variant, idx) => ({
-    ...variant,
-    sku:
-      variant?.sku && variant.sku.toString().trim().length > 0
-        ? variant.sku
-        : generateVariantSku(baseSku, idx),
-  }));
+  (variantList || []).map((variant, idx) => {
+    const colorVal = variant.color || variant.colorName || "";
+    const colorSku = variant?.sku && variant.sku.toString().trim().length > 0
+      ? variant.sku
+      : `${baseSku || "SKU"}-${colorVal.toUpperCase().replace(/\s+/g, "")}`;
+    
+    const existingSizes = variant.sizes || [];
+    const sizesMap = new Map(existingSizes.map(s => [s.size, s]));
+    
+    const normalizedSizes = ["UK 3", "UK 4", "UK 5", "UK 6", "UK 7", "UK 8", "UK 9", "UK 10"].map(size => {
+      const match = sizesMap.get(size);
+      const qty = match ? (typeof match.quantity === "number" ? match.quantity : Number(match.stock || 0)) : 0;
+      return {
+        size,
+        quantity: qty,
+        sku: match?.sku || `${colorSku}-${size.replace(/\s+/g, "")}`,
+        price: match?.price || 0,
+        originalPrice: match?.originalPrice || 0,
+        enabled: match ? match.enabled !== false : qty > 0
+      };
+    });
+
+    return {
+      ...variant,
+      color: colorVal,
+      sku: colorSku,
+      images: normalizeImageList(variant.images || (variant.image ? [variant.image] : [])),
+      thumbnail: variant.thumbnail || variant.image || "",
+      hoverImage: variant.hoverImage || "",
+      sizes: normalizedSizes
+    };
+  });
 
 const useProductSubmit = (id) => {
   const location = useLocation();
@@ -44,7 +106,12 @@ const useProductSubmit = (id) => {
 
   // react hook
   const [imageUrl, setImageUrl] = useState([]);
+  const [featuredImage, setFeaturedImage] = useState("");
+  const [hoverImage, setHoverImage] = useState("");
+  const [badge, setBadge] = useState("");
+  const [video, setVideo] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [seoImage, setSeoImage] = useState("");
   const [tag, setTag] = useState([]);
   const [values, setValues] = useState({});
   let [variants, setVariants] = useState([]);
@@ -82,12 +149,7 @@ const useProductSubmit = (id) => {
 
   // New Sections State
   const [productDescription, setProductDescription] = useState({ enabled: true, icon: "", title: "Product Description", description: "" });
-  const [ingredients, setIngredients] = useState({ enabled: true, icon: "", title: "Ingredients", items: [] });
-  const [keyUses, setKeyUses] = useState({ enabled: true, icon: "", title: "Key Uses", items: [] });
-  const [howToUse, setHowToUse] = useState({ enabled: true, icon: "", title: "How to Use", items: [] }); // items is array of strings
-  const [safetyInformation, setSafetyInformation] = useState({ enabled: true, icon: "", title: "Safety Information", items: [] }); // items is array of strings
   const [additionalInformation, setAdditionalInformation] = useState({ enabled: true, icon: "", title: "Additional Information", subsections: [] });
-  const [composition, setComposition] = useState({ enabled: true, icon: "", title: "Composition", description: "" });
   const [productHighlights, setProductHighlights] = useState({ enabled: true, icon: "", title: "Product Highlights", items: [] });
   const [manufacturerDetails, setManufacturerDetails] = useState({ enabled: true, icon: "", title: "Manufacturer Details", items: [] });
   const [disclaimer, setDisclaimer] = useState({ enabled: true, icon: "", title: "Disclaimer", description: "" });
@@ -131,7 +193,10 @@ const useProductSubmit = (id) => {
     // console.log('data is data',data)
     try {
       setIsSubmitting(true);
-      if (!imageUrl) return notifyError("Image is required!");
+      if (!imageUrl?.length) {
+        setIsSubmitting(false);
+        return notifyError("Image is required!");
+      }
 
       if (data.discountType === "percentage") {
         if (Number(data.discount) > 100) {
@@ -152,25 +217,43 @@ const useProductSubmit = (id) => {
       }
 
       const baseSkuValue = data.sku || sku || productId || "SKU";
-      const variantsWithSku = ensureVariantsHaveSku(variants, baseSkuValue);
+      
+      const updatedVariants = variants.map((cv, idx) => {
+        const cvOriginal = getNumberTwo(cv.originalPrice || data.originalPrice || 0);
+        const cvDiscount = getNumberTwo(cv.discount || data.discount || 0);
+        const cvBaseDiscountedPrice = data.discountType === "percentage" 
+          ? cvOriginal - (cvOriginal * cvDiscount / 100)
+          : cvOriginal - cvDiscount;
+        const cvPrice = cvBaseDiscountedPrice * (1 + Number(data.taxRate || 0) / 100);
 
-      const updatedVariants = variantsWithSku.map((v, i) => {
-        const baseVariantPrice = data.discountType === "percentage" 
-          ? getNumberTwo(v?.originalPrice) - (getNumberTwo(v?.originalPrice) * getNumberTwo(v?.discount) / 100)
-          : getNumberTwo(v?.originalPrice) - getNumberTwo(v?.discount);
+        const colorSku = cv.sku || `${baseSkuValue}-${(cv.color || "").toUpperCase().replace(/\s+/g, "")}`;
         
-        const taxRateValue = Number(data.taxRate || 0);
-        const variantPrice = baseVariantPrice * (1 + taxRateValue / 100);
+        const sizes = Array.isArray(cv.sizes) ? cv.sizes : [];
+        const updatedSizes = sizes.map((sv, sIdx) => {
+          const svOriginal = getNumberTwo(sv.originalPrice || cvOriginal);
+          const svDiscount = getNumberTwo(sv.discount || cvDiscount);
+          const svBaseDiscounted = data.discountType === "percentage"
+            ? svOriginal - (svOriginal * svDiscount / 100)
+            : svOriginal - svDiscount;
+          const svPrice = svBaseDiscounted * (1 + Number(data.taxRate || 0) / 100);
+          return {
+            ...sv,
+            originalPrice: svOriginal,
+            price: svPrice,
+            quantity: sv.enabled === false ? 0 : Number(sv.quantity || 0),
+            sku: sv.sku || `${colorSku}-${(sv.size || "").replace(/\s+/g, "")}`,
+            enabled: sv.enabled !== false
+          };
+        });
 
-        const newObj = {
-          ...v,
-          price: variantPrice,
-          originalPrice: getNumberTwo(v?.originalPrice),
-          discount: getNumberTwo(v?.discount),
-          discountType: data.discountType || "flat",
-          quantity: Number(v?.quantity || 0),
+        return {
+          ...cv,
+          sku: colorSku,
+          price: cvPrice,
+          originalPrice: cvOriginal,
+          discount: cvDiscount,
+          sizes: updatedSizes
         };
-        return newObj;
       });
 
       setIsBasicComplete(true);
@@ -181,8 +264,19 @@ const useProductSubmit = (id) => {
       const taxRateValue = Number(data.taxRate || 0);
       const calculatedPrice = basePriceAfterDiscount * (1 + taxRateValue / 100);
 
+      // Compute total stock sum across all variants
+      const computedTotalStock = updatedVariants.reduce((sum, cv) => {
+        return sum + cv.sizes.reduce((sSum, sv) => sSum + Number(sv.quantity || 0), 0);
+      }, 0);
+
+      const hasColorVariants = updatedVariants.length > 0;
+      const finalStock = hasColorVariants
+        ? computedTotalStock
+        : Number(data.stock ?? 0);
+
+      setTotalStock(finalStock);
       setPrice(calculatedPrice);
-      setQuantity(data.stock);
+      setQuantity(finalStock);
       setBarcode(data.barcode);
       setSku(data.sku);
       setOriginalPrice(data.originalPrice);
@@ -260,37 +354,29 @@ const useProductSubmit = (id) => {
           }));
 
       const buildVariantFilters = (variantList, baseSkuCode) => {
-        if (!isCombination || !variantList?.length) return [];
-        return variantList.map((variant, idx) => {
-          const attributeMap = {};
-          const labelParts = [];
-          variantTitle?.forEach((attribute) => {
-            const valueId = variant[attribute._id];
-            if (valueId) {
-              attributeMap[attribute._id] = valueId;
-              const option = attribute?.variants?.find(
-                (opt) => opt._id === valueId
-              );
-              if (option) {
-                const optionName =
-                  typeof option.name === "object"
-                    ? showingTranslateValue(option.name)
-                    : option.name;
-                labelParts.push(optionName);
-              }
+        if (!variantList?.length) return [];
+        const flat = [];
+        variantList.forEach((cv) => {
+          const color = cv.color || "";
+          const sizes = cv.sizes || [];
+          sizes.forEach((sv) => {
+            if (sv.enabled !== false) {
+              flat.push({
+                sku: sv.sku,
+                barcode: sv.barcode || cv.barcode || "",
+                attributes: {
+                  color: color,
+                  size: sv.size
+                },
+                combinationLabel: `${color} ${sv.size}`,
+                price: sv.price,
+                originalPrice: sv.originalPrice,
+                quantity: sv.quantity
+              });
             }
           });
-
-          return {
-            sku: variant.sku || generateVariantSku(baseSkuCode, idx),
-            barcode: variant.barcode || "",
-            attributes: attributeMap,
-            combinationLabel: labelParts.filter(Boolean).join(" "),
-            price: variant.price,
-            originalPrice: variant.originalPrice,
-            quantity: variant.quantity,
-          };
         });
+        return flat;
       };
 
       const variantFiltersPayload = buildVariantFilters(
@@ -302,10 +388,6 @@ const useProductSubmit = (id) => {
         productId: productId,
         sku: data.sku || "",
         barcode: data.barcode || "",
-        // Batch & manufacturing metadata
-        batchNo: data.batchNo?.trim() || "",
-        expDate: data.expDate || "",
-        manufactureDate: data.manufactureDate || "",
         hsnCode: data.hsnCode?.trim() || "",
         taxRate:
           typeof data.taxRate === "number"
@@ -333,26 +415,30 @@ const useProductSubmit = (id) => {
 
         image: imageUrl,
         thumbnail: thumbnailUrl,
-        stock: variants?.length < 1 ? data.stock : Number(totalStock),
-        tag: JSON.stringify(tag),
+        stock: finalStock,
+        tag: Array.isArray(tag) ? tag : tag ? [tag] : [],
 
-        // Wholesaler fields
-        isWholesaler: Boolean(data.isWholesaler),
-        wholePrice: Number(data.wholePrice ?? data.wholesalerPrice) || 0,
-        minQuantity: Number(data.minQuantity ?? data.wholesalerMinQuantity) || 0,
-        
-        suitableFor: data.suitableFor ? (Array.isArray(data.suitableFor) ? data.suitableFor : [data.suitableFor]) : [],
+        gender: data.gender || "",
+        productType: data.productType || "",
+        metaTitle: data.metaTitle || "",
+        metaDescription: data.metaDescription || "",
+        seoImage: seoImage || "",
+        featuredImage: featuredImage || "",
+        hoverImage: hoverImage || "",
+        video: video || "",
+        badge: badge || "",
+        status: mapStatusForApi(data.status || "Published"),
+        lowStockAlert: typeof data.lowStockAlert === "number" ? data.lowStockAlert : Number(data.lowStockAlert || 5),
 
         prices: {
-          price: data.discountType === "percentage" 
-            ? getNumberTwo(data.originalPrice) - (getNumberTwo(data.originalPrice) * getNumber(data.discount) / 100)
-            : getNumberTwo(data.originalPrice) - getNumber(data.discount),
+          price: getNumberTwo(data.price) || getNumberTwo(data.originalPrice),
           originalPrice: getNumberTwo(data.originalPrice),
-          discount: getNumber(data.discount),
-          discountType: data.discountType || "flat",
+          salePrice: data.salePrice ? getNumberTwo(data.salePrice) : 0,
+          discount: Math.max(0, getNumberTwo(data.originalPrice) - (getNumberTwo(data.salePrice) || getNumberTwo(data.price) || getNumberTwo(data.originalPrice))),
+          discountType: "flat",
         },
-        isCombination: updatedVariants?.length > 0 ? isCombination : false,
-        variants: isCombination ? updatedVariants : [],
+        isCombination: hasColorVariants,
+        variants: hasColorVariants ? updatedVariants : [],
         variantFilters: variantFiltersPayload,
         brand: brand?._id || null,
         dynamicSections: sanitizeDynamicSections(dynamicSections),
@@ -361,12 +447,7 @@ const useProductSubmit = (id) => {
         
         // New Sections
         productDescription,
-        ingredients,
-        keyUses,
-        howToUse,
-        safetyInformation,
         additionalInformation,
-        composition,
         productHighlights,
         manufacturerDetails,
         disclaimer,
@@ -379,10 +460,6 @@ const useProductSubmit = (id) => {
         const res = await ProductServices.updateProduct(updatedId, productData);
         if (res) {
           // Update form fields with response to ensure UI reflects server values
-          setValue("isWholesaler", Boolean(res?.isWholesaler));
-          setValue("wholePrice", res?.wholePrice ?? 0);
-          setValue("minQuantity", res?.minQuantity ?? 0);
-
           if (isCombination) {
             setIsUpdate(true);
             notifySuccess(res.message);
@@ -421,8 +498,18 @@ const useProductSubmit = (id) => {
               : Number(res?.taxRate || 0)
           );
           setValue("isPriceInclusive", Boolean(res?.isPriceInclusive));
-          setTag(JSON.parse(res.tag));
+          let parsedTags = [];
+          try {
+            parsedTags = typeof res.tag === "string" ? JSON.parse(res.tag) : (Array.isArray(res.tag) ? res.tag : [res.tag].filter(Boolean));
+          } catch (e) {
+            parsedTags = res.tag ? [res.tag] : [];
+          }
+          setTag(parsedTags);
           setImageUrl(res.image);
+          setFeaturedImage(res.featuredImage || "");
+          setHoverImage(res.hoverImage || "");
+          setBadge(res.badge || "");
+          setVideo(res.video || "");
           const normalizedResponseVariants = ensureVariantsHaveSku(
             res.variants || [],
             res.sku || res.productId || "SKU"
@@ -432,6 +519,16 @@ const useProductSubmit = (id) => {
           setMediaSections(res.mediaSections || []);
           setFaqSection(res.faqs || { enabled: true, icon: "", title: "FAQ", items: [] });
           setValue("productId", res.productId);
+          setValue("gender", res.gender || "");
+          setValue("productType", res.productType || "");
+          setValue("metaTitle", res.metaTitle || "");
+          setValue("metaDescription", res.metaDescription || "");
+          setSeoImage(res.seoImage || "");
+          setValue("status", mapStatusForForm(res.status));
+          setValue("lowStockAlert", res.lowStockAlert || 5);
+          setValue("originalPrice", res?.prices?.originalPrice || 0);
+          setValue("price", res?.prices?.price || 0);
+          setValue("salePrice", res?.prices?.salePrice || 0);
           setProductId(res.productId);
           setOriginalPrice(res?.prices?.originalPrice);
           setPrice(res?.prices?.price);
@@ -461,11 +558,6 @@ const useProductSubmit = (id) => {
           setIsUpdate(true);
           notifySuccess("Product Added Successfully!");
 
-          // Wholesaler fields
-          setValue("isWholesaler", Boolean(res?.isWholesaler));
-          setValue("wholePrice", res?.wholePrice ?? 0);
-          setValue("minQuantity", res?.minQuantity ?? 0);
-
           setDynamicSections(res.dynamicSections || []);
           setMediaSections(res.mediaSections || []);
           setFaqSection(res.faqs || { enabled: true, icon: "", title: "FAQ", items: [] });
@@ -480,10 +572,12 @@ const useProductSubmit = (id) => {
         }
       }
     } catch (err) {
-      // console.log("err", err);
       setIsSubmitting(false);
-      notifyError(err?.response?.data?.message || err?.message);
-      closeDrawer();
+      const msg =
+        err?.response?.data?.message ||
+        (typeof err?.response?.data === "string" ? err.response.data : null) ||
+        err?.message;
+      notifyError(msg || "Failed to save product");
     }
   };
 
@@ -508,10 +602,21 @@ const useProductSubmit = (id) => {
       setValue("taxRate", 0);
       setValue("isPriceInclusive", false);
       setValue("discountType", "flat");
+      setValue("gender", "");
+      setValue("productType", "");
+      setValue("metaTitle", "");
+      setValue("metaDescription", "");
+      setSeoImage("");
+      setValue("status", "Published");
+      setValue("lowStockAlert", 5);
 
       setProductId("");
       // setValue('show');
       setImageUrl([]);
+      setFeaturedImage("");
+      setHoverImage("");
+      setBadge("");
+      setVideo("");
       setThumbnailUrl("");
       setTag([]);
       setVariants([]);
@@ -547,12 +652,7 @@ const useProductSubmit = (id) => {
       
       // Reset New Sections
       setProductDescription({ enabled: true, icon: "", title: "Product Description", description: "" });
-      setIngredients({ enabled: true, icon: "", title: "Ingredients", items: [] });
-      setKeyUses({ enabled: true, icon: "", title: "Key Uses", items: [] });
-      setHowToUse({ enabled: true, icon: "", title: "How to Use", items: [] });
-      setSafetyInformation({ enabled: true, icon: "", title: "Safety Information", items: [] });
       setAdditionalInformation({ enabled: true, icon: "", title: "Additional Information", subsections: [] });
-      setComposition({ enabled: true, icon: "", title: "Composition", description: "" });
       setProductHighlights({ enabled: true, icon: "", title: "Product Highlights", items: [] });
       setManufacturerDetails({ enabled: true, icon: "", title: "Manufacturer Details", items: [] });
       setDisclaimer({ enabled: true, icon: "", title: "Disclaimer", description: "" });
@@ -586,26 +686,6 @@ const useProductSubmit = (id) => {
             setValue("sku", res.sku);
             setValue("barcode", res.barcode);
             setValue("stock", res.stock);
-            // Batch & manufacturing metadata (prefill for edit mode)
-            setValue("batchNo", res.batchNo || "");
-            if (res.expDate) {
-              const exp = new Date(res.expDate);
-              const expFormatted = !isNaN(exp)
-                ? `${exp.getFullYear()}-${String(exp.getMonth() + 1).padStart(2, "0")}-${String(exp.getDate()).padStart(2, "0")}`
-                : "";
-              setValue("expDate", expFormatted);
-            } else {
-              setValue("expDate", "");
-            }
-            if (res.manufactureDate) {
-              const mfg = new Date(res.manufactureDate);
-              const mfgFormatted = !isNaN(mfg)
-                ? `${mfg.getFullYear()}-${String(mfg.getMonth() + 1).padStart(2, "0")}-${String(mfg.getDate()).padStart(2, "0")}`
-                : "";
-              setValue("manufactureDate", mfgFormatted);
-            } else {
-              setValue("manufactureDate", "");
-            }
             setValue("productId", res.productId);
             setValue("discount", res?.prices?.discount);
             setValue("originalPrice", res?.prices?.originalPrice);
@@ -619,31 +699,47 @@ const useProductSubmit = (id) => {
             );
             setValue("isPriceInclusive", Boolean(res?.isPriceInclusive));
             setValue("discountType", res?.prices?.discountType || "flat");
-
-            // Wholesaler fields
-            setValue("isWholesaler", Boolean(res?.isWholesaler));
-            setValue("wholePrice", res?.wholePrice ?? 0);
-            setValue("minQuantity", res?.minQuantity ?? 0);
+            setValue("gender", res.gender || "");
+            setValue("productType", res.productType || "");
+            setValue("metaTitle", res.metaTitle || "");
+            setValue("metaDescription", res.metaDescription || "");
+            setSeoImage(res.seoImage || "");
+            setValue("status", mapStatusForForm(res.status));
+            setValue("lowStockAlert", res.lowStockAlert || 5);
 
             setProductId(res.productId ? res.productId : res._id);
             setBarcode(res.barcode);
             setSku(res.sku);
 
-            res.categories.map((category) => {
-              category.name = showingTranslateValue(category?.name, lang);
+            if (res.categories && Array.isArray(res.categories)) {
+              res.categories.forEach((category) => {
+                if (category) {
+                  category.name = showingTranslateValue(category?.name, lang);
+                }
+              });
+            }
 
-              return category;
-            });
+            if (res.category) {
+              res.category.name = showingTranslateValue(
+                res?.category?.name,
+                lang
+              );
+            }
 
-            res.category.name = showingTranslateValue(
-              res?.category?.name,
-              lang
-            );
-
-            setSelectedCategory(res.categories);
-            setDefaultCategory([res?.category]);
-            setTag(JSON.parse(res.tag));
+            setSelectedCategory(res.categories || []);
+            setDefaultCategory(res?.category ? [res?.category] : []);
+            let parsedTagsTwo = [];
+            try {
+              parsedTagsTwo = typeof res.tag === "string" ? JSON.parse(res.tag) : (Array.isArray(res.tag) ? res.tag : [res.tag].filter(Boolean));
+            } catch (e) {
+              parsedTagsTwo = res.tag ? [res.tag] : [];
+            }
+            setTag(parsedTagsTwo);
             setImageUrl(res.image);
+            setFeaturedImage(res.featuredImage || "");
+            setHoverImage(res.hoverImage || "");
+            setBadge(res.badge || "");
+            setVideo(res.video || "");
             setThumbnailUrl(res.thumbnail || "");
             const normalizedVariants = ensureVariantsHaveSku(
               res.variants || [],
@@ -655,6 +751,9 @@ const useProductSubmit = (id) => {
             setTotalStock(res.stock);
             setOriginalPrice(res?.prices?.originalPrice);
             setPrice(res?.prices?.price);
+            setValue("originalPrice", res?.prices?.originalPrice || 0);
+            setValue("price", res?.prices?.price || 0);
+            setValue("salePrice", res?.prices?.salePrice || 0);
             if (res?.brand) {
               setBrand(res.brand);
             } else {
@@ -665,12 +764,7 @@ const useProductSubmit = (id) => {
 
             // Populate New Sections
             if (res.productDescription) setProductDescription({ ...res.productDescription, title: res.productDescription.title || "Product Description" });
-            if (res.ingredients) setIngredients({ ...res.ingredients, title: res.ingredients.title || "Ingredients" });
-            if (res.keyUses) setKeyUses({ ...res.keyUses, title: res.keyUses.title || "Key Uses" });
-            if (res.howToUse) setHowToUse({ ...res.howToUse, title: res.howToUse.title || "How to Use" });
-            if (res.safetyInformation) setSafetyInformation({ ...res.safetyInformation, title: res.safetyInformation.title || "Safety Information" });
             if (res.additionalInformation) setAdditionalInformation({ ...res.additionalInformation, title: res.additionalInformation.title || "Additional Information" });
-            if (res.composition) setComposition({ ...res.composition, title: res.composition.title || "Composition" });
             if (res.productHighlights) setProductHighlights({ ...res.productHighlights, title: res.productHighlights.title || "Product Highlights" });
             if (res.manufacturerDetails) setManufacturerDetails({ ...res.manufacturerDetails, title: res.manufacturerDetails.title || "Manufacturer Details" });
             if (res.disclaimer) setDisclaimer({ ...res.disclaimer, title: res.disclaimer.title || "Disclaimer" });
@@ -709,8 +803,7 @@ const useProductSubmit = (id) => {
     const varTitle = attribue?.filter((att) => res.includes(att._id));
 
     if (variants?.length > 0) {
-      const totalStock = variants?.reduce((pre, acc) => pre + acc.quantity, 0);
-      setTotalStock(Number(totalStock));
+      setTotalStock(sumVariantStock(variants));
     }
     setVariantTitle(varTitle);
   }, [attribue, variants, language, lang]);
@@ -1269,11 +1362,6 @@ const useProductSubmit = (id) => {
       category: defaultCategory[0]?._id || resData?.category?._id || resData?.category || "",
       image: imageUrl,
 
-      // Wholesaler fields
-      isWholesaler: updatedData.isWholesaler !== undefined ? Boolean(updatedData.isWholesaler) : Boolean(resData?.isWholesaler),
-      wholePrice: updatedData.wholePrice !== undefined ? Number(updatedData.wholePrice) : Number(resData?.wholePrice || 0),
-      minQuantity: updatedData.minQuantity !== undefined ? Number(updatedData.minQuantity) : Number(resData?.minQuantity || 0),
-
       stock: formattedVariants?.length > 0 ? Number(totalStock) : resData?.stock || 0,
       tag: resData?.tag ? resData.tag : JSON.stringify(tag),
       prices: {
@@ -1600,16 +1688,17 @@ const useProductSubmit = (id) => {
     
     // New Sections Exports
     productDescription, setProductDescription,
-    ingredients, setIngredients,
-    keyUses, setKeyUses,
-    howToUse, setHowToUse,
-    safetyInformation, setSafetyInformation,
     additionalInformation, setAdditionalInformation,
-    composition, setComposition,
     productHighlights, setProductHighlights,
     manufacturerDetails, setManufacturerDetails,
     disclaimer, setDisclaimer,
     faqSection, setFaqSection,
+    seoImage, setSeoImage,
+
+    featuredImage, setFeaturedImage,
+    hoverImage, setHoverImage,
+    badge, setBadge,
+    video, setVideo,
   };
 };
 

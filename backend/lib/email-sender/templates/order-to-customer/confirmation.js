@@ -21,7 +21,7 @@ const orderConfirmationBody = (option) => {
 <body>
     <div class="container">
         <div class="header">
-            <img class="logo" src="${option.logo || "https://farmacykart.com/favicon.png"}" alt="${option.shop_name}" />
+            <img class="logo" src="${option.logo || "https://rasastore.com/favicon.png"}" alt="${option.shop_name}" />
             <h1>Order confirmed</h1>
             <p style="margin-top:8px;color:#475569;">Hi ${option.name}, your order has been successfully placed.</p>
         </div>

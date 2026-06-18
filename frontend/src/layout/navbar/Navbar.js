@@ -1,12 +1,10 @@
 import { useContext, useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import { useCart } from "react-use-cart";
-import { IoSearchOutline, IoHome } from "react-icons/io5";
+import { IoSearchOutline } from "react-icons/io5";
 import { FiShoppingCart, FiHeart } from "react-icons/fi";
-import { FaPrescriptionBottleAlt } from "react-icons/fa";
 import { useQuery } from "@tanstack/react-query";
 
 import { getUserSession } from "@lib/auth";
@@ -22,51 +20,17 @@ import CustomerNotificationBell from "@components/notification/CustomerNotificat
 import { pickBrandLogo } from "@utils/brandAssets";
 
 const NavbarLogo = () => {
-  const { storeCustomizationSetting, globalSetting } = useGetSetting();
-  const [imgError, setImgError] = useState(false);
-  const siteName = globalSetting?.shop_name || "Farmacykart";
-  const logoSrc = pickBrandLogo(
-    storeCustomizationSetting?.navbar?.logo,
-    storeCustomizationSetting?.seo?.favicon,
-    globalSetting?.logo
-  );
-
-  if (imgError || !logoSrc) {
-    return (
-      <Link href="/" className="flex items-center gap-2 shrink-0" aria-label={siteName}>
-        <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-store-600 text-white">
-          <FaPrescriptionBottleAlt className="text-xl" />
-        </span>
-        <span className="font-extrabold text-store-800 text-base hidden xl:block">{siteName}</span>
-      </Link>
-    );
-  }
-
   return (
-    <Link href="/" className="block shrink-0" aria-label={siteName}>
+    <Link href="/" className="flex items-center shrink-0 relative ml-6 w-44 h-16" aria-label="The Rasa Store">
       <img
-        src={logoSrc}
-        alt={siteName}
-        onError={() => setImgError(true)}
-        className="h-14 w-auto max-w-[200px] object-contain object-left sm:h-16 sm:max-w-[220px]"
+        src="/rasaLogo.png"
+        alt="The Rasa Store"
+        className="absolute top-[65%] -translate-y-1/2 left-0 h-36 w-auto max-w-none object-contain select-none z-10"
+        draggable="false"
       />
     </Link>
   );
 };
-
-/** Home icon — between logo & categories, or left of top search bar after scroll */
-const NavbarHomeIcon = ({ besideSearch = false }) => (
-  <Link
-    href="/"
-    className={`flex h-10 w-10 items-center justify-center rounded-lg text-green-800 hover:text-green-900 hover:bg-green-50 transition-colors shrink-0 ${
-      besideSearch ? "mr-1" : "ml-10 md:ml-14"
-    }`}
-    aria-label="Home"
-    title="Home"
-  >
-    <IoHome className="text-2xl" />
-  </Link>
-);
 
 const Navbar = () => {
   const { showingTranslateValue } = useUtilsFunction();
@@ -74,6 +38,8 @@ const Navbar = () => {
   const { data: categoriesData } = useQuery({
     queryKey: ["category"],
     queryFn: async () => await CategoryServices.getShowingCategory(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const getLevel1Categories = (categories) => {
@@ -88,12 +54,7 @@ const Navbar = () => {
     let topLevel = homeRoot?.children?.length ? homeRoot.children : categories;
     const finalCategories = [];
     topLevel.forEach((cat) => {
-      const name = showingTranslateValue(cat?.name)?.toLowerCase();
-      if ((name === "medicine" || name === "medicines") && cat.children?.length > 0) {
-        finalCategories.push(...cat.children);
-      } else {
-        finalCategories.push(cat);
-      }
+      finalCategories.push(cat);
     });
     return finalCategories;
   };
@@ -104,6 +65,10 @@ const Navbar = () => {
   const { totalUniqueItems } = useCart();
   const { count: wishlistCount } = useWishlist();
   const userInfo = getUserSession();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Initialize from route to avoid "flash" on first paint.
   const initialShowSearch =
@@ -123,20 +88,25 @@ const Navbar = () => {
       return;
     }
 
-    const heroEl = document.getElementById("hero-search-anchor");
-    if (!heroEl) {
-      const onScroll = () => setShowSearchInNavbar(window.scrollY > 280);
-      onScroll();
-      window.addEventListener("scroll", onScroll, { passive: true });
-      return () => window.removeEventListener("scroll", onScroll);
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setShowSearchInNavbar(!entry.isIntersecting),
-      { threshold: 0, rootMargin: "-100px 0px 0px 0px" }
-    );
-    observer.observe(heroEl);
-    return () => observer.disconnect();
+    // On the homepage the navbar keeps its initial state (category menu) for the
+    // entire pinned hero experience, and only swaps to the search bar once the
+    // full hero section has been scrolled past.
+    const onScroll = () => {
+      const heroEl = document.getElementById("hero-section");
+      if (heroEl) {
+        const rect = heroEl.getBoundingClientRect();
+        setShowSearchInNavbar(rect.bottom <= 100);
+      } else {
+        setShowSearchInNavbar(false);
+      }
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, [isHome, router.asPath]);
 
   useEffect(() => {
@@ -172,7 +142,7 @@ const Navbar = () => {
   return (
     <>
       <CartDrawer />
-      <header className="hidden lg:block bg-white">
+      <header className="hidden lg:block bg-[#050505] text-white border-b border-neutral-900">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-8">
           <div
             className={`flex items-center gap-4 transition-all duration-300 ${
@@ -181,23 +151,19 @@ const Navbar = () => {
           >
             <NavbarLogo />
 
-            {!showNavbarSearch && isHome && <NavbarHomeIcon />}
-
             <div className="flex-1 min-w-0 flex items-center justify-center gap-2">
-              {showNavbarSearch && <NavbarHomeIcon besideSearch />}
-
               {showNavbarSearch ? (
                 <form
                   onSubmit={handleSearchSubmit}
-                  className="navbar-search-form flex items-center w-full max-w-3xl rounded-full border border-gray-200 bg-white p-1 hover:border-store-300 focus-within:border-store-400 focus-within:ring-2 focus-within:ring-store-100 transition-all"
+                  className="navbar-search-form flex items-center w-full max-w-3xl rounded-none border border-neutral-800 bg-[#0F0F0F] p-0.5 hover:border-neutral-700 focus-within:border-neutral-700 focus-within:ring-0 focus-within:ring-offset-0 transition-all"
                 >
                   <div className="flex-1 relative min-w-0 flex items-center min-h-[42px]">
-                    <IoSearchOutline className="absolute left-3 text-gray-700 text-lg pointer-events-none z-10" />
+                    <IoSearchOutline className="absolute left-3 text-neutral-400 text-lg pointer-events-none z-10" />
                     <input
                       ref={searchInputRef}
                       type="search"
-                      placeholder="Search for medicine, healthcare & more..."
-                      className="navbar-search-input w-full h-full py-2 pl-10 pr-2 text-sm !bg-transparent !border-0 !border-none !shadow-none !ring-0 !outline-none focus:!ring-0 focus:!border-0 focus:!outline-none placeholder-gray-500"
+                      placeholder="Search for streetwear, footwear, accessories..."
+                      className="navbar-search-input w-full h-full py-2 pl-10 pr-2 text-xs font-black uppercase tracking-wider !bg-transparent !border-0 !border-none !shadow-none !ring-0 !outline-none focus:!ring-0 focus:!border-0 focus:!outline-none placeholder-neutral-500 text-white"
                       value={searchText}
                       onChange={(e) => handleSearchChange(e.target.value)}
                       onFocus={() => searchText.length > 0 && setShowSuggestions(true)}
@@ -224,7 +190,7 @@ const Navbar = () => {
                   </div>
                   <button
                     type="submit"
-                    className="shrink-0 rounded-full bg-store-600 hover:bg-store-700 text-white text-sm font-bold px-5 py-2.5 border-0 outline-none shadow-none transition-colors"
+                    className="shrink-0 rounded-none bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-black uppercase tracking-widest px-8 py-3.5 border-0 outline-none shadow-none transition-colors duration-200"
                   >
                     Search
                   </button>
@@ -238,16 +204,16 @@ const Navbar = () => {
               ) : null}
             </div>
 
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <CustomerNotificationBell />
               <Link
                 href="/wishlist"
-                className="relative p-2 text-gray-600 hover:text-store-600 rounded-lg hover:bg-store-50"
+                className="relative p-2.5 text-neutral-300 hover:text-white rounded-none hover:bg-neutral-900/50 transition-colors"
                 aria-label="Wishlist"
               >
                 <FiHeart className="text-xl" />
                 {wishlistCount > 0 && (
-                  <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 text-[10px] font-bold text-white bg-store-500 rounded-full flex items-center justify-center">
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 text-[8px] font-black text-black bg-[#D4AF37] rounded-none border border-black flex items-center justify-center px-1">
                     {wishlistCount}
                   </span>
                 )}
@@ -255,39 +221,39 @@ const Navbar = () => {
               <button
                 type="button"
                 onClick={toggleCartDrawer}
-                className="relative p-2 text-gray-600 hover:text-store-600 rounded-lg hover:bg-store-50"
+                className="relative p-2.5 text-neutral-300 hover:text-white rounded-none hover:bg-neutral-900/50 transition-colors"
                 aria-label="Cart"
               >
                 <FiShoppingCart className="text-xl" />
                 {totalUniqueItems > 0 && (
-                  <span className="absolute top-0.5 right-0.5 min-w-[16px] h-4 text-[10px] font-bold text-white bg-store-500 rounded-full flex items-center justify-center">
+                  <span className="absolute top-1 right-1 min-w-[16px] h-4 text-[8px] font-black text-black bg-[#D4AF37] rounded-none border border-black flex items-center justify-center px-1">
                     {totalUniqueItems}
                   </span>
                 )}
               </button>
-              <div className="w-px h-8 bg-gray-200 mx-1" />
-              {userInfo?.image ? (
+              <div className="w-px h-8 bg-neutral-900 mx-1" />
+              {mounted && userInfo?.image ? (
                 <Link href="/user/dashboard">
-                  <Image
+                  <img
                     width={36}
                     height={36}
                     src={userInfo.image}
                     alt="Account"
-                    className="rounded-full w-9 h-9 border-2 border-store-100 object-cover"
+                    className="rounded-none w-9 h-9 border border-black object-cover"
                   />
                 </Link>
-              ) : userInfo?.name ? (
+              ) : mounted && userInfo?.name ? (
                 <Link
                   href="/user/dashboard"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-store-500 text-store-600 font-bold text-sm"
+                  className="flex h-9 w-9 items-center justify-center rounded-none border border-black bg-black text-white hover:bg-white hover:text-black transition-colors font-black text-sm"
                 >
-                  {userInfo.name[0]}
+                  {userInfo.name[0].toUpperCase()}
                 </Link>
               ) : (
                 <button
                   type="button"
                   onClick={() => router.push("/auth/login")}
-                  className="text-sm font-bold text-white bg-store-600 hover:bg-store-700 px-5 py-2 rounded-full shadow-sm"
+                  className="text-xs font-black uppercase tracking-widest text-black bg-[#D4AF37] hover:bg-[#b8952f] px-6 py-3.5 rounded-md transition-all duration-200"
                 >
                   Login
                 </button>
@@ -321,4 +287,4 @@ const Navbar = () => {
   );
 };
 
-export default dynamic(() => Promise.resolve(Navbar), { ssr: false });
+export default Navbar;

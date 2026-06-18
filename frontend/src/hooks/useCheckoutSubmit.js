@@ -553,7 +553,7 @@ const useCheckoutSubmit = (storeSetting) => {
         key: storeSetting.razorpay_id,
         amount: amount,
         currency: currency || "INR",
-        name: storeSetting?.store_name || "Farmacykart",
+        name: storeSetting?.store_name || "Rasa Store",
         description:
           storeSetting?.store_description ||
           "This is the total cost of your purchase",

@@ -32,32 +32,8 @@ const CustomerServices = {
     return requests.delete(`/customer/${id}`);
   },
 
-  // Admin: Get wholesalers
-  getAllWholesalers: async ({ searchText = "", wholesalerStatus = "" } = {}) => {
-    const params = new URLSearchParams();
-    if (searchText) params.append("searchText", searchText);
-    if (wholesalerStatus) params.append("wholesalerStatus", wholesalerStatus);
-    return requests.get(`/customer/wholesalers?${params.toString()}`);
-  },
-
-  // Create wholesaler (admin)
-  createWholesaler: async (body) => {
-    return requests.post(`/customer/wholesaler`, body);
-  },
-
-  // Update wholesaler approval status (approve / reject)
-  updateWholesalerStatus: async (id, status) => {
-    return requests.put(`/customer/${id}`, { wholesalerStatus: status });
-  },
-
-  // Delete cloudinary asset
   deleteCloudinaryAsset: async (publicId) => {
     return requests.post(`/customer/cloudinary-delete`, { publicId });
-  },
-
-  // Send credentials to wholesaler (admin action)
-  sendCredentials: async (id, body = {}) => {
-    return requests.post(`/customer/send-credentials/${id}`, body);
   },
 
   getCustomerStatistics: async () => {

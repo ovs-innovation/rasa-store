@@ -8,7 +8,7 @@ const sendSMS = async (to, message, variables = {}) => {
   try {
     const authKey = process.env.MSG91_AUTH_KEY;
     const templateId = process.env.MSG91_TEMPLATE_ID;
-    const senderId = process.env.MSG91_SENDER_ID || "FARMCY";
+    const senderId = process.env.MSG91_SENDER_ID || "RASA";
 
     if (!authKey || !templateId) {
       console.warn("MSG91_AUTH_KEY or MSG91_TEMPLATE_ID not found in .env. Skipping SMS.");
@@ -108,7 +108,7 @@ const sendLoginOtpSms = async (to, otp) => {
     console.warn("[MSG91] OTP API failed, trying Flow SMS fallback...");
     const flowOk = await sendSMS(
       mobile,
-      `Your Farmacykart login OTP is ${otp}. Valid for 10 minutes.`,
+      `Your RASA login OTP is ${otp}. Valid for 10 minutes.`,
       { otp, OTP: otp, VAR1: otp, var: otp, var1: otp }
     );
     if (flowOk) {

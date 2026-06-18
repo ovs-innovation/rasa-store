@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 
+import { PRODUCT_PLACEHOLDER } from "@utils/brandAssets";
+
 const ProductImageGallery = ({ images, productTitle = "Product", buttons }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isZooming, setIsZooming] = useState(false);
@@ -53,10 +55,10 @@ const ProductImageGallery = ({ images, productTitle = "Product", buttons }) => {
   // If no media, show placeholder
   const displayImages = validMedia.length > 0
     ? validMedia
-    : ["https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png"];
+    : [PRODUCT_PLACEHOLDER];
 
   const activeImage = displayImages[activeIndex] || displayImages[0];
-  const placeholder = "https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png";
+  const placeholder = PRODUCT_PLACEHOLDER;
 
   // Reset active index when images change
   useEffect(() => {
@@ -95,7 +97,7 @@ const ProductImageGallery = ({ images, productTitle = "Product", buttons }) => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 lg:items-start bg-white rounded-2xl ">
+    <div className="flex flex-col lg:flex-row gap-6 lg:items-start bg-transparent rounded-2xl ">
       {/* Vertical Thumbnail Gallery - Left Side (Flipkart Style) */}
       {displayImages.length > 1 && (
         <div className="flex lg:flex-col flex-row gap-3 order-2 lg:order-1 overflow-x-auto lg:overflow-x-visible lg:overflow-y-auto max-h-[560px] pb-2 lg:pb-0 scrollbar-thin">
@@ -104,8 +106,8 @@ const ProductImageGallery = ({ images, productTitle = "Product", buttons }) => {
               key={`thumb-${index}-${mediaUrl}`}
               onClick={() => handleThumbnailClick(index)}
               className={`flex-shrink-0 relative w-16 h-16 lg:w-20 lg:h-20 rounded-xl border-2 overflow-hidden transition-all duration-300 transform ${index === activeIndex
-                ? "border-store-500 ring-2 ring-store-100 shadow-md scale-105"
-                : "border-gray-100 hover:border-gray-300 hover:shadow-sm grayscale-[0.5] hover:grayscale-0"
+                ? "border-[#D4AF37] ring-2 ring-[#D4AF37]/20 shadow-md scale-105"
+                : "border-neutral-900 hover:border-neutral-800 hover:shadow-sm grayscale-[0.5] hover:grayscale-0"
                 }`}
               type="button"
             >
@@ -138,7 +140,7 @@ const ProductImageGallery = ({ images, productTitle = "Product", buttons }) => {
                   )} </>
               )}
               {index === activeIndex && (
-                <div className="absolute inset-0 border-2 border-store-500" />
+                <div className="absolute inset-0 border-2 border-[#D4AF37]" />
               )}
             </button>
           ))}
@@ -148,7 +150,7 @@ const ProductImageGallery = ({ images, productTitle = "Product", buttons }) => {
       {/* Main Preview Image / Video - Right Side (Flipkart Style) */}
       {/* Main Preview Image / Video - Right Side (Flipkart Style) */}
       <div className="flex-1 order-1 lg:order-2 w-full">
-        <div className="relative w-full aspect-square bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
+        <div className="relative w-full aspect-square bg-[#0A0A0A] border border-neutral-900 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]">
 
           {/* Buttons overlay */}
           {buttons}
@@ -181,12 +183,12 @@ const ProductImageGallery = ({ images, productTitle = "Product", buttons }) => {
                 onMouseMove={handleMouseMove}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                className="w-full h-full max-h-[400px] object-contain transition-opacity duration-300"
+                className="w-full h-full object-contain transition-opacity duration-300"
                 style={{
-                  transform: isZooming ? "scale(2)" : "scale(1)",
+                  transform: isZooming ? "scale(2.2)" : "scale(1)",
                   transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
                   cursor: "zoom-in",
-                  transition: "transform 0.1s ease-out"
+                  transition: "transform 0.15s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
                 }}
               />
             )

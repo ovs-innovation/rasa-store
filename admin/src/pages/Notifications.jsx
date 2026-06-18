@@ -251,8 +251,6 @@ const Notifications = () => {
                                 to={
                                   value.productId
                                     ? `/product/${value.productId}`
-                                    : value.prescriptionId
-                                    ? `/prescriptions/${value.prescriptionId}`
                                     : `/order/${value.orderId}`
                                 }
                                 className="flex items-center"
@@ -281,8 +279,6 @@ const Notifications = () => {
                                   <p className="flex items-center text-xs text-gray-400">
                                     {value.productId ? (
                                       <Badge type="danger">Stock Out</Badge>
-                                    ) : value.prescriptionId ? (
-                                      <Badge type="warning">Prescription</Badge>
                                     ) : (
                                       <Badge type="success">New Order</Badge>
                                     )}

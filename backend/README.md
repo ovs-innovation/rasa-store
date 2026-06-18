@@ -1,10 +1,10 @@
 
-Farmacykart Server Documentation - Updated backend
+RASA Server Documentation - Updated backend
 
 
 Introduction: 
 
-This is ready api backend for Farmacykart admin and frontend built with node.js, express, mongoose, and mongodb for database. 
+This is ready api backend for RASA admin and frontend built with node.js, express, mongoose, and mongodb for database. 
 
 
 Tech and Packages we use in this project:
@@ -21,7 +21,7 @@ Tech and Packages we use in this project:
 
 Getting Started & Installation:
 
-For getting started with the template you have to follow the below procedure. First navigate to the Farmacykart-server directory.
+For getting started with the template you have to follow the below procedure. First navigate to the RASA-server directory.
 
 Step 1 : Configure your .env file:
 

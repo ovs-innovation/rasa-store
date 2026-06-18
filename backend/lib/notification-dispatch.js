@@ -5,7 +5,7 @@ const CustomerNotification = require("../models/CustomerNotification");
 const { sendSMS } = require("./sms-sender/sender");
 const { sendEmail } = require("./email-sender/sender");
 
-const PLACEHOLDER_EMAIL_DOMAIN = "phone.farmacykart.com";
+const PLACEHOLDER_EMAIL_DOMAIN = "phone.rasastore.com";
 const FCM_BATCH_SIZE = 500;
 
 const isPlaceholderEmail = (email) =>
@@ -48,17 +48,8 @@ async function resolveRecipients({ target, customerId }) {
     return [...customers, ...admins];
   }
 
-  if (target === "Customer") {
-    return Customer.find({
-      role: { $ne: "wholesaler" },
-      status: { $ne: "Inactive" },
-    })
-      .select(select)
-      .lean();
-  }
-
-  if (target === "Store") {
-    return Customer.find({ role: "wholesaler", status: { $ne: "Inactive" } })
+  if (target === "Customer" || target === "Store") {
+    return Customer.find({ status: { $ne: "Inactive" } })
       .select(select)
       .lean();
   }
@@ -72,12 +63,12 @@ async function resolveRecipients({ target, customerId }) {
   return [];
 }
 
-const BRAND_LOGO_URL =
-  process.env.BRAND_LOGO_URL ||
-  "https://res.cloudinary.com/dse9adftu/image/upload/v1780479335/farmacykart/brand/logo.png";
+const { DEFAULT_LOGO_URL } = require("./brand-assets");
+
+const BRAND_LOGO_URL = DEFAULT_LOGO_URL;
 
 function buildEmailHtml({ title, description, image, clickAction, shopName }) {
-  const storeUrl = process.env.STORE_URL || process.env.FRONTEND_URL || "https://farmacykart.com";
+  const storeUrl = process.env.STORE_URL || process.env.FRONTEND_URL || "https://rasastore.com";
   const link = clickAction || storeUrl;
   const imgBlock = image
     ? `<p style="text-align:center"><img src="${image}" alt="" style="max-width:100%;border-radius:8px" /></p>`
@@ -88,8 +79,8 @@ function buildEmailHtml({ title, description, image, clickAction, shopName }) {
 <html>
 <body style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px">
   <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:12px;padding:24px;border:1px solid #e2e8f0">
-    <p style="text-align:center;margin:0 0 16px"><img src="${BRAND_LOGO_URL}" alt="${shopName || "Farmacykart"}" style="height:48px;width:auto" /></p>
-    <p style="color:#0f766e;font-weight:bold;margin:0 0 8px">${shopName || "Farmacykart"}</p>
+    <p style="text-align:center;margin:0 0 16px"><img src="${BRAND_LOGO_URL}" alt="${shopName || "RASA"}" style="height:48px;width:auto" /></p>
+    <p style="color:#0f766e;font-weight:bold;margin:0 0 8px">${shopName || "RASA"}</p>
     <h2 style="color:#0f172a;margin:0 0 12px">${title}</h2>
     ${imgBlock}
     <p style="color:#475569;line-height:1.6">${description}</p>
@@ -102,7 +93,7 @@ function buildEmailHtml({ title, description, image, clickAction, shopName }) {
 }
 
 function buildSmsText({ title, description, clickAction }) {
-  const storeUrl = process.env.STORE_URL || "https://farmacykart.com";
+  const storeUrl = process.env.STORE_URL || "https://rasastore.com";
   const link = clickAction || storeUrl;
   const body = `${title}: ${description}`.slice(0, 140);
   return `${body} ${link}`.slice(0, 160);
@@ -214,7 +205,7 @@ async function sendSmsToRecipients(recipients, payload) {
 }
 
 async function sendEmailsToRecipients(recipients, payload) {
-  const shopName = payload.shopName || "Farmacykart";
+  const shopName = payload.shopName || "RASA";
   const html = buildEmailHtml({ ...payload, shopName });
   const text = `${payload.title}\n\n${payload.description}\n\n${payload.clickAction || ""}`;
 

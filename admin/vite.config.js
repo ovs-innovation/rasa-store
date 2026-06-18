@@ -59,10 +59,9 @@ export default defineConfig({
         scope: ".",
         start_url: ".",
         id: ".",
-        short_name: "Farmacykart - E-Commerce Website",
-        name: "Farmacykart | React eCommerce Admin Dashboard",
-        description:
-          "Farmacykart : React Grocery & Organic Food Store e-commerce Admin Dashboard",
+        short_name: "RASA Admin",
+        name: "RASA | Fashion Store Admin",
+        description: "RASA — Premium Sneakers & Streetwear Admin Dashboard",
         icons: [
           {
             src: "/favicon-transparent.png",

@@ -110,11 +110,11 @@ const Careers = () => {
                         Email your resume to our careers team:
                       </p>
                       <a
-                        href="mailto:careers@farmacykart.com"
+                        href="mailto:careers@Rasa Store.com"
                         className="inline-flex items-center gap-2 text-store-600 hover:text-store-700 font-semibold text-sm sm:text-base md:text-lg transition-colors break-all"
                       >
                         <FiMail className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                        <span className="break-all">careers@farmacykart.com</span>
+                        <span className="break-all">careers@Rasa Store.com</span>
                       </a>
                     </div>
                   </div>
@@ -150,7 +150,7 @@ const Careers = () => {
                     Join us in building the future of healthcare
                   </p>
                   <a
-                    href="mailto:careers@farmacykart.com?subject=Career Inquiry"
+                    href="mailto:careers@Rasa Store.com?subject=Career Inquiry"
                     className="inline-block bg-white text-store-600 font-semibold px-6 py-3 rounded-md hover:bg-gray-100 transition-colors"
                   >
                     Get Started

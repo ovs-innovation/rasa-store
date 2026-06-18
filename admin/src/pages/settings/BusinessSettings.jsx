@@ -23,8 +23,8 @@ const BusinessSettings = () => {
    const [isSubmitting, setIsSubmitting] = useState(false);
    const [settings, setSettings] = useState({
       maintenanceMode: false,
-      businessName: "FarmacyKart",
-      email: "info@farmacykart.com",
+      businessName: "RASA",
+      email: "info@rasastore.com",
       phone: "9100000000",
       phoneCountry: "IN",
       country: "India",
@@ -45,7 +45,7 @@ const BusinessSettings = () => {
       additionalChargeName: "Service Charge",
       additionalChargeAmount: "10",
       countryPickerStatus: false,
-      copyrightText: "© 2026 FarmacyKart. All rights reserved.",
+      copyrightText: "© 2026 RASA. All rights reserved.",
       cookiesText: "We use cookies to improve your experience on our site.",
    });
 

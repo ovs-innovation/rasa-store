@@ -26,6 +26,7 @@ const nextConfig = {
       "i.postimg.cc",
       "img.youtube.com",
       "placehold.co",
+      "images.unsplash.com",
     ],
   },
 
@@ -45,4 +46,4 @@ const nextConfig = {
   },
 };
 
-module.exports = withPWA(nextConfig);
+module.exports = nextConfig;

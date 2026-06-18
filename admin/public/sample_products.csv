@@ -1,3 +1,0 @@
-id,productId,name,description,sku,barcode,price,originalPrice,discount,stock,sales,category,brand,images,tags,status,taxRate,isPriceInclusive,hsnCode,batchNo,expDate,manufactureDate,isWholesale,wholePrice,minQuantity,isCombination,averageRating,totalRatings,totalReviews,slug,variants,createdAt,updatedAt
-,DUMMY001,Sample Ayurvedic Tonic,Great health tonic,SKU_D_001,123456789,100,120,20,50,0,Ayurvedic,,https://i.ibb.co/example.jpg,"tonic,health",show,0,No,HSN001,B001,2026-12-31,2025-01-01,No,0,0,No,0,0,0,sample-ayurvedic-tonic,[],,
-,DUMMY002,Sample Face Wash,Cleans face,SKU_D_002,987654321,200,250,50,100,0,Personal care,,https://i.ibb.co/example2.jpg,"face,wash",show,18,Yes,HSN002,B002,,,No,0,0,No,0,0,0,sample-face-wash,[],,

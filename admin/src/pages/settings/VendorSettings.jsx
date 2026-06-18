@@ -133,7 +133,7 @@ const VendorSettings = () => {
 
   return (
     <>
-      <PageTitle>Retailer Setting</PageTitle>
+      <PageTitle>Vendor Settings</PageTitle>
       <AnimatedContent>
         <div className="space-y-8 pb-12">
           {/* General Setup */}

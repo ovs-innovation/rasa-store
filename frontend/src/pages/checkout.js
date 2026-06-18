@@ -1,4 +1,4 @@
-import React,{useState, useRef, useContext, useEffect} from "react";
+import React,{useState, useRef, useEffect} from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -12,7 +12,7 @@ import {
   IoChevronForward,
   IoLocationOutline
 } from "react-icons/io5";
-import { FiLoader } from "react-icons/fi";
+import { FiLoader, FiEdit } from "react-icons/fi";
 import { useQuery } from "@tanstack/react-query";
 import { ImCreditCard } from "react-icons/im";
 import useTranslation from "next-translate/useTranslation";
@@ -35,7 +35,6 @@ import CustomerServices from "@services/CustomerServices";
 import LocationServices from "@services/LocationServices";
 import SwitchToggle from "@components/form/SwitchToggle";
 import { notifySuccess, notifyError } from "@utils/toast";
-import { UserContext } from "@context/UserContext";
 import { isProfileComplete, getDisplayEmail } from "@utils/profileAuth";
 
 const Checkout = () => {
@@ -81,8 +80,6 @@ const Checkout = () => {
     };
   }, [showAddressModal]);
   const { storeCustomizationSetting } = useGetSetting();
-  const { state } = useContext(UserContext) || {};
-  const isWholesaler = state?.userInfo?.role && state.userInfo.role.toString().toLowerCase() === "wholesaler";
 
   const { data: storeSetting } = useQuery({
     queryKey: ["storeSetting"],
@@ -171,17 +168,6 @@ const Checkout = () => {
 
   // Calculate totals for order summary
   const calculateTotals = () => {
-    // For wholesalers, no discount calculation - only show subtotal
-    if (isWholesaler) {
-      return {
-        totalMRP: 0,
-        totalDiscount: 0,
-        subtotal: cartTotal,
-        taxAmount: taxSummary?.exclusiveTax || 0,
-        total: parseFloat(total)
-      };
-    }
-    
     let totalMRP = 0;
     let totalDiscount = 0;
     
@@ -443,6 +429,83 @@ const Checkout = () => {
   return (
     <>
       <Layout title="Checkout" description="this is checkout page">
+        <style jsx global>{`
+          /* Checkout page dark theme overrides */
+          body {
+            background-color: #050505 !important;
+            color: #ffffff !important;
+          }
+
+          /* Form sections wrapper */
+          .form-group h2 {
+            color: #ffffff !important;
+            font-weight: 800 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+          }
+          
+          .bg-gray-50.border-gray-200 {
+            background-color: #0a0a0a !important;
+            border-color: #141414 !important;
+          }
+          
+          /* Select Delivery Address card */
+          div[class*="border-gray-200"] {
+            background-color: #0f0f0f !important;
+            border-color: #1a1a1a !important;
+          }
+          div[class*="border-gray-200"]:hover {
+            border-color: #d4af3730 !important;
+          }
+          
+          /* Deliver To badge */
+          .bg-blue-50.text-gray-700 {
+            background-color: #d4af3715 !important;
+            color: #d4af37 !important;
+            border: 1px solid #d4af3730 !important;
+          }
+          
+          /* Text overrides */
+          h3.text-gray-900,
+          p.text-gray-900,
+          span.text-gray-900,
+          p.text-base.font-bold {
+            color: #ffffff !important;
+          }
+          p.text-gray-500,
+          span.text-gray-500,
+          span.text-gray-600,
+          span.text-gray-700 {
+            color: #a3a3a3 !important;
+          }
+          
+          /* Selected address highlights */
+          .ring-2.ring-store-300 {
+            border-color: #d4af37 !important;
+            box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2) !important;
+          }
+          
+          /* Input & Form field area styling */
+          input, select, textarea {
+            background-color: #050505 !important;
+            border-color: #1a1a1a !important;
+            color: #ffffff !important;
+          }
+          input:focus, select:focus, textarea:focus {
+            border-color: #d4af37 !important;
+            outline: none !important;
+          }
+          
+          /* Add Address button & Action buttons */
+          button.bg-store-500 {
+            background-color: #d4af37 !important;
+            color: #000000 !important;
+            font-weight: 700 !important;
+          }
+          button.bg-store-500:hover {
+            background-color: #c29e2e !important;
+          }
+        `}</style>
         <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 lg:px-10">
           <div className="py-6 sm:py-10 lg:py-12 w-full flex flex-col lg:flex-row lg:gap-10 xl:gap-14">
             <div className="w-full lg:w-3/5 flex flex-col min-w-0">
@@ -566,9 +629,7 @@ const Checkout = () => {
                                         className="text-gray-400 hover:text-store-600 p-1 transition-colors"
                                         title="Edit address"
                                       >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
+                                        <FiEdit className="w-4 h-4" />
                                       </button>
                                       {shippingAddresses.length > 1 && (
                                         <button
@@ -690,9 +751,8 @@ const Checkout = () => {
                   )}
                 </h2>
 
-                {/* Coupon Section - Hidden for wholesalers */}
-                {!isWholesaler && (
-                  <div className="flex items-center mt-4 py-4 lg:py-4 text-sm w-full font-semibold text-gray-500 last:border-b-0 last:text-base last:pb-0">
+                {/* Coupon Section */}
+                <div className="flex items-center mt-4 py-4 lg:py-4 text-sm w-full font-semibold text-gray-500 last:border-b-0 last:text-base last:pb-0">
                     <form className="w-full">
                       {couponInfo.couponCode ? (
                         <div className="relative bg-emerald-50 border-2 border-dashed border-emerald-400 rounded-lg p-5 w-full overflow-hidden shadow-sm">
@@ -812,21 +872,18 @@ const Checkout = () => {
                       )}
                     </form>
                   </div>
-                )}
                 
-                {/* Total MRP - Hidden for wholesalers */}
-                {!isWholesaler && (
-                  <div className="flex items-center py-2 text-sm w-full font-semibold text-gray-500 last:border-b-0 last:text-base last:pb-0">
+                {/* Total MRP */}
+                <div className="flex items-center py-2 text-sm w-full font-semibold text-gray-500 last:border-b-0 last:text-base last:pb-0">
                     Total MRP
                     <span className="ml-auto flex-shrink-0 text-gray-800 font-bold">
                       {currency}
                       {totals.totalMRP.toFixed(2)}
                     </span>
                   </div>
-                )}
                 
-                {/* Total Discount - Hidden for wholesalers */}
-                {!isWholesaler && totals.totalDiscount > 0 && (
+                {/* Total Discount */}
+                {totals.totalDiscount > 0 && (
                   <div className="flex items-center py-2 text-sm w-full font-semibold text-green-600 last:border-b-0 last:text-base last:pb-0">
                     Total Discount
                     <span className="ml-auto flex-shrink-0 font-bold text-green-600">
@@ -858,8 +915,8 @@ const Checkout = () => {
                   </div>
                 )}
                 
-                {/* Coupon Offer / Additional Discount - Hidden for wholesalers */}
-                {!isWholesaler && discountAmount > 0 && (
+                {/* Coupon Offer / Additional Discount */}
+                {discountAmount > 0 && (
                   <div
                     className={`flex items-center py-2 text-sm w-full font-semibold last:border-b-0 last:text-base last:pb-0 ${
                       isCouponApplied ? "text-green-600" : "text-gray-500"

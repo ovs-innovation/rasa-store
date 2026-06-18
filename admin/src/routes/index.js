@@ -11,7 +11,6 @@ const Category = lazy(() => import("@/pages/Category"));
 const ChildCategory = lazy(() => import("@/pages/ChildCategory"));
 const Staff = lazy(() => import("@/pages/Staff"));
 const Customers = lazy(() => import("@/pages/Customers"));
-const Wholesalers = lazy(() => import("@/pages/Retailer"));
 const AddProduct = lazy(() => import("@/pages/AddProduct"));
 const NewItemRequest = lazy(() => import("@/pages/NewItemRequest"));
 const ProductBulkImport = lazy(() => import("@/pages/ProductBulkImport"));
@@ -37,6 +36,8 @@ const Reviews = lazy(() => import("@/pages/Reviews"));
 const CategoryBulkImport = lazy(() => import("@/pages/CategoryBulkImport"));
 const CategoryBulkExport = lazy(() => import("@/pages/CategoryBulkExport"));
 const LowStock = lazy(() => import("@/pages/LowStock"));
+const StockOverview = lazy(() => import("@/pages/StockOverview"));
+const OutOfStock = lazy(() => import("@/pages/OutOfStock"));
 const OrdersByStatus = lazy(() => import("@/pages/OrdersByStatus"));
 const GeneralSettings = lazy(() => import("@/pages/settings/GeneralSettings"));
 const BusinessSettings = lazy(() => import("@/pages/settings/BusinessSettings"));
@@ -50,8 +51,7 @@ const RefundSettings = lazy(() => import("@/pages/settings/RefundSettings"));
 const Faqs = lazy(() => import("@/pages/Faqs"));
 const PushNotification = lazy(() => import("@/pages/PushNotification"));
 const Testimonials = lazy(() => import("@/pages/Testimonials"));
-const Prescriptions = lazy(() => import("@/pages/Prescriptions"));
-const PrescriptionDetails = lazy(() => import("@/pages/PrescriptionDetails"));
+const RasaHomepage = lazy(() => import("@/pages/RasaHomepage"));
 /*
 //  * ⚠ These are internal routes!
 //  * They will be rendered inside the app, using the default `containers/Layout`.
@@ -67,10 +67,6 @@ const routes = [
   {
     path: "/dashboard",
     component: Dashboard,
-  },
-  {
-    path: "/prescriptions",
-    component: Prescriptions,
   },
   {
     path: "/new-sale",
@@ -122,10 +118,6 @@ const routes = [
     component: OrdersByStatus,
   },
   {
-    path: "/prescriptions/:id",
-    component: PrescriptionDetails,
-  },
-  {
     path: "/products",
     component: Products,
   },
@@ -156,6 +148,18 @@ const routes = [
   {
     path: "/products/low-stock",
     component: LowStock,
+  },
+  {
+    path: "/inventory",
+    component: StockOverview,
+  },
+  {
+    path: "/inventory/low-stock",
+    component: LowStock,
+  },
+  {
+    path: "/inventory/out-of-stock",
+    component: OutOfStock,
   },
   {
     path: "/products/gallery",
@@ -209,10 +213,6 @@ const routes = [
   {
     path: "/customers",
     component: Customers,
-  },
-  {
-    path: "/wholesalers",
-    component: Wholesalers,
   },
   {
     path: "/customer-order/:id",
@@ -282,6 +282,34 @@ const routes = [
   //   component: ComingSoon,
   // },
   {
+    path: "/homepage",
+    component: RasaHomepage,
+  },
+  {
+    path: "/homepage/hero",
+    component: RasaHomepage,
+  },
+  {
+    path: "/homepage/brands",
+    component: RasaHomepage,
+  },
+  {
+    path: "/homepage/instagram",
+    component: RasaHomepage,
+  },
+  {
+    path: "/homepage/trending",
+    component: RasaHomepage,
+  },
+  {
+    path: "/homepage/new-arrivals",
+    component: RasaHomepage,
+  },
+  {
+    path: "/homepage/categories",
+    component: RasaHomepage,
+  },
+  {
     path: "/edit-profile",
     component: EditProfile,
   },
@@ -303,8 +331,9 @@ const routeAccessList = [
   { label: "Attributes", value: "attributes" },
   { label: "Coupons", value: "coupons" },
   { label: "Customers", value: "customers" },
-  { label: "Wholesalers", value: "wholesalers" },
   { label: "Orders", value: "orders" },
+  { label: "Inventory", value: "inventory" },
+  { label: "Homepage Manager", value: "homepage" },
   { label: "Staff", value: "our-staff" },
   { label: "Settings", value: "settings" },
   { label: "Languages", value: "languages" },

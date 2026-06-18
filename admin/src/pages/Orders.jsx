@@ -66,7 +66,7 @@ const Orders = () => {
     invoice: true,
     time: true,
     customerName: true,
-    productName: false,
+    productName: true,
     contact: true,
     shippingCost: false,
     discount: false,
@@ -241,7 +241,6 @@ const Orders = () => {
                     {[
                       { label: 'All', value: '' },
                       { label: 'Customer', value: 'customer' },
-                      { label: 'Retailer', value: 'wholesaler' }
                     ].map((tab) => (
                       <button
                         key={tab.value}

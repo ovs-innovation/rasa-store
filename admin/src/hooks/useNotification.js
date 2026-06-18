@@ -9,7 +9,7 @@ const useNotification = () => {
 
   // useEffect(() => {
   //   setSocket(io(import.meta.env.VITE_APP_API_SOCKET_URL));
-  //   // setSocket(io("https://Farmacykart-backend-theta.vercel.app"));
+  //   // setSocket(io(process.env.NEXT_PUBLIC_API_SOCKET_URL));
   // }, []);
 
   // useEffect(() => {

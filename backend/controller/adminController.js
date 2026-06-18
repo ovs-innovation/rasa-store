@@ -98,9 +98,9 @@ const forgetPassword = async (req, res) => {
     const option = {
       name: isAdded.name,
       email: req.body.verifyEmail,
-      contact_email: globalSetting?.setting?.email || "support@Farmacykart.com",
+      contact_email: globalSetting?.setting?.email || "support@rasastore.com",
       token: token,
-      shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
+      shop_name: globalSetting?.setting?.shop_name || "RASA",
     };
 
     const { html, text } = simpleResetPasswordEmail({
@@ -109,7 +109,7 @@ const forgetPassword = async (req, res) => {
     });
     const body = {
       to: `${req.body.verifyEmail}`,
-      subject: "Farmacykart admin password reset",
+      subject: "RASA admin password reset",
       html,
       text,
       emailType: "admin-password-reset",
@@ -172,15 +172,15 @@ const addStaff = async (req, res) => {
       const option = {
         name: req.body.name,
         email: req.body.email,
-        contact_email: globalSetting?.setting?.email || "support@Farmacykart.com",
+        contact_email: globalSetting?.setting?.email || "support@rasastore.com",
         password: req.body.password,
-        shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
+        shop_name: globalSetting?.setting?.shop_name || "RASA",
       };
 
       const staffHtml = addStaffEmailBody(option);
       const body = {
         to: `${req.body.email}`,
-        subject: "Your Farmacykart staff account",
+        subject: "Your RASA staff account",
         html: staffHtml,
         text: `Hello,\n\nYour ${option.shop_name} staff account is ready.\nEmail: ${option.email}\n\nLogin at the admin panel.\n\n— ${option.shop_name}`,
         emailType: "staff-welcome",

@@ -21,17 +21,17 @@ const Layout = ({ title, description, children, hideMobileHeader }) => {
   const storeColor = storeCustomizationSetting?.theme?.color || "green";
   const palette = getPalette(storeColor);
 
-  // Sync prescription medicines to cart
+  // Sync cart with backend
   useCartSync();
 
   // Get dynamic title and favicon from settings
-  const siteTitle = storeCustomizationSetting?.seo?.meta_title || globalSetting?.shop_name || "Farmacykart";
+  const siteTitle = storeCustomizationSetting?.seo?.meta_title || globalSetting?.shop_name || "Rasa Store";
   const favicon = pickBrandLogo(
     storeCustomizationSetting?.seo?.favicon,
     globalSetting?.logo,
     storeCustomizationSetting?.navbar?.logo
   );
-  const defaultDescription = storeCustomizationSetting?.seo?.meta_description || description || "Discover personalized merchandise, branded giveaways, and advertising essentials. Ideal for businesses, events, and promotions";
+  const defaultDescription = storeCustomizationSetting?.seo?.meta_description || description || "Rasa Store defines modern premium streetwear. Minimalist silhouettes, heavyweight fabrics, and clean aesthetics designed for the digital generation.";
 
   return (
     <>
@@ -40,16 +40,16 @@ const Layout = ({ title, description, children, hideMobileHeader }) => {
           <style>
             {`
               :root {
-                --store-color-50: ${palette[50]};
-                --store-color-100: ${palette[100]};
-                --store-color-200: ${palette[200]};
-                --store-color-300: ${palette[300]};
-                --store-color-400: ${palette[400]};
-                --store-color-500: ${palette[500]};
-                --store-color-600: ${palette[600]};
-                --store-color-700: ${palette[700]};
-                --store-color-800: ${palette[800]};
-                --store-color-900: ${palette[900]};
+                --store-color-50: #F9F9F9;
+                --store-color-100: #FFFFFF;
+                --store-color-200: #F3F4F6;
+                --store-color-300: #111111;
+                --store-color-400: #1F2937;
+                --store-color-500: #111111;
+                --store-color-600: #111111;
+                --store-color-700: #000000;
+                --store-color-800: #111111;
+                --store-color-900: #000000;
               }
             `}
           </style>
@@ -69,7 +69,7 @@ const Layout = ({ title, description, children, hideMobileHeader }) => {
 
         <div className={`${hideMobileHeader ? "pt-0" : "pt-16"} lg:pt-0 lg:mt-0 pb-16 lg:pb-0`}>
           {/* Desktop: one sticky header — top bar + navbar + categories shift on scroll */}
-          <div className="hidden lg:block sticky top-0 z-[70] bg-white shadow-sm">
+          <div id="site-header" className="hidden lg:block sticky top-0 z-[70] bg-[#050505] shadow-lg shadow-black/40">
             <NavBarTop />
             <Navbar />
           </div>
@@ -93,7 +93,7 @@ const Layout = ({ title, description, children, hideMobileHeader }) => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="light"
+        theme="dark"
       />
     </>
   );

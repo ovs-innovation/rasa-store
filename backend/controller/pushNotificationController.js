@@ -5,9 +5,9 @@ const { dispatchCampaign } = require("../lib/notification-dispatch");
 const getShopName = async () => {
   try {
     const globalSetting = await Setting.findOne({ name: "globalSetting" });
-    return globalSetting?.setting?.shop_name || "Farmacykart";
+    return globalSetting?.setting?.shop_name || "RASA";
   } catch {
-    return "Farmacykart";
+    return "RASA";
   }
 };
 

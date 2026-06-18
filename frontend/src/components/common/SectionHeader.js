@@ -4,7 +4,7 @@ import { getPalette } from "@utils/themeColors";
 import CMSkeleton from "@components/preloader/CMSkeleton";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 
-const SectionHeader = ({ title, subtitle, loading = false, error = null, align = "left" }) => {
+const SectionHeader = ({ title, subtitle, loading = false, error = null, align = "left", className = "mb-12" }) => {
   const { storeCustomizationSetting } = useGetSetting();
   const { showingTranslateValue } = useUtilsFunction();
   const storeColor = storeCustomizationSetting?.theme?.color || "green";
@@ -25,39 +25,20 @@ const SectionHeader = ({ title, subtitle, loading = false, error = null, align =
   const displaySubtitle = subtitle ? getDisplayValue(subtitle) : "";
 
   return (
-    <div className={`${alignmentClass} mb-10`}>
+    <div className={`${alignmentClass} ${className}`}>
       <h2 
-        className="text-xl md:text-2xl lg:text-3xl font-bold mb-3" 
-        style={{ color: palette[700] }}
+        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-widest text-current mb-4 leading-none" 
       >
         {loading ? (
-          <CMSkeleton count={1} height={30} loading={loading} data="" />
+          <CMSkeleton count={1} height={40} loading={loading} data="" />
         ) : (
           displayTitle
         )}
       </h2>
-      {/* <div className={`flex ${containerClass} mb-3`}>
-        <svg
-          width="100"
-          height="16"
-          viewBox="0 0 120 20"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          style={{ color: palette[600] }}
-        >
-          <path
-            d="M0 10 L30 10 L35 5 L40 15 L45 10 L75 10 L80 5 L85 15 L90 10 L120 10"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </div> */}
       {displaySubtitle && (
-        <p className={`text-gray-600 text-sm md:text-base ${align === "center" ? "max-w-2xl mx-auto" : ""}`}>
+        <p className={`text-neutral-500 text-[10px] md:text-xs font-bold uppercase tracking-widest leading-relaxed ${align === "center" ? "max-w-2xl mx-auto" : ""}`}>
           {loading ? (
-            <CMSkeleton count={4} height={10} error={error} loading={loading} data="" />
+            <CMSkeleton count={2} height={10} error={error} loading={loading} data="" />
           ) : (
             displaySubtitle
           )}

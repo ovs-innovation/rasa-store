@@ -19,7 +19,7 @@ async function populateCartTaxFields(cart) {
   if (productIds.length === 0) return cart;
 
   const products = await Product.find({ _id: { $in: productIds } }).select(
-    "_id taxRate hsnCode mrp originalPrice batchNo expDate"
+    "_id taxRate hsnCode mrp originalPrice"
   );
 
   const productMap = {};
@@ -28,8 +28,6 @@ async function populateCartTaxFields(cart) {
       taxRate: product.taxRate || 0,
       hsnCode: product.hsnCode || "",
       mrp: product.mrp || product.originalPrice || 0,
-      batchNo: product.batchNo || "",
-      expDate: product.expDate || "",
     };
   });
 
@@ -43,8 +41,6 @@ async function populateCartTaxFields(cart) {
         taxRate: item.taxRate ?? productData.taxRate,
         hsn: item.hsn || item.hsnCode || productData.hsnCode,
         mrp: item.mrp || productData.mrp,
-        batchNo: item.batchNo || productData.batchNo,
-        expDate: item.expDate || productData.expDate,
       };
     }
     return item;

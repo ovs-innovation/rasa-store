@@ -4,14 +4,13 @@ import http from "http";
 const isServer = typeof window === "undefined";
 
 // Prefer IPv4 on server (Windows often resolves localhost to ::1 first)
-const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(
-  "://localhost",
-  "://127.0.0.1"
-);
+const apiBaseUrl = (
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8092/api"
+).replace("://localhost", "://127.0.0.1");
 
 const instance = axios.create({
   baseURL: apiBaseUrl,
-  timeout: 50000,
+  timeout: isServer ? 12000 : 30000,
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",

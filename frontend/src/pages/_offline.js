@@ -3,7 +3,7 @@ import Layout from "@layout/Layout";
 
 const Offline = () => {
   return (
-    <Layout title="Farmacykart">
+    <Layout title="Rasa Store">
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-10 py-6 sm:py-10">
         <div className="mb-6 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <span className="font-bold">You’re offline.</span>{" "}

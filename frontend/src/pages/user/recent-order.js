@@ -96,7 +96,6 @@ const RecentOrder = ({ data, loading, error }) => {
           slug: product.slug || item.slug || "",
           quantity: item.quantity || 1,
           stock: product.stock,
-          minQuantity: product.minQuantity,
         }, item.quantity || 1);
         addedCount++;
       }

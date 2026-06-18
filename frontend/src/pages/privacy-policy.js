@@ -134,7 +134,7 @@ const PrivacyPolicy = () => {
                         error={error}
                         loading={loading}
                         data={storeCustomizationSetting?.privacy_policy?.description || `<h2>1. Introduction</h2>
-<p>Welcome to Farmacykart. We are committed to protecting your privacy and ensuring the security of your personal data.</p>
+<p>Welcome to Rasa Store. We are committed to protecting your privacy and ensuring the security of your personal data.</p>
 <h2>2. Information We Collect</h2>
 <ul>
   <li><strong>Personal Details:</strong> Name, contact number, email, and delivery address.</li>

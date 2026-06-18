@@ -1,2 +1,2 @@
 
-This is updated version of Farmacykart-admin
+This is updated version of RASA-admin

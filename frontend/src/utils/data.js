@@ -171,7 +171,7 @@ const contactData = [
     title: "contact-page-box1-title",
     info: "contact-page-box1-info",
     icon: FiMail,
-    contact: "Farmacykart@gmail.com",
+    contact: "Rasa Store@gmail.com",
     className: "bg-pink-100",
   },
   {

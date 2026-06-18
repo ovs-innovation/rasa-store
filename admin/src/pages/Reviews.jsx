@@ -59,56 +59,8 @@ const Reviews = () => {
     })
   );
 
-  const dummyReviews = [
-    {
-      _id: "65f1a2b3c4d5e6f7a8b9c0d1",
-      product: {
-        title: { en: "Ayurvedic Herbal Cough Syrup" },
-        image: "https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png"
-      },
-      user: {
-        name: "Rahul Sharma",
-        phone: "919876543210"
-      },
-      rating: 5,
-      reviewText: "The herbal syrup is incredibly effective. I started feeling better within just two days of use. Highly recommended for chronic cough!",
-      orderInvoice: 10452,
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-    },
-    {
-      _id: "65f1a2b3c4d5e6f7a8b9c0d2",
-      product: {
-        title: { en: "Premium Multivitamin Tablets" },
-        image: "https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png"
-      },
-      user: {
-        name: "Priya Patel",
-        phone: "919012345678"
-      },
-      rating: 4,
-      reviewText: "Great vitamins, definitely feeling more energetic. The packaging was top notch, though shipping took a little longer than expected.",
-      orderInvoice: 10458,
-      createdAt: new Date(Date.now() - 172800000).toISOString(),
-    },
-    {
-      _id: "65f1a2b3c4d5e6f7a8b9c0d3",
-      product: {
-        title: { en: "Digital Blood Pressure Monitor" },
-        image: "https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png"
-      },
-      user: {
-        name: "Vikram Singh",
-        phone: "918887776665"
-      },
-      rating: 3,
-      reviewText: "The monitor is accurate but the interface is a bit clunky to use for elderly people. Works well once you get the hang of it.",
-      orderInvoice: 10462,
-      createdAt: new Date(Date.now() - 259200000).toISOString(),
-    }
-  ];
-
-  const reviews = data?.reviews?.length > 0 ? data.reviews : dummyReviews;
-  const totalResults = data?.pagination?.total || (data?.reviews?.length > 0 ? 0 : dummyReviews.length);
+  const reviews = data?.reviews || [];
+  const totalResults = data?.pagination?.total || reviews.length;
 
   const handleDeleteReview = async (reviewId) => {
     try {

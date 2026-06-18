@@ -6,7 +6,7 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: false,
       unique: true,
-      sparse: true, // Allows null/missing values but enforces uniqueness for non-null
+      sparse: true,
     },
     name: {
       type: String,
@@ -28,36 +28,14 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
-
     shippingAddress: [{
-      name: {
-        type: String,
-        required: false,
-      },
-      address: {
-        type: String,
-        required: false,
-      },
-      city: {
-        type: String,
-        required: false,
-      },
-      country: {
-        type: String,
-        required: false,
-      },
-      zipCode: {
-        type: String,
-        required: false,
-      },
-      phone: {
-        type: String,
-        required: false,
-      },
-      isDefault: {
-        type: Boolean,
-        default: false,
-      },
+      name: { type: String, required: false },
+      address: { type: String, required: false },
+      city: { type: String, required: false },
+      country: { type: String, required: false },
+      zipCode: { type: String, required: false },
+      phone: { type: String, required: false },
+      isDefault: { type: Boolean, default: false },
       addressType: {
         type: String,
         enum: ['Home', 'Work', 'Other'],
@@ -90,79 +68,6 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
-    role: {
-      type: String,
-      enum: ["customer", "wholesaler"],
-      default: "customer",
-    },
-    // Wholesaler specific fields
-    aadhar: {
-      type: String,
-      required: false,
-    },
-    pan: {
-      type: String,
-      required: false,
-    },
-    gst: {
-      type: String,
-      required: false,
-    },
-    gstPublicId: {
-      type: String,
-      required: false,
-    },
-    drugLicense: {
-      type: String,
-      required: false,
-    },
-    drugLicensePublicId: {
-      type: String,
-      required: false,
-    },
-    aadharPublicId: {
-      type: String,
-      required: false,
-    },
-    aadharDeleteToken: {
-      type: String,
-      required: false,
-    },
-    panPublicId: {
-      type: String,
-      required: false,
-    },
-    panDeleteToken: {
-      type: String,
-      required: false,
-    },
-    gstNotRequired: {
-      type: Boolean,
-      default: false,
-    },
-    gstDeleteToken: {
-      type: String,
-      required: false,
-    },
-    drugLicenseNotRequired: {
-      type: Boolean,
-      default: false,
-    },
-    // Shop / Business fields (from updated wholesaler signup form)
-    hasShop: { type: Boolean, default: false },
-    shopName: { type: String, required: false },
-    gstNumber: { type: String, required: false },
-    drugLicenseNumber: { type: String, required: false },
-    shopImageUrl: { type: String, required: false },
-    shopImagePublicId: { type: String, required: false },
-    shopImageDeleteToken: { type: String, required: false },
-    businessDocUrl: { type: String, required: false },
-    businessDocPublicId: { type: String, required: false },
-    businessDocDeleteToken: { type: String, required: false },
-    drugLicenseDeleteToken: {
-      type: String,
-      required: false,
-    },
     lastLogin: {
       type: Date,
       required: false,
@@ -171,22 +76,6 @@ const customerSchema = new mongoose.Schema(
       type: Boolean,
       required: false,
       default: false,
-    },
-    // Wholesaler approval status (only meaningful for role = 'wholesaler')
-    wholesalerStatus: {
-      type: String,
-      enum: ["pending", "approved", "rejected"],
-      default: "pending",
-    },
-    // Credential email tracking
-    credentialEmailCount: {
-      type: Number,
-      required: false,
-      default: 0,
-    },
-    lastCredentialEmailSentAt: {
-      type: Date,
-      required: false,
     },
     cart: [
       {

@@ -14,7 +14,7 @@ const {
 } = require("../lib/email-sender/simple-templates");
 const { sendVerificationCode } = require("../lib/phone-verification/sender");
 
-const PLACEHOLDER_EMAIL_DOMAIN = "phone.farmacykart.com";
+const PLACEHOLDER_EMAIL_DOMAIN = "phone.rasastore.com";
 
 const normalizePhone = (phone) => {
   if (!phone) return "";
@@ -66,11 +66,12 @@ const sendCustomerAuthResponse = async (res, customer, message, extra = {}) => {
     address: customerWithCart.address,
     phone: customerWithCart.phone,
     image: customerWithCart.image,
-    role: customerWithCart.role || "customer",
     cart: customerWithCart.cart,
     phoneVerified: !!customerWithCart.phoneVerified,
     emailVerified: !!customerWithCart.emailVerified,
     profileComplete,
+    hasPassword: !!customerWithCart.password,
+    authProvider: customerWithCart.authProvider || "email",
     message,
     ...extra,
   });
@@ -89,7 +90,7 @@ const verifyEmailAddress = async (req, res) => {
       name: req.body.name,
       email: req.body.email,
       token: token,
-      shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
+      shop_name: globalSetting?.setting?.shop_name || "RASA",
     };
     const { html, text } = simpleVerifyEmail(option);
     const body = {
@@ -229,7 +230,7 @@ const sendPhoneEmailOTP = async (req, res) => {
       name: user.name,
       email: user.email,
       otp: otp,
-      shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
+      shop_name: globalSetting?.setting?.shop_name || "RASA",
     };
 
     const otpMail = simpleOtpEmail({
@@ -628,7 +629,7 @@ const resendVerificationEmail = async (req, res) => {
       name: user.name,
       email: user.email,
       otp: otp,
-      shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
+      shop_name: globalSetting?.setting?.shop_name || "RASA",
     };
 
     const otpMail = simpleOtpEmail({
@@ -647,109 +648,6 @@ const resendVerificationEmail = async (req, res) => {
     await sendEmail(body);
     res.send({ message: "A new OTP has been sent to your email." });
   } catch (err) {
-    res.status(500).send({ message: err.message });
-  }
-};
-
-// Create wholesaler from frontend form - accepts URLs (preferred) or multipart files
-const createWholesaler = async (req, res) => {
-  try {
-    const { name, email, phone } = req.body;
-
-    const gstNotRequired = req.body.gstNotRequired === 'true' || req.body.gstNotRequired === true || req.body.gstNotRequired === 'on';
-    const drugLicenseNotRequired = req.body.drugLicenseNotRequired === 'true' || req.body.drugLicenseNotRequired === true || req.body.drugLicenseNotRequired === 'on';
-
-    if (!name || !email) {
-      return res.status(400).send({ message: 'Name and email are required.' });
-    }
-
-    // check if email exists
-    const existing = await Customer.findOne({ email });
-    if (existing) {
-      return res.status(400).send({ message: 'Customer with this email already exists.' });
-    }
-
-    const files = req.files || {};
-
-    // Basic URL validator
-    const isValidUrl = (value) => {
-      if (!value) return false;
-      try {
-        const u = new URL(value);
-        return ['http:', 'https:'].includes(u.protocol);
-      } catch (e) {
-        return false;
-      }
-    };
-
-    const resolveField = (bodyKey, fileKey) => {
-      const bodyVal = req.body[bodyKey] && String(req.body[bodyKey]).trim();
-      if (bodyVal) {
-        if (!isValidUrl(bodyVal)) {
-          return { error: `${bodyKey} must be a valid URL.` };
-        }
-        return { url: bodyVal };
-      }
-      if (files[fileKey] && files[fileKey][0]) {
-        return { url: `/uploads/wholesaler/${files[fileKey][0].filename}` };
-      }
-      return { url: null };
-    };
-
-    const aadharRes = resolveField('aadharUrl', 'aadhar');
-    if (aadharRes.error) return res.status(400).send({ message: aadharRes.error });
-
-    const panRes = resolveField('panUrl', 'pan');
-    if (panRes.error) return res.status(400).send({ message: panRes.error });
-
-    const gstRes = resolveField('gstUrl', 'gst');
-    if (gstRes.error) return res.status(400).send({ message: gstRes.error });
-
-    const drugRes = resolveField('drugUrl', 'drugLicense');
-    if (drugRes.error) return res.status(400).send({ message: drugRes.error });
-
-    // Required validations — only name and email are mandatory from frontend signup
-    // (Aadhar/PAN are optional per the updated form)
-
-    const newWholesaler = new Customer({
-      name,
-      email,
-      phone,
-      role: 'wholesaler',
-      password: req.body.password ? bcrypt.hashSync(req.body.password) : undefined,
-      aadhar: aadharRes.url,
-      aadharPublicId: req.body.aadharPublicId || (files.aadhar && files.aadhar[0] ? files.aadhar[0].filename.split('.').slice(0, -1).join('.') : null),
-      aadharDeleteToken: req.body.aadharDeleteToken || null,
-      pan: panRes.url,
-      panPublicId: req.body.panPublicId || (files.pan && files.pan[0] ? files.pan[0].filename.split('.').slice(0, -1).join('.') : null),
-      panDeleteToken: req.body.panDeleteToken || null,
-      gst: gstRes.url,
-      gstPublicId: req.body.gstPublicId || (files.gst && files.gst[0] ? files.gst[0].filename.split('.').slice(0, -1).join('.') : null),
-      gstDeleteToken: req.body.gstDeleteToken || null,
-      drugLicense: drugRes.url,
-      drugLicensePublicId: req.body.drugPublicId || (files.drugLicense && files.drugLicense[0] ? files.drugLicense[0].filename.split('.').slice(0, -1).join('.') : null),
-      drugLicenseDeleteToken: req.body.drugDeleteToken || null,
-      gstNotRequired,
-      drugLicenseNotRequired,
-      wholesalerStatus: 'pending',
-      // New shop fields from updated signup form
-      hasShop: req.body.hasShop === true || req.body.hasShop === 'true' || false,
-      shopName: req.body.shopName || null,
-      gstNumber: req.body.gstNumber || null,
-      drugLicenseNumber: req.body.drugLicenseNumber || null,
-      shopImageUrl: req.body.shopImageUrl || null,
-      shopImagePublicId: req.body.shopImagePublicId || null,
-      shopImageDeleteToken: req.body.shopImageDeleteToken || null,
-      businessDocUrl: req.body.businessDocUrl || null,
-      businessDocPublicId: req.body.businessDocPublicId || null,
-      businessDocDeleteToken: req.body.businessDocDeleteToken || null,
-    });
-
-    await newWholesaler.save();
-
-    res.send({ message: 'Wholesaler submitted successfully', wholesaler: newWholesaler });
-  } catch (err) {
-    console.error('createWholesaler error:', err);
     res.status(500).send({ message: err.message });
   }
 };
@@ -813,7 +711,7 @@ const deleteCloudinaryAsset = async (req, res) => {
 // Simple server-side upload endpoint that accepts a data URL (base64) and uploads to Cloudinary
 const cloudinaryUpload = async (req, res) => {
   try {
-    const { file, publicId, folder = 'wholesaler' } = req.body;
+    const { file, publicId, folder = 'rasa' } = req.body;
     if (!file) return res.status(400).send({ message: 'file (data URL) is required' });
 
     if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
@@ -947,21 +845,6 @@ const loginCustomer = async (req, res) => {
       customer.firebaseUid = uid;
     }
 
-    // If the account is a wholesaler, check approval status
-    if (customer.role === 'wholesaler') {
-      if (customer.wholesalerStatus === 'pending') {
-        return res.status(403).send({
-          message: 'Your account is currently under verification. You will be notified once approved by our team.',
-          wholesalerStatus: 'pending',
-        });
-      }
-      if (customer.wholesalerStatus === 'rejected') {
-        return res.status(403).send({
-          message: 'Your wholesaler application has been rejected. Please contact support for more information.',
-          wholesalerStatus: 'rejected',
-        });
-      }
-    }
     
     // Update lastLogin timestamp
     customer.lastLogin = new Date();
@@ -1044,21 +927,6 @@ const signupPhone = async (req, res) => {
       await customer.save();
     }
 
-    if (customer.role === "wholesaler") {
-      if (customer.wholesalerStatus === "pending") {
-        return res.status(403).send({
-          message:
-            "Your account is currently under verification. You will be notified once approved.",
-          wholesalerStatus: "pending",
-        });
-      }
-      if (customer.wholesalerStatus === "rejected") {
-        return res.status(403).send({
-          message: "Your wholesaler application has been rejected.",
-          wholesalerStatus: "rejected",
-        });
-      }
-    }
 
     await sendCustomerAuthResponse(res, customer, isNewUser ? "Account created!" : "Login Successful!", {
       isNewUser,
@@ -1118,7 +986,7 @@ const sendProfileEmailOtp = async (req, res) => {
     await customer.save();
 
     const globalSetting = await Setting.findOne({ name: "globalSetting" });
-    const shopName = globalSetting?.setting?.shop_name || "Farmacykart";
+    const shopName = globalSetting?.setting?.shop_name || "RASA";
     const otpMail = simpleOtpEmail({
       name: customer.name,
       email: normalizedEmail,
@@ -1284,7 +1152,7 @@ const forgetPassword = async (req, res) => {
       name: isAdded.name,
       email: req.body.email,
       token: token,
-      shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
+      shop_name: globalSetting?.setting?.shop_name || "RASA",
     };
 
     const { html, text } = simpleResetPasswordEmail(option);
@@ -1329,52 +1197,6 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// Send credentials email to wholesaler (admin action)
-const sendCredentials = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const { password } = req.body;
-
-    const customer = await Customer.findById(id);
-    if (!customer) return res.status(404).send({ message: 'Wholesaler not found' });
-
-    // Require client to provide plaintext password (do not generate on server)
-    if (!password || String(password).trim().length === 0) {
-      return res.status(400).send({ message: 'Password is required. Generate it from the admin UI and send it.' });
-    }
-    const plainPassword = String(password);
-    const frontendUrl = process.env.FRONTEND_URL || process.env.STORE_URL || 'http://localhost:3000';
-    const mailBody = {
-      to: customer.email,
-      subject: 'Farmacykart – Your wholesaler login details',
-      html: `<p>Hi ${customer.name || 'Wholesaler'},</p>
-             <p>Your wholesaler panel login credentials are below:</p>
-             <p><strong>Email:</strong> ${customer.email}</p>
-             <p><strong>Password:</strong> ${plainPassword}</p>
-             <p>Login here: <a href="${frontendUrl}">${frontendUrl}</a></p>
-             <p>Regards,<br/>Farmacykart Team</p>`,
-    };
-
-    try {
-      await sendEmail(mailBody);
-      customer.password = bcrypt.hashSync(plainPassword);
-      customer.credentialEmailCount = (customer.credentialEmailCount || 0) + 1;
-      customer.lastCredentialEmailSentAt = new Date();
-      await customer.save();
-      return res.send({
-        message: 'Credentials emailed successfully',
-        credentialEmailCount: customer.credentialEmailCount,
-        lastCredentialEmailSentAt: customer.lastCredentialEmailSentAt,
-      });
-    } catch (err) {
-      console.error('sendCredentials email send error:', err);
-      return res.status(403).send({ message: `Error sending email: ${err.message}` });
-    }
-  } catch (err) {
-    console.error('sendCredentials error:', err);
-    res.status(500).send({ message: err.message });
-  }
-};
 
 const changePassword = async (req, res) => {
   try {
@@ -1618,37 +1440,11 @@ const getAllCustomers = async (req, res) => {
   }
 };
 
-// Get only wholesalers
-const getAllWholesalers = async (req, res) => {
-  try {
-    const { searchText = "", wholesalerStatus = "" } = req.query;
-    let query = { role: "wholesaler" };
-
-    if (wholesalerStatus) {
-      query.wholesalerStatus = wholesalerStatus;
-    }
-
-    if (searchText) {
-      query.$or = [
-        { name: { $regex: searchText, $options: "i" } },
-        { email: { $regex: searchText, $options: "i" } },
-        { phone: { $regex: searchText, $options: "i" } },
-      ];
-    }
-
-    const wholesalers = await Customer.find(query).sort({ createdAt: -1 });
-    res.send(wholesalers);
-  } catch (err) {
-    res.status(500).send({ message: err.message });
-  }
-};
-
 const getCustomerById = async (req, res) => {
   try {
-    // Populate cart.productId with prices and wholesaler metadata so admin/frontend can determine effective price
     const customer = await Customer.findById(req.params.id).populate({
       path: "cart.productId",
-      select: "title prices image slug wholePrice minQuantity",
+      select: "title prices image slug",
     });
     // console.log("getCustomerById cart:", JSON.stringify(customer?.cart, null, 2));
     res.send(customer);
@@ -1881,34 +1677,9 @@ const updateCustomer = async (req, res) => {
     if (image) customer.image = image;
     if (cart) customer.cart = cart;
     console.log("req.body", req.body);
-    // Allow updating document fields and delete tokens
-    if (req.body.aadhar !== undefined) customer.aadhar = req.body.aadhar;
-    if (req.body.aadharPublicId !== undefined) customer.aadharPublicId = req.body.aadharPublicId;
-    if (req.body.aadharDeleteToken !== undefined) customer.aadharDeleteToken = req.body.aadharDeleteToken;
 
-    if (req.body.pan !== undefined) customer.pan = req.body.pan;
-    if (req.body.panPublicId !== undefined) customer.panPublicId = req.body.panPublicId;
-    if (req.body.panDeleteToken !== undefined) customer.panDeleteToken = req.body.panDeleteToken;
-
-    if (req.body.gst !== undefined) customer.gst = req.body.gst;
-    if (req.body.gstPublicId !== undefined) customer.gstPublicId = req.body.gstPublicId;
-    if (req.body.gstDeleteToken !== undefined) customer.gstDeleteToken = req.body.gstDeleteToken;
-
-    if (req.body.drugLicense !== undefined) customer.drugLicense = req.body.drugLicense;
-    if (req.body.drugLicensePublicId !== undefined) customer.drugLicensePublicId = req.body.drugLicensePublicId;
-    if (req.body.drugLicenseDeleteToken !== undefined) customer.drugLicenseDeleteToken = req.body.drugLicenseDeleteToken;
-
-    // Allow admin to set/update password for wholesaler
     if (req.body.password && typeof req.body.password === 'string' && req.body.password.trim().length > 0) {
       customer.password = bcrypt.hashSync(req.body.password);
-    }
-
-    // Allow admin to update wholesaler approval status
-    if (req.body.wholesalerStatus !== undefined) {
-      const validStatuses = ['pending', 'approved', 'rejected'];
-      if (validStatuses.includes(req.body.wholesalerStatus)) {
-        customer.wholesalerStatus = req.body.wholesalerStatus;
-      }
     }
 
     // Save the updated customer
@@ -1926,8 +1697,9 @@ const updateCustomer = async (req, res) => {
       address: updatedUser.address,
       phone: updatedUser.phone,
       image: updatedUser.image,
-      role: updatedUser.role || "customer",
       emailVerified: !!updatedUser.emailVerified,
+      hasPassword: !!updatedUser.password,
+      authProvider: updatedUser.authProvider || "email",
       message: "Customer updated successfully!",
     });
   } catch (err) {
@@ -2073,7 +1845,7 @@ const getCart = async (req, res) => {
     const { customerId } = req.params;
     const customer = await Customer.findById(customerId).populate({
       path: "cart.productId",
-      select: "title prices image slug wholePrice minQuantity stock variants",
+      select: "title prices image slug stock variants",
     });
     if (!customer) {
       return res.status(404).send({ message: "Customer not found." });
@@ -2120,7 +1892,7 @@ const addToCart = async (req, res) => {
     // Return populated cart
     const updated = await Customer.findById(customerId).populate({
       path: "cart.productId",
-      select: "title prices image slug wholePrice minQuantity stock variants",
+      select: "title prices image slug stock variants",
     });
 
     res.send({ message: "Cart updated successfully.", cart: updated.cart });
@@ -2171,7 +1943,7 @@ const updateCartItem = async (req, res) => {
 
     const updated = await Customer.findById(customerId).populate({
       path: "cart.productId",
-      select: "title prices image slug wholePrice minQuantity stock variants",
+      select: "title prices image slug stock variants",
     });
 
     res.send({ message: "Cart item updated.", cart: updated.cart });
@@ -2268,7 +2040,177 @@ const updateFcmToken = async (req, res) => {
   }
 };
 
+const sendEmailOtpLogin = async (req, res) => {
+  try {
+    const { email, intent: rawIntent, avatar } = req.body;
+    const intent = rawIntent === "signup" ? "signup" : "login";
+
+    if (!email) {
+      return res.status(400).send({ message: "Email is required." });
+    }
+
+    const emailNorm = String(email).toLowerCase().trim();
+    if (!emailNorm || !emailNorm.includes("@")) {
+      return res.status(400).send({ message: "Valid email address is required." });
+    }
+
+    let user = await Customer.findOne({ email: emailNorm });
+
+    if (intent === "signup" && user) {
+      return res.status(409).send({
+        message: "This email is already registered. Please login instead.",
+        code: "EMAIL_ALREADY_REGISTERED",
+      });
+    }
+
+    if (intent === "login" && !user) {
+      return res.status(404).send({
+        message: "No account found with this email. Please sign up first.",
+        code: "EMAIL_NOT_REGISTERED",
+      });
+    }
+
+    if (!user && intent === "signup") {
+      user = new Customer({
+        name: emailNorm.split("@")[0],
+        email: emailNorm,
+        image: avatar || "",
+        emailVerified: false,
+        authProvider: "email",
+        profileComplete: false,
+      });
+      await user.save();
+    } else if (user && intent === "signup" && !user.emailVerified) {
+      if (avatar) {
+        user.image = avatar;
+        await user.save();
+      }
+    }
+
+    // Check resend cooldown (60 seconds)
+    if (user.lastLoginOtpSentAt && (Date.now() - user.lastLoginOtpSentAt < 60 * 1000)) {
+      const remainingSeconds = Math.ceil(60 - (Date.now() - user.lastLoginOtpSentAt) / 1000);
+      return res.status(429).send({
+        message: `Please wait ${remainingSeconds} seconds before requesting a new OTP.`,
+      });
+    }
+
+    // Generate 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const hashedOtp = bcrypt.hashSync(otp, 10);
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.loginOtp = hashedOtp;
+    user.loginOtpExpires = otpExpires;
+    user.loginOtpAttempts = 0; // Reset attempts on new OTP request
+    user.lastLoginOtpSentAt = new Date();
+    await user.save();
+
+    // Send OTP to email
+    const globalSetting = await Setting.findOne({ name: "globalSetting" });
+    const option = {
+      name: user.name,
+      email: user.email,
+      otp: otp,
+      shop_name: globalSetting?.setting?.shop_name || "RASA",
+    };
+
+    const otpMail = simpleOtpEmail({
+      ...option,
+      purpose: "login",
+      expiresMinutes: 10,
+    });
+    const body = {
+      to: user.email,
+      subject: `${option.shop_name} login code`,
+      html: otpMail.html,
+      text: otpMail.text,
+      emailType: "login-otp",
+    };
+
+    await sendEmail(body);
+    res.send({
+      message: `4-digit OTP sent to your email: ${user.email}`,
+      email: user.email,
+      resendAfter: 60,
+    });
+
+  } catch (err) {
+    console.error("sendEmailOtpLogin error:", err);
+    res.status(500).send({ message: err.message });
+  }
+};
+
+const verifyEmailOtpLogin = async (req, res) => {
+  try {
+    const { email, otp, intent: rawIntent, avatar } = req.body;
+    const intent = rawIntent === "signup" ? "signup" : "login";
+
+    if (!email || !otp) {
+      return res.status(400).send({ message: "Email and OTP are required." });
+    }
+
+    const emailNorm = String(email).toLowerCase().trim();
+    const user = await Customer.findOne({ email: emailNorm });
+
+    if (!user) {
+      return res.status(404).send({
+        message:
+          intent === "login"
+            ? "No account found with this email. Please sign up first."
+            : "Please request an OTP first.",
+        code: intent === "login" ? "EMAIL_NOT_REGISTERED" : undefined,
+      });
+    }
+
+    const wasVerified = !!user.emailVerified;
+
+    // Check if OTP exists and is not expired
+    if (!user.loginOtp || !user.loginOtpExpires || new Date() > user.loginOtpExpires) {
+      return res.status(400).send({ message: "OTP has expired or not found. Please request a new one." });
+    }
+
+    // Check attempt limits
+    if (user.loginOtpAttempts >= 5) {
+      return res.status(403).send({ message: "Too many failed attempts. Please request a new OTP." });
+    }
+
+    // Verify OTP
+    const isMatch = bcrypt.compareSync(otp, user.loginOtp);
+
+    if (!isMatch) {
+      user.loginOtpAttempts += 1;
+      await user.save();
+      return res.status(400).send({ message: "Invalid OTP code." });
+    }
+
+    // Success! Clear OTP fields
+    user.loginOtp = undefined;
+    user.loginOtpExpires = undefined;
+    user.loginOtpAttempts = 0;
+    user.emailVerified = true;
+    user.lastLogin = new Date();
+    if (avatar) {
+      user.image = avatar;
+    }
+    await user.save();
+
+    const isNewUser = !wasVerified;
+    await sendCustomerAuthResponse(
+      res,
+      user,
+      isNewUser ? "Account created!" : "Login Successful!",
+      { isNewUser }
+    );
+  } catch (err) {
+    console.error("verifyEmailOtpLogin error:", err);
+    res.status(500).send({ message: err.message });
+  }
+};
+
 module.exports = {
+  sendEmailOtpLogin,
+  verifyEmailOtpLogin,
   checkCustomerExistance,
   loginCustomer,
   signupPhone,
@@ -2288,7 +2230,6 @@ module.exports = {
   changePassword,
   resetPassword,
   getAllCustomers,
-  getAllWholesalers,
   getCustomerById,
   updateCustomer,
   deleteCustomer,
@@ -2297,12 +2238,10 @@ module.exports = {
   updateShippingAddress,
   deleteShippingAddress,
   getCustomerStatistics,
-  createWholesaler,
   deleteCloudinaryAsset,
   cloudinarySign,
   cloudinaryStatus,
   cloudinaryUpload,
-  sendCredentials,
   // Cart management
   getCart,
   addToCart,

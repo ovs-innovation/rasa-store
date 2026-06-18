@@ -1,14 +1,13 @@
 /**
- * Sets Farmacykart logo on store settings (after legacy URL cleanup).
+ * Sets RASA logo on store settings.
  * Usage: node script/applyBrandLogo.js
  */
 require("../config/env");
 const mongoose = require("mongoose");
 const Setting = require("../models/Setting");
 
-const BRAND_LOGO =
-  process.env.BRAND_LOGO_URL ||
-  "https://res.cloudinary.com/dse9adftu/image/upload/v1780479335/farmacykart/brand/logo.png";
+const { DEFAULT_LOGO_URL } = require("../lib/brand-assets");
+const BRAND_LOGO = DEFAULT_LOGO_URL;
 
 async function main() {
   await mongoose.connect(process.env.MONGO_URI);

@@ -20,7 +20,7 @@ const useLoginSubmit = () => {
   } = useForm({
     defaultValues: {
       email: "info@ovsinnovation.com",
-      password: "Ovsinnovation@123"
+      password: "Admin@123"
     }
   });
 

@@ -183,7 +183,6 @@ const MyOrders = () => {
           slug: product.slug || item.slug || "",
           quantity: item.quantity || 1,
           stock: product.stock,
-          minQuantity: product.minQuantity,
         };
 
         await addItemWithDB(itemToAdd, item.quantity || 1);

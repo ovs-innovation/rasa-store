@@ -1,20 +1,21 @@
+// IMPORTANT: Keep in sync with NEXT_PUBLIC_FIREBASE_* in frontend/.env (admin uses same project if shared).
 importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js");
 
 firebase.initializeApp({
-  apiKey: "AIzaSyDUBq2cp6dQhkxGUlwQ01y1Az8MsNiL9Ic",
-  authDomain: "farmacykart-f0650.firebaseapp.com",
-  projectId: "farmacykart-f0650",
-  storageBucket: "farmacykart-f0650.firebasestorage.app",
-  messagingSenderId: "902396666658",
-  appId: "1:902396666658:web:e37de93d37a9958968fb7b",
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: "",
 });
 
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   const notificationTitle =
-    payload.notification?.title || payload.data?.title || "New Notification";
+    payload.notification?.title || payload.data?.title || "RASA Admin";
   const notificationOptions = {
     body:
       payload.notification?.body ||

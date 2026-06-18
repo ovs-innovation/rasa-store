@@ -2,7 +2,7 @@
 const LEGACY_CLOUD_NAMES = ["dhqcwkpzp", "ahossain"];
 
 /** Admin panel favicon + sidebar/login logo */
-export const ADMIN_BRAND_LOGO = "/favicon-transparent.png";
+export const ADMIN_BRAND_LOGO = "/rasaLogo.png";
 export const CLOUDINARY_PLACEHOLDER = ADMIN_BRAND_LOGO;
 
 /**

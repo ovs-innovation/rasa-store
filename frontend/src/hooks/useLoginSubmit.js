@@ -16,7 +16,6 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVe
 const useLoginSubmit = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [wholesalerStatus, setWholesalerStatus] = useState(null); // 'pending' | 'rejected' | null
   const redirectUrl = useSearchParams().get("redirectUrl");
   const { dispatch } = useContext(UserContext);
 
@@ -134,11 +133,7 @@ const useLoginSubmit = () => {
           if (respData?.requiresVerification) {
             notifyError(respData.message || "Please verify your email.");
             router.push(`/auth/verify-email?email=${encodeURIComponent(respData.email || email)}`);
-          } else if (respData?.wholesalerStatus) {
-            setWholesalerStatus(respData.wholesalerStatus);
-            notifyError(respData.message || "Account not yet approved.");
           } else {
-            setWholesalerStatus(null);
             notifyError(respData?.message || err.message || "Login failed");
           }
           setLoading(false);
@@ -164,7 +159,6 @@ const useLoginSubmit = () => {
     submitHandler,
     reset,
     setValue,
-    wholesalerStatus,
   };
 };
 

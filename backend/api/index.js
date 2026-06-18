@@ -24,7 +24,6 @@ const shiprocketRoutes = require("../routes/shiprocketRoutes");
 const taxRoutes = require("../routes/taxRoutes");
 const reviewRoutes = require("../routes/reviewRoutes");
 const faqRoutes = require("../routes/faqRoutes");
-const prescriptionRoutes = require("../routes/prescriptionRoutes");
 const testimonialRoutes = require("../routes/testimonialRoutes");
 const locationRoutes = require("../routes/locationRoutes");
 const refundRoutes = require("../routes/refundRoutes");
@@ -55,9 +54,6 @@ const allowedOrigins = process.env.FRONTEND_URL
       process.env.FRONTEND_URL,
       process.env.ADMIN_URL,
       process.env.STORE_URL,
-      "https://admin.farmacykart.com",
-      "https://farmacykart.com",
-      "https://www.farmacykart.com",
       "http://localhost:3000",
       "http://127.0.0.1:3000",
       "http://localhost:4100",
@@ -119,7 +115,6 @@ app.use("/api/shiprocket", shiprocketRoutes);
 app.use("/api/brand", brandRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/faqs", faqRoutes);
-app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/location", locationRoutes);
 app.use("/api/refund", refundRoutes);
@@ -139,7 +134,7 @@ app.use((err, req, res, next) => {
 // Serve static files from the "public" directory
 app.use("/static", express.static(path.join(__dirname, "../public")));
 
-// Serve uploaded files (e.g., wholesaler documents)
+// Serve uploaded files (static uploads)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // 404 Handler for undefined routes

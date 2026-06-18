@@ -58,8 +58,18 @@ const SliderCarousel = () => {
   }));
 
   const defaultSliderData = [
-    { img: "/slider/dss11.webp" },
-    { img: "/slider/dss22.webp" },
+    {
+      img: "https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=800&auto=format&fit=crop",
+      title: "Essential Streetwear",
+      subtitle: "Season Drop 2026",
+      link: "/search?category=unisex-clothing"
+    },
+    {
+      img: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?q=80&w=800&auto=format&fit=crop",
+      title: "Urban Sneaker Line",
+      subtitle: "New Footwear Arrivals",
+      link: "/search?category=footwear"
+    },
   ];
 
   const sliderData = backendSliderData.length > 0 ? backendSliderData : defaultSliderData;
@@ -70,7 +80,7 @@ const SliderCarousel = () => {
   }
 
   return (
-    <div className="w-full bg-white  ">
+    <div className="w-full bg-white py-6">
       <div className="mx-auto max-w-screen-2xl px-3 sm:px-10">
         <div className="relative">
           <Swiper
@@ -101,48 +111,42 @@ const SliderCarousel = () => {
               },
             }}
             autoplay={{
-              delay: 2000,
+              delay: 3500,
               disableOnInteraction: false,
               pauseOnMouseEnter: false,
             }}
-            loop={sliderData.length >= 4}
+            loop={sliderData.length >= 2}
             className="slider-carousel-swiper"
           >
             {sliderData.map((item, index) => (
               <SwiperSlide key={index}>
-                <div className="relative w-full h-[200px] sm:h-[250px] md:h-[300px] lg:h-[400px] rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  {item.slug ? (
-                    <Link href={`/product/${item.slug}`} className="relative w-full h-full block">
-                      <Image
-                        src={item.img || "/placeholder.png"}
-                        alt={`Slider ${index + 1}`}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        className="object-contain cursor-pointer hover:scale-105 transition-transform duration-500"
-                        priority={index === 0}
-                      />
-                    </Link>
-                  ) : item.catSlug ? (
-                    <Link href={`/search?category=${item.catSlug}${item.catId ? `&_id=${item.catId}` : ""}`} className="relative w-full h-full block">
-                      <Image
-                        src={item.img || "/placeholder.png"}
-                        alt={`Slider ${index + 1}`}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                        className="object-contain cursor-pointer hover:scale-105 transition-transform duration-500"
-                        priority={index === 0}
-                      />
-                    </Link>
-                  ) : (
+                <div className="relative w-full h-[200px] sm:h-[250px] md:h-[300px] lg:h-[350px] rounded-none overflow-hidden shadow-sm border border-gray-100 group">
+                  {/* Link wrapper */}
+                  <Link href={item.link || item.slug ? `/product/${item.slug}` : item.catSlug ? `/search?category=${item.catSlug}` : "/search"} className="relative w-full h-full block">
                     <Image
                       src={item.img || "/placeholder.png"}
-                      alt={`Slider ${index + 1}`}
+                      alt={item.title || `Slider ${index + 1}`}
                       fill
                       sizes="(max-width: 768px) 100vw, 50vw"
-                      className="object-contain"
+                      className="object-cover cursor-pointer group-hover:scale-105 transition-transform duration-700"
                       priority={index === 0}
                     />
-                  )}
+                    
+                    {/* Overlay content for premium fashion look */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-[2] flex flex-col justify-end p-6 sm:p-8">
+                      <span className="text-[10px] text-[#D4AF37] font-extrabold uppercase tracking-widest mb-1.5">
+                        {item.subtitle || "RASA EXCLUSIVE"}
+                      </span>
+                      <h3 className="text-white font-black text-lg sm:text-2xl uppercase tracking-tight mb-3">
+                        {item.title || "Modern Apparel"}
+                      </h3>
+                      <div>
+                        <span className="inline-block px-5 py-2.5 bg-white text-black font-extrabold text-[10px] uppercase tracking-wider group-hover:bg-[#D4AF37] transition-colors">
+                          Shop Collection
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
                 </div>
               </SwiperSlide>
             ))}

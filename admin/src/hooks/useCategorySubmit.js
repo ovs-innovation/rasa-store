@@ -13,6 +13,7 @@ const useCategorySubmit = (id, data) => {
   const [resData, setResData] = useState({});
   const [checked, setChecked] = useState("");
   const [imageUrl, setImageUrl] = useState([]);
+  const [bannerUrl, setBannerUrl] = useState([]);
   const [children, setChildren] = useState([]);
   const [language, setLanguage] = useState("en");
   const [published, setPublished] = useState(true);
@@ -64,6 +65,7 @@ const useCategorySubmit = (id, data) => {
 
         icon: imageUrl?.length > 0 ? imageUrl[0] : "",
         images: imageUrl || [],
+        banner: bannerUrl?.length > 0 ? bannerUrl[0] : "",
         status: published ? "show" : "hide",
         lang: language,
       };
@@ -110,6 +112,7 @@ const useCategorySubmit = (id, data) => {
       setValue("description");
       setValue("icon");
       setImageUrl([]);
+      setBannerUrl([]);
       setPublished(true);
       clearErrors("name");
       clearErrors("parentId");
@@ -140,6 +143,7 @@ const useCategorySubmit = (id, data) => {
             setSelectCategoryName(res.parentName);
             setChecked(res.parentId);
             setImageUrl(res.images?.length > 0 ? res.images : (res.icon ? [res.icon] : []));
+            setBannerUrl(res.banner ? [res.banner] : []);
             setPublished(res.status === "show" ? true : false);
           }
         } catch (err) {
@@ -156,6 +160,8 @@ const useCategorySubmit = (id, data) => {
     errors,
     imageUrl,
     setImageUrl,
+    bannerUrl,
+    setBannerUrl,
     children,
     setChildren,
     published,

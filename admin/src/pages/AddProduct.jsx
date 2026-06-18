@@ -1,697 +1,494 @@
-import React, { useContext, useState } from "react";
+import React from "react";
 import { Link, useHistory } from "react-router-dom";
 import { Button, Input, Textarea, Select } from "@windmill/react-ui";
-import { FiChevronLeft, FiImage, FiCloudRain, FiUploadCloud, FiLayers, FiTrash2 } from "react-icons/fi";
-import { IoSparkles } from "react-icons/io5"; // For ✨ Generate
+import { FiChevronLeft, FiSave } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
-import ReactTagInput from "@pathofdev/react-tag-input";
 
 // Internal imports
 import useProductSubmit from "@/hooks/useProductSubmit";
 import Uploader from "@/components/image-uploader/Uploader";
 import ParentCategory from "@/components/category/ParentCategory";
-import { SidebarContext } from "@/context/SidebarContext";
 import Error from "@/components/form/others/Error";
-import Multiselect from "multiselect-react-dropdown";
-import { Controller } from "react-hook-form";
-import useAsync from "@/hooks/useAsync";
-import TaxServices from "@/services/TaxServices";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
+import ProductPlacementFlags from "@/components/product/ProductPlacementFlags";
+import ColorVariantManager from "@/components/product/ColorVariantManager";
+import ProductPreviewCard from "@/components/product/ProductPreviewCard";
 
 const AddProduct = () => {
   const { t } = useTranslation();
   const history = useHistory();
 
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [activeTab, setActiveTab] = useState("Default");
-  const languages = ["Default", "English (EN)"];
-
-  const { currency, showingTranslateValue } = useUtilsFunction();
+  const { showingTranslateValue } = useUtilsFunction();
+  
+  const variantStockTotal = (list = []) =>
+    list.reduce(
+      (total, variant) =>
+        total +
+        (variant.sizes || []).reduce(
+          (sizeTotal, size) => sizeTotal + Number(size.quantity || 0),
+          0
+        ),
+      0
+    );
   
   const {
     tag,
     setTag,
-    values,
-    setValues,
-    language,
     register,
     onSubmit,
     errors,
     imageUrl,
     setImageUrl,
-    thumbnailUrl,
-    setThumbnailUrl,
+    featuredImage,
+    setFeaturedImage,
+    hoverImage,
+    setHoverImage,
+    badge,
+    setBadge,
+    video,
+    setVideo,
     handleSubmit,
     isSubmitting,
     selectedCategory,
     setSelectedCategory,
     setDefaultCategory,
-    defaultCategory,
     brandOptions,
     brand,
     setBrand,
     watch,
-    control,
     slug,
     handleProductSlug,
-    // Dynamic / Media Sections
-    dynamicSections,
-    setDynamicSections,
-    mediaSections,
-    setMediaSections,
-    // New Sections Props
-    productDescription: productDescriptionSection, setProductDescription: setProductDescriptionSection,
-    ingredients, setIngredients,
-    keyUses, setKeyUses,
-    howToUse, setHowToUse,
-    safetyInformation, setSafetyInformation,
-    additionalInformation, setAdditionalInformation,
-    composition, setComposition,
-    productHighlights, setProductHighlights,
-    manufacturerDetails, setManufacturerDetails,
-    disclaimer, setDisclaimer,
-    faqSection, setFaqSection,
-    // Attribute & Variant Handlers
-    handleGenerateCombination,
-    onSelectAttribute: handleAddAtt,
     variants,
     setVariants,
-    attribue, // Backend attributes
-    attributes, // User selected attribute values state in hook
-    setAttributes,
+    seoImage,
+    setSeoImage,
   } = useProductSubmit();
 
-  const { data: taxOptionsFromApi, loading: taxLoading } = useAsync(TaxServices.getAll);
-  const [taxOptions, setTaxOptions] = useState([]);
-  React.useEffect(() => {
-    if (taxOptionsFromApi && Array.isArray(taxOptionsFromApi)) {
-      setTaxOptions(taxOptionsFromApi);
-    }
-  }, [taxOptionsFromApi]);
-
-  const defaultGstRates = [
-    { label: "GST 0%", value: 0 },
-    { label: "GST 5%", value: 5 },
-    { label: "GST 12%", value: 12 },
-    { label: "GST 18%", value: 18 },
-    { label: "GST 28%", value: 28 },
-  ];
-
-  const gstRates = React.useMemo(() => {
-    const ratesMap = new Map();
-    defaultGstRates.forEach(rate => {
-      ratesMap.set(rate.value, rate);
-    });
-    if (taxOptions && Array.isArray(taxOptions) && taxOptions.length > 0) {
-      taxOptions.forEach((tax) => {
-        const rateValue = tax.rate || 0;
-        ratesMap.set(rateValue, {
-          label: tax.name || `GST ${rateValue}%`,
-          value: rateValue,
-        });
-      });
-    }
-    return Array.from(ratesMap.values()).sort((a, b) => a.value - b.value);
-  }, [taxOptions]);
-
-  const isPriceInclusiveChecked = Boolean(watch("isPriceInclusive"));
-
-  const onSelectAttribute = (selectedList) => {
-    setAttributes(selectedList);
-    handleAddAtt(selectedList);
-  };
-
-  const onRemoveAttribute = (selectedList) => {
-    setAttributes(selectedList);
-    handleAddAtt(selectedList);
-  };
-
-  const handleVariantChange = (index, field, value) => {
-    setVariants((prev) =>
-      prev.map((v, i) => (i === index ? { ...v, [field]: value } : v))
-    );
-  };
-
-  // Auto-generate variants when attribute values change
-  React.useEffect(() => {
-    if (Object.keys(values).length > 0) {
-      const hasValues = Object.values(values).some(arr => arr && arr.length > 0);
-      if (hasValues) {
-        handleGenerateCombination(true);
-      } else {
-        setVariants([]);
-      }
-    } else {
-      setVariants([]);
-    }
-  }, [values]);
-
-  const handleGenerate = (e) => {
-    e.preventDefault();
-    console.log("AI Generate clicked");
-  };
-
-  const isVideoUrl = (url = "") => {
-    if (!url || typeof url !== "string") return false;
-    const lowered = url.toLowerCase();
-    return lowered.includes("youtube.com/") || lowered.includes("youtu.be/");
-  };
-
-  const handleAddDynamicSection = () => {
-    setDynamicSections((prev) => [
-      ...prev,
-      { name: "", description: "", isVisible: true, subsections: [] },
-    ]);
-  };
-
-  const handleDynamicSectionChange = (sectionIndex, field, value) => {
-    setDynamicSections((prev) =>
-      prev.map((section, idx) =>
-        idx === sectionIndex ? { ...section, [field]: value } : section
-      )
-    );
-  };
-
-  const handleRemoveDynamicSection = (sectionIndex) => {
-    setDynamicSections((prev) => prev.filter((_, idx) => idx !== sectionIndex));
-  };
-
-  const handleAddSubsection = (sectionIndex, type = "keyValue") => {
-    setDynamicSections((prev) =>
-      prev.map((section, idx) => {
-        if (idx === sectionIndex) {
-          const newSubsection =
-            type === "paragraph"
-              ? { type: "paragraph", content: "", isVisible: true }
-              : { type: "keyValue", key: "", value: "", isVisible: true };
-          return {
-            ...section,
-            subsections: [...(section.subsections || []), newSubsection],
-          };
-        }
-        return section;
-      })
-    );
-  };
-
-  const handleSubsectionChange = (sectionIndex, subsectionIndex, field, value) => {
-    setDynamicSections((prev) =>
-      prev.map((section, idx) => {
-        if (idx === sectionIndex) {
-          const updatedSubsections = (section.subsections || []).map((sub, subIdx) =>
-            subIdx === subsectionIndex ? { ...sub, [field]: value } : sub
-          );
-          return { ...section, subsections: updatedSubsections };
-        }
-        return section;
-      })
-    );
-  };
-
-  const handleSubsectionTypeChange = (sectionIndex, subsectionIndex, type) => {
-    setDynamicSections((prev) =>
-      prev.map((section, idx) => {
-        if (idx === sectionIndex) {
-          const updatedSubsections = (section.subsections || []).map((sub, subIdx) => {
-            if (subIdx === subsectionIndex) {
-              if (type === "paragraph") {
-                return { type: "paragraph", content: sub.content || "", isVisible: true };
-              }
-              return { type: "keyValue", key: sub.key || "", value: sub.value || "", isVisible: true };
-            }
-            return sub;
-          });
-          return { ...section, subsections: updatedSubsections };
-        }
-        return section;
-      })
-    );
-  };
-
-  const handleRemoveSubsection = (sectionIndex, subsectionIndex) => {
-    setDynamicSections((prev) =>
-      prev.map((section, idx) => {
-        if (idx === sectionIndex) {
-          return {
-            ...section,
-            subsections: (section.subsections || []).filter((_, subIdx) => subIdx !== subsectionIndex),
-          };
-        }
-        return section;
-      })
-    );
-  };
-
-  const handleAddMediaSection = () => {
-    setMediaSections((prev) => [
-      ...prev,
-      { name: "", description: "", isVisible: true, items: [] },
-    ]);
-  };
-
-  const handleMediaSectionChange = (sectionIndex, field, value) => {
-    setMediaSections((prev) =>
-      prev.map((section, idx) =>
-        idx === sectionIndex ? { ...section, [field]: value } : section
-      )
-    );
-  };
-
-  const handleRemoveMediaSection = (sectionIndex) => {
-    setMediaSections((prev) => prev.filter((_, idx) => idx !== sectionIndex));
-  };
-
-  const handleAddMediaItem = (sectionIndex) => {
-    setMediaSections((prev) =>
-      prev.map((section, idx) => {
-        if (idx === sectionIndex) {
-          return {
-            ...section,
-            items: [...(section.items || []), { image: "", details: "" }],
-          };
-        }
-        return section;
-      })
-    );
-  };
-
-  const handleMediaItemChange = (sectionIndex, itemIndex, field, value) => {
-    setMediaSections((prev) =>
-      prev.map((section, idx) => {
-        if (idx === sectionIndex) {
-          const updatedItems = (section.items || []).map((item, subIdx) =>
-            subIdx === itemIndex ? { ...item, [field]: value } : item
-          );
-          return { ...section, items: updatedItems };
-        }
-        return section;
-      })
-    );
-  };
-
-  const handleRemoveMediaItem = (sectionIndex, itemIndex) => {
-    setMediaSections((prev) =>
-      prev.map((section, idx) => {
-        if (idx === sectionIndex) {
-          return {
-            ...section,
-            items: (section.items || []).filter((_, subIdx) => subIdx !== itemIndex),
-          };
-        }
-        return section;
-      })
-    );
-  };
+  const watchTitle = watch("title");
+  const watchOriginalPrice = watch("originalPrice");
+  const watchPrice = watch("price");
+  const watchSalePrice = watch("salePrice");
 
   return (
-    <div className="bg-[#f0f2f5] dark:bg-gray-900 min-h-screen pb-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center space-x-3">
-            <button onClick={() => history.goBack()} className="p-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8 bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
+          <div className="flex items-center space-x-4">
+            <button
+              type="button"
+              onClick={() => history.goBack()}
+              className="p-2.5 border border-gray-100 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 transition-colors"
+            >
               <FiChevronLeft size={20} />
             </button>
-            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-200">Add New Item</h1>
+            <div>
+              <h1 className="text-2xl font-black text-gray-800 dark:text-white uppercase tracking-wider">Add Product</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Create a new premium fashion storefront product.</p>
+            </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-              <div className="flex space-x-6 border-b border-gray-200 dark:border-gray-700 mb-6">
-                {languages.map((lang) => (
-                  <button key={lang} type="button" onClick={() => setActiveTab(lang)} className={`pb-3 text-sm font-medium ${activeTab === lang ? "text-[#008f89] border-b-2 border-[#008f89]" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"}`}>
-                    {lang}
-                  </button>
-                ))}
-              </div>
-              <div className="mb-6 relative">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name (Default) <span className="text-red-500">*</span></label>
-                  <Input {...register("title", { required: "Name is required!" })} placeholder="New food" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-[#008f89]" />
-                <Error errorName={errors.title} />
-              </div>
-              <div className="mb-2 relative">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Short description (Default) <span className="text-red-500">*</span></label>
-                  <Textarea {...register("description", { required: "Description is required!" })} rows="4" placeholder="Short description" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-[#008f89]" />
-                <Error errorName={errors.description} />
-              </div>
-              <div className="mb-2 relative">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product Slug <span className="text-red-500">*</span></label>
-                  <Input {...register("slug", { required: "Slug is required!" })} defaultValue={slug} placeholder="product-slug" onBlur={(e) => handleProductSlug(e.target.value)} className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-[#008f89]" />
-                <Error errorName={errors.slug} />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">SKU</label>
-                  <Input {...register("sku")} placeholder="SKU" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            
+            {/* Left Column: Form Fields */}
+            <div className="lg:col-span-2 space-y-8">
+              
+              {/* SECTION 1 — BASIC INFORMATION */}
+              <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm space-y-6">
+                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-sm font-bold">1</span>
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Section 1: Basic Information</h2>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Barcode</label>
-                  <Input {...register("barcode")} placeholder="Barcode" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Product Name *</label>
+                    <Input
+                      {...register("title", { required: "Product Name is required!" })}
+                      placeholder="e.g. Nike Air Max 90"
+                      onBlur={(e) => handleProductSlug(e.target.value)}
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 focus:border-emerald-500"
+                    />
+                    <Error errorName={errors.title} />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Slug (Auto Generated) *</label>
+                    <Input
+                      {...register("slug", { required: "Slug is required!" })}
+                      defaultValue={slug}
+                      placeholder="nike-air-max-90"
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 focus:border-emerald-500"
+                    />
+                    <Error errorName={errors.slug} />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Product Type *</label>
+                    <Select
+                      {...register("productType", { required: "Product Type is required!" })}
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    >
+                      <option value="">Choose Type</option>
+                      <option value="Sneakers">Sneakers</option>
+                      <option value="Bags">Bags</option>
+                      <option value="Slides">Slides</option>
+                      <option value="Heels">Heels</option>
+                      <option value="Accessories">Accessories</option>
+                    </Select>
+                    <Error errorName={errors.productType} />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Gender *</label>
+                    <Select
+                      {...register("gender", { required: "Gender is required!" })}
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    >
+                      <option value="">Choose Gender</option>
+                      <option value="Men">Men</option>
+                      <option value="Women">Women</option>
+                      <option value="Unisex">Unisex</option>
+                    </Select>
+                    <Error errorName={errors.gender} />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Short Description *</label>
+                    <Textarea
+                      {...register("description", { required: "Short description is required!" })}
+                      rows="2"
+                      placeholder="Provide a quick summary of the product (fit, style, materials)."
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 focus:border-emerald-500"
+                    />
+                    <Error errorName={errors.description} />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Full Description</label>
+                    <Textarea
+                      {...register("highlights")}
+                      rows="4"
+                      placeholder="Detailed breakdown of construction, heritage, aesthetic detail, and tech details."
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 focus:border-emerald-500"
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
+              </section>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col space-y-6">
-               <div className="flex-1 flex flex-col">
-                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Item Images</label>
-                 <div className="flex-1 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                   <Uploader imageUrl={imageUrl} setImageUrl={setImageUrl} folder="product" product={true} useOriginalSize={true} />
-                 </div>
-               </div>
-               <div className="flex-1 flex flex-col">
-                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Thumbnail Image</label>
-                 <div className="flex-1 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg flex flex-col items-center justify-center p-4 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                   <Uploader imageUrl={thumbnailUrl} setImageUrl={setThumbnailUrl} folder="product" product={false} useOriginalSize={true} />
-                 </div>
-               </div>
-               <div>
-                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product Video URL</label>
-                 <Input type="text" placeholder="https://www.youtube.com/..." value={Array.isArray(imageUrl) ? imageUrl.find((item) => typeof item === "string" && isVideoUrl(item)) || "" : ""} onChange={(e) => { const url = e.target.value.trim(); setImageUrl((prev = []) => { const prevArray = Array.isArray(prev) ? prev : [prev]; const filtered = prevArray.filter(item => !(typeof item === "string" && isVideoUrl(item))); return isVideoUrl(url) ? [...filtered, url] : filtered; }); }} className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
-               </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center"><FiLayers className="mr-2 text-gray-500 dark:text-gray-400" /> Store & Category Info</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Store <span className="text-red-500">*</span></label>
-                <Select value={brand?._id || ""} onChange={(e) => { const selected = brandOptions?.find(item => item._id === e.target.value); setBrand(selected || null); }} className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-                  <option value="" className="dark:bg-gray-800">Select store</option>
-                  {brandOptions?.map(item => <option key={item._id} value={item._id} className="dark:bg-gray-800">{item.name?.en || item.name}</option>)}
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Category <span className="text-red-500">*</span></label>
-                <ParentCategory lang={language} selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} setDefaultCategory={setDefaultCategory} />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Default Category</label>
-                <Multiselect displayValue="name" isObject={true} singleSelect={true} onSelect={(v) => setDefaultCategory(v)} selectedValues={defaultCategory} options={selectedCategory} placeholder="Default Category" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Suitable For</label>
-                <Select {...register("suitableFor")} className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-                  <option value="" className="dark:bg-gray-800">Select Condition</option>
-                  <option value="Kids" className="dark:bg-gray-800">Kids</option>
-                  <option value="Adults" className="dark:bg-gray-800">Adults</option>
-                  <option value="Adults" className="dark:bg-gray-800">Other</option>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center"><FiLayers className="mr-2 text-gray-500 dark:text-gray-400" /> Batch & Manufacturing Info</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Batch No.</label><Input {...register("batchNo")} placeholder="Batch Number" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expiry Date</label><Input type="date" {...register("expDate")} className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Manufacturing Date</label><Input type="date" {...register("manufactureDate")} className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" /></div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-6">Price Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-6">
-              <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">MRP Price ₹ <span className="text-red-500">*</span></label><Input type="number" step="0.01" min="0" onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()} {...register("originalPrice")} placeholder="0" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Discount Type</label><Select {...register("discountType")} className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"><option value="flat" className="dark:bg-gray-800">Flat (₹)</option><option value="percentage" className="dark:bg-gray-800">Percentage (%)</option></Select></div>
-              <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Discount</label><Input type="number" step="0.01" min="0" onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()} {...register("discount")} placeholder="0" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" /></div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">GST Tax</label>
-                <Select {...register("taxRate")} className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-                  {gstRates.map((rate) => (
-                    <option key={rate.value} value={rate.value} className="dark:bg-gray-800">
-                      {rate.label}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sale Price ₹</label>
-                <Input 
-                  type="number" 
-                  readOnly 
-                  value={(() => {
-                    const originalPrice = Number(watch("originalPrice")) || 0;
-                    const discount = Number(watch("discount")) || 0;
-                    const discountType = watch("discountType");
-                    const taxRate = Number(watch("taxRate")) || 0;
-                    
-                    let basePrice = originalPrice;
-                    if (discountType === "percentage") {
-                      basePrice = originalPrice - (originalPrice * discount / 100);
-                    } else {
-                      basePrice = originalPrice - discount;
-                    }
-                    
-                    const finalPrice = basePrice * (1 + taxRate / 100);
-                    return Math.max(0, finalPrice).toFixed(2);
-                  })()} 
-                  className="w-full border-teal-200 dark:border-teal-900/30 bg-teal-50 dark:bg-teal-900/20 font-bold text-teal-700 dark:text-teal-400" 
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center">Product Details & Rich Content</h2>
-            <div className="space-y-10">
-              {/* Composition */}
-              <div className="border border-gray-100 dark:border-gray-700 rounded-md p-4 bg-gray-50 dark:bg-gray-900/50">
-                <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Composition</h3>
-                <div className="space-y-4">
-                  <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Title</label><Input value={composition?.title || ""} onChange={(e) => setComposition({ ...composition, title: e.target.value })} placeholder="Section Title" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" /></div>
-                  <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Description</label><Textarea rows="3" value={composition?.description || ""} onChange={(e) => setComposition({ ...composition, description: e.target.value })} placeholder="Composition details" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" /></div>
+              {/* SECTION 2 — MEDIA */}
+              <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm space-y-6">
+                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-sm font-bold">2</span>
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Section 2: Media</h2>
                 </div>
-              </div>
-              {/* Highlights */}
-              <div className="border border-gray-100 dark:border-gray-700 rounded-md p-4 bg-gray-50 dark:bg-gray-900/50">
-                <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Product Highlights</h3>
-                <div className="space-y-4">
-                  <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Title</label><Input value={productHighlights?.title || ""} onChange={(e) => setProductHighlights({ ...productHighlights, title: e.target.value })} placeholder="Section Title" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" /></div>
-                  <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Highlights (List)</label>
-                    <div className="space-y-3">
-                      {productHighlights?.items?.map((item, idx) => (
-                        <div key={idx} className="flex gap-2 items-center">
-                          <Input placeholder="Item" value={item || ""} onChange={(e) => { const newItems = [...(productHighlights?.items || [])]; newItems[idx] = e.target.value; setProductHighlights({ ...productHighlights, items: newItems }); }} className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
-                          <button type="button" onClick={() => { const newItems = (productHighlights?.items || []).filter((_, i) => i !== idx); setProductHighlights({ ...productHighlights, items: newItems }); }} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"><FiTrash2 /></button>
-                        </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Featured Image (Front View)</label>
+                    <Uploader
+                      product={false}
+                      folder="product"
+                      imageUrl={featuredImage ? [featuredImage] : []}
+                      setImageUrl={(url) => setFeaturedImage(Array.isArray(url) ? url[0] : (url || ""))}
+                      useOriginalSize={true}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Hover Image (Alternative View)</label>
+                    <Uploader
+                      product={false}
+                      folder="product"
+                      imageUrl={hoverImage ? [hoverImage] : []}
+                      setImageUrl={(url) => setHoverImage(Array.isArray(url) ? url[0] : (url || ""))}
+                      useOriginalSize={true}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Gallery Images</label>
+                    <Uploader
+                      product={true}
+                      folder="product"
+                      imageUrl={imageUrl}
+                      setImageUrl={setImageUrl}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Product Video URL</label>
+                    <Input
+                      value={video}
+                      onChange={(e) => setVideo(e.target.value)}
+                      placeholder="e.g. https://www.youtube.com/watch?v=..."
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* SECTION 3 — PRODUCT ORGANIZATION */}
+              <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm space-y-6">
+                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-sm font-bold">3</span>
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Section 3: Product Organization</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Brand *</label>
+                    <Select
+                      value={brand?._id || ""}
+                      onChange={(e) => {
+                        const selected = brandOptions?.find((item) => item._id === e.target.value);
+                        setBrand(selected || null);
+                      }}
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    >
+                      <option value="">Select brand</option>
+                      {brandOptions?.map((item) => (
+                        <option key={item._id} value={item._id}>
+                          {item.name?.en || item.name}
+                        </option>
                       ))}
-                      <Button type="button" size="small" onClick={() => setProductHighlights({ ...productHighlights, items: [...(productHighlights?.items || []), ""] })} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">Add Item</Button>
-                    </div>
+                    </Select>
                   </div>
-                </div>
-              </div>
-              {/* Ingredients */}
-              <div className="border border-gray-100 dark:border-gray-700 rounded-md p-4 bg-gray-50 dark:bg-gray-900/50">
-                <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">Ingredients</h3>
-                <div className="space-y-4">
-                  <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Icon</label><Uploader product={false} folder="product-icons" imageUrl={ingredients?.icon} setImageUrl={(url) => setIngredients({ ...ingredients, icon: url })} /></div>
-                  <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Title</label><Input value={ingredients?.title || ""} onChange={(e) => setIngredients({ ...ingredients, title: e.target.value })} placeholder="Section Title" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" /></div>
-                  <div className="space-y-3">
-                    {ingredients?.items?.map((item, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <Input placeholder="Key" value={item?.key || ""} onChange={(e) => { const newItems = [...(ingredients?.items || [])]; newItems[idx] = { ...newItems[idx], key: e.target.value }; setIngredients({ ...ingredients, items: newItems }); }} className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
-                        <Input placeholder="Value" value={item?.value || ""} onChange={(e) => { const newItems = [...(ingredients?.items || [])]; newItems[idx] = { ...newItems[idx], value: e.target.value }; setIngredients({ ...ingredients, items: newItems }); }} className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
-                        <button type="button" onClick={() => { const newItems = (ingredients?.items || []).filter((_, i) => i !== idx); setIngredients({ ...ingredients, items: newItems }); }} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"><FiTrash2 /></button>
-                      </div>
-                    ))}
-                    <Button type="button" size="small" onClick={() => setIngredients({ ...ingredients, items: [...(ingredients?.items || []), { key: "", value: "" }] })} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">Add Ingredient</Button>
-                  </div>
-                </div>
-              </div>
-              {/* How to Use */}
-              <div className="border border-gray-100 dark:border-gray-700 rounded-md p-4 bg-gray-50 dark:bg-gray-900/50">
-                <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">How to Use</h3>
-                <div className="space-y-4">
-                  <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Icon</label><Uploader product={false} folder="product-icons" imageUrl={howToUse?.icon} setImageUrl={(url) => setHowToUse({ ...howToUse, icon: url })} /></div>
-                  <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-2">Title</label><Input value={howToUse?.title || ""} onChange={(e) => setHowToUse({ ...howToUse, title: e.target.value })} placeholder="Section Title" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" /></div>
-                  <div className="space-y-3">
-                    {howToUse?.items?.map((item, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <Input placeholder="Instruction" value={item || ""} onChange={(e) => { const newItems = [...(howToUse?.items || [])]; newItems[idx] = e.target.value; setHowToUse({ ...howToUse, items: newItems }); }} className="dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200" />
-                        <button type="button" onClick={() => { const newItems = (howToUse?.items || []).filter((_, i) => i !== idx); setHowToUse({ ...howToUse, items: newItems }); }} className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"><FiTrash2 /></button>
-                      </div>
-                    ))}
-                    <Button type="button" size="small" onClick={() => setHowToUse({ ...howToUse, items: [...(howToUse?.items || []), ""] })} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">Add Instruction</Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Custom Layout Sections */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">Custom Layout Sections</h2>
-              <Button size="small" type="button" onClick={handleAddDynamicSection} className="bg-[#008f89] hover:bg-[#00706b]">Add Layout Section</Button>
-            </div>
-            <div className="space-y-6">
-              {dynamicSections?.map((section, sectionIndex) => (
-                <div key={sectionIndex} className="border border-gray-200 dark:border-gray-700 rounded-lg p-5 bg-gray-50 dark:bg-gray-900/50">
-                  <div className="flex justify-between gap-4 mb-4">
-                    <Input value={section.name || ""} onChange={(e) => handleDynamicSectionChange(sectionIndex, "name", e.target.value)} placeholder="Section name" className="flex-1 font-bold border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
-                    <button type="button" className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors" onClick={() => handleRemoveDynamicSection(sectionIndex)}><FiTrash2 /></button>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Category *</label>
+                    <ParentCategory
+                      lang="en"
+                      selectedCategory={selectedCategory}
+                      setSelectedCategory={setSelectedCategory}
+                      setDefaultCategory={setDefaultCategory}
+                    />
                   </div>
-                  <Textarea className="mb-4 w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" rows="2" value={section.description || ""} onChange={(e) => handleDynamicSectionChange(sectionIndex, "description", e.target.value)} placeholder="Description" />
-                  <div className="space-y-4 pl-4 border-l-2 border-gray-200 dark:border-gray-700 mb-4">
-                    {section.subsections?.map((subsection, subsectionIndex) => (
-                      <div key={subsectionIndex} className="bg-white dark:bg-gray-800 p-4 rounded shadow-sm border border-gray-100 dark:border-gray-700">
-                        <div className="flex justify-between gap-4 mb-3">
-                          <Select value={subsection.type || "keyValue"} onChange={(e) => handleSubsectionTypeChange(sectionIndex, subsectionIndex, e.target.value)} className="w-48 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200">
-                            <option value="keyValue" className="dark:bg-gray-800">Key / Value</option>
-                            <option value="paragraph" className="dark:bg-gray-800">Paragraph</option>
-                          </Select>
-                          <button type="button" className="text-red-500 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors" onClick={() => handleRemoveSubsection(sectionIndex, subsectionIndex)}><FiTrash2 size={16} /></button>
-                        </div>
-                        {subsection.type === "paragraph" ? (
-                          <Textarea rows="3" value={subsection.content || ""} onChange={(e) => handleSubsectionChange(sectionIndex, subsectionIndex, "content", e.target.value)} placeholder="Content" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
-                        ) : (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <Input value={subsection.key || ""} onChange={(e) => handleSubsectionChange(sectionIndex, subsectionIndex, "key", e.target.value)} placeholder="Key" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
-                            <Input value={subsection.value || ""} onChange={(e) => handleSubsectionChange(sectionIndex, subsectionIndex, "value", e.target.value)} placeholder="Value" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-3">
-                    <Button size="small" type="button" layout="outline" onClick={() => handleAddSubsection(sectionIndex, "keyValue")}>+ Add Key / Value</Button>
-                    <Button size="small" type="button" layout="outline" onClick={() => handleAddSubsection(sectionIndex, "paragraph")}>+ Add Paragraph</Button>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Product Badge</label>
+                    <Select
+                      value={badge}
+                      onChange={(e) => setBadge(e.target.value)}
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    >
+                      <option value="">No Badge</option>
+                      <option value="New">New</option>
+                      <option value="Trending">Trending</option>
+                      <option value="Best Seller">Best Seller</option>
+                      <option value="Limited Edition">Limited Edition</option>
+                    </Select>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </section>
 
-          {/* Media Sections */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">Media Blocks</h2>
-              <Button size="small" type="button" onClick={handleAddMediaSection} className="bg-[#008f89] hover:bg-[#00706b]">Add Media Block</Button>
-            </div>
-            <div className="space-y-6">
-              {mediaSections?.map((section, sectionIndex) => (
-                <div key={sectionIndex} className="border border-gray-200 dark:border-gray-700 rounded-lg p-5 bg-gray-50 dark:bg-gray-900/50">
-                  <div className="flex justify-between gap-4 mb-4">
-                    <Input value={section.name || ""} onChange={(e) => handleMediaSectionChange(sectionIndex, "name", e.target.value)} placeholder="Block title" className="flex-1 font-bold border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" />
-                    <button type="button" className="text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors" onClick={() => handleRemoveMediaSection(sectionIndex)}><FiTrash2 /></button>
+              {/* SECTION 4 — PRICING */}
+              <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm space-y-6">
+                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-sm font-bold">4</span>
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Section 4: Pricing</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">MRP (₹) *</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
+                      {...register("originalPrice", { required: "MRP is required!" })}
+                      placeholder="0"
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    />
+                    <Error errorName={errors.originalPrice} />
                   </div>
-                  <Textarea className="mb-4 w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200" rows="2" value={section.description || ""} onChange={(e) => handleMediaSectionChange(sectionIndex, "description", e.target.value)} placeholder="Description" />
-                  <div className="space-y-4">
-                    {section.items?.map((item, itemIndex) => (
-                      <div key={itemIndex} className="bg-white dark:bg-gray-800 p-4 rounded shadow-sm border border-gray-100 dark:border-gray-700 flex gap-4">
-                        <div className="w-1/3">
-                          <Uploader product={false} folder="media-blocks" imageUrl={item.image} setImageUrl={(url) => handleMediaItemChange(sectionIndex, itemIndex, "image", url)} />
-                        </div>
-                        <div className="flex-1 flex flex-col justify-between">
-                           <Textarea rows="3" value={item.details || ""} onChange={(e) => handleMediaItemChange(sectionIndex, itemIndex, "details", e.target.value)} placeholder="Details" className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 mb-2" />
-                           <div className="flex justify-end">
-                             <button type="button" className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm flex items-center transition-colors" onClick={() => handleRemoveMediaItem(sectionIndex, itemIndex)}><FiTrash2 className="mr-1" /> Remove</button>
-                           </div>
-                        </div>
-                      </div>
-                    ))}
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Selling Price (₹) *</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
+                      {...register("price", { required: "Selling Price is required!" })}
+                      placeholder="0"
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    />
+                    <Error errorName={errors.price} />
                   </div>
-                  <div className="mt-4">
-                    <Button size="small" type="button" layout="outline" onClick={() => handleAddMediaItem(sectionIndex)}>+ Add Image</Button>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Sale Price (Optional)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
+                      {...register("salePrice")}
+                      placeholder="0"
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </section>
 
-          {/* Attribute & Variants */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-20">
-            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-6 flex items-center">Product Attributes & Variants</h2>
-            <div className="mb-8">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Attribute</label>
-              <Multiselect
-                options={attribue?.map(a => ({ name: showingTranslateValue(a.title), _id: a._id }))}
-                selectedValues={attributes}
-                onSelect={onSelectAttribute}
-                onRemove={onRemoveAttribute}
-                displayValue="name"
-                placeholder="Choose attributes"
-                className="w-full"
-                style={{ 
-                  chips: { background: "#e6f4f3", color: "#008f89", borderRadius: "4px" },
-                  searchBox: { border: "1px solid #e2e8f0", borderRadius: "4px", padding: "8px" }
-                }}
+              {/* SECTION 5 — INVENTORY & STATUS */}
+              <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm space-y-6">
+                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-sm font-bold">5</span>
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Section 5: Inventory</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Base SKU</label>
+                    <Input
+                      {...register("sku")}
+                      placeholder="e.g. NIKE-AM90-BLK"
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                      Total Stock *
+                    </label>
+                    <Input
+                      type="number"
+                      min="0"
+                      {...register("stock", {
+                        required: variants?.length ? false : "Stock is required!",
+                        min: { value: 0, message: "Stock cannot be negative" },
+                      })}
+                      placeholder="e.g. 50"
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    />
+                    <Error errorName={errors.stock} />
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      {variants?.length > 0
+                        ? `Variant stock total: ${variantStockTotal(variants)} units (edit in Section 6)`
+                        : "Units available to sell on the storefront"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Low Stock Alert *</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      {...register("lowStockAlert")}
+                      placeholder="e.g. 5"
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Status</label>
+                    <Select
+                      {...register("status")}
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    >
+                      <option value="Published">Published (Live on store)</option>
+                      <option value="Draft">Draft</option>
+                      <option value="Hidden">Hidden</option>
+                      <option value="Out Of Stock">Out Of Stock</option>
+                    </Select>
+                  </div>
+                </div>
+              </section>
+
+              {/* SECTION 6 — VARIANTS */}
+              <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm space-y-6">
+                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-sm font-bold">6</span>
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Section 6: Variants</h2>
+                </div>
+                <p className="text-xs text-gray-500 -mt-2">Configure color variants with color thumbnails and custom Galleries, and UK size stocks nested under each color.</p>
+                
+                <ColorVariantManager
+                  variants={variants}
+                  setVariants={setVariants}
+                  watch={watch}
+                />
+              </section>
+
+              {/* SECTION 7 — SEO */}
+              <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm space-y-6">
+                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-sm font-bold">7</span>
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Section 7: SEO</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Meta Title</label>
+                    <Input
+                      {...register("metaTitle")}
+                      placeholder="Search engine optimized listing title"
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Meta Description</label>
+                    <Textarea
+                      {...register("metaDescription")}
+                      rows="3"
+                      placeholder="Meta description for search snippets"
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">SEO Image</label>
+                    <Uploader
+                      product={false}
+                      folder="seo"
+                      imageUrl={seoImage ? [seoImage] : []}
+                      setImageUrl={(url) => setSeoImage(Array.isArray(url) ? url[0] : (url || ""))}
+                      useOriginalSize={true}
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* HOMEPAGE PLACEMENT */}
+              <section className="space-y-6">
+                <ProductPlacementFlags tag={tag} setTag={setTag} />
+              </section>
+
+              {/* Submit Action */}
+              <div className="flex justify-end pt-4">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-3.5 rounded-xl flex items-center shadow-lg shadow-emerald-200 dark:shadow-none font-bold transition-all gap-2"
+                >
+                  <FiSave className="text-lg" />
+                  Save & Publish Product
+                </Button>
+              </div>
+
+            </div>
+
+            {/* Right Column: Live Sticky Card Preview */}
+            <div className="lg:col-span-1 lg:sticky lg:top-8">
+              <ProductPreviewCard
+                title={watchTitle}
+                brandName={brand ? (brand.name?.en || brand.name) : ""}
+                originalPrice={watchOriginalPrice}
+                discount={Number(watchOriginalPrice || 0) - (Number(watchSalePrice) || Number(watchPrice) || Number(watchOriginalPrice || 0))}
+                discountType="flat"
+                badge={badge}
+                featuredImage={featuredImage}
+                hoverImage={hoverImage}
               />
             </div>
-            {attributes.length > 0 && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {attributes.map((attr) => {
-                    return (
-                      <div key={attr._id} className="flex flex-col">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{attr.name}</label>
-                        <div className="border border-gray-200 dark:border-gray-700 rounded-md p-1 focus-within:border-[#008f89] transition-all bg-white dark:bg-gray-800">
-                          <ReactTagInput
-                            placeholder={`Enter choice values`}
-                            tags={values[attr._id] || []}
-                            onChange={(newTags) => setValues({ ...values, [attr._id]: newTags })}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            
-            {variants.length > 0 && (
-              <div className="mt-10 overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-lg">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-[#e6f4f3] dark:bg-teal-900/30 text-gray-700 dark:text-teal-400 uppercase text-xs font-bold">
-                    <tr>
-                      <th className="px-6 py-4">Variant</th>
-                      <th className="px-6 py-4">Variant Price</th>
-                      <th className="px-6 py-4">Stock</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                    {variants.map((variant, index) => (
-                      <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td className="px-6 py-4 font-medium text-gray-600 dark:text-gray-300">
-                           {Object.keys(variant).filter(k => !['price', 'originalPrice', 'discount', 'quantity', 'barcode', 'sku', 'image', 'productId', 'title', 'description', 'slug', 'dynamicSections', 'mediaSections'].includes(k)).map(k => variant[k]).join('-')}
-                        </td>
-                        <td className="px-6 py-4">
-                          <Input 
-                            type="number" 
-                            value={variant.originalPrice || 0} 
-                            onChange={(e) => handleVariantChange(index, "originalPrice", e.target.value)} 
-                            className="h-10 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-[#008f89] w-full" 
-                            min="0"
-                            step="0.01"
-                            onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
-                          />
-                        </td>
-                        <td className="px-6 py-4">
-                          <Input 
-                            type="number" 
-                            value={variant.quantity || 0} 
-                            onChange={(e) => handleVariantChange(index, "quantity", e.target.value)} 
-                            className="h-10 border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 focus:border-[#008f89] w-full" 
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
 
-
-          </div>
-
-          <div className="flex justify-end mt-8">
-            <Button type="submit" disabled={isSubmitting} className="bg-[#008f89] hover:bg-[#00706b] text-white px-10 py-3 rounded-md flex items-center shadow-sm font-semibold transition-all">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-              Save & Update
-            </Button>
           </div>
         </form>
       </div>

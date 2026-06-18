@@ -27,68 +27,20 @@ const TopPopularSelling = ({ bestSeller = [], topBrands = [], goldCustomers = []
   ];
 
   // Top brands
-  const displayBrands =
-    topBrands.length > 0
-      ? topBrands.slice(0, 6)
-      : [
-          { name: "Health Shield", count: 45 },
-          { name: "Eco-Meds", count: 38 },
-          { name: "RxCare", count: 32 },
-          { name: "Quick Rx", count: 28 },
-          { name: "CityMed", count: 24 },
-          { name: "Wellness", count: 18 },
-        ];
+  const displayBrands = topBrands.slice(0, 6);
 
-  // Top selling meds
   const displayMeds =
-    bestSeller.length > 0
-      ? bestSeller.slice(0, 6).map((m) => ({
-          name: showingTranslateValue(m.title) || m.title,
-          sold: m.count,
-          img: m.image?.[0] || "https://cdn-icons-png.flaticon.com/512/3028/3028574.png",
-        }))
-      : [
-          { name: "Paracetamol 500mg", sold: 12, img: "https://cdn-icons-png.flaticon.com/512/3028/3028574.png" },
-          { name: "Multivitamin 30s", sold: 10, img: "https://cdn-icons-png.flaticon.com/512/1047/1047687.png" },
-          { name: "Salbutamol Inhaler", sold: 8, img: "https://cdn-icons-png.flaticon.com/512/1047/1047721.png" },
-          { name: "Antiseptic Cream", sold: 7, img: "https://cdn-icons-png.flaticon.com/512/1047/1047711.png" },
-          { name: "Digital Thermometer", sold: 6, img: "https://cdn-icons-png.flaticon.com/512/1047/1047716.png" },
-          { name: "Cold & Flu Relief", sold: 5, img: "https://cdn-icons-png.flaticon.com/512/3028/3028566.png" },
-        ];
+    bestSeller.slice(0, 6).map((m) => ({
+      name: showingTranslateValue(m.title) || m.title,
+      sold: m.count,
+      img: m.image?.[0] || "/rasaLogo.png",
+    }));
 
-  // Most loved products
-  const mostLovedProducts = [
-    {
-      name: "Farmcy Organic Herbal Tea",
-      hearts: 212,
-      img: "https://images.unsplash.com/photo-1594631252845-29fc458639a6?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      name: "Pure Lavender Honey",
-      hearts: 185,
-      img: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      name: "Organic Aloe Vera Gel",
-      hearts: 156,
-      img: "https://images.unsplash.com/photo-1596755094514-b87a0423926c?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      name: "Sun-Dried Chamomile",
-      hearts: 142,
-      img: "https://images.unsplash.com/photo-1544145945-f904253d0c7e?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      name: "Farmcy Chia Seeds",
-      hearts: 128,
-      img: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=400",
-    },
-    {
-      name: "Pure Turmeric Powder",
-      hearts: 115,
-      img: "https://images.unsplash.com/photo-1615485245832-378393c04205?auto=format&fit=crop&q=80&w=400",
-    },
-  ];
+  const mostLovedProducts = bestSeller.slice(0, 6).map((m) => ({
+    name: showingTranslateValue(m.title) || m.title,
+    hearts: m.count || 0,
+    img: m.image?.[0] || "/rasaLogo.png",
+  }));
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-10">
@@ -105,7 +57,12 @@ const TopPopularSelling = ({ bestSeller = [], topBrands = [], goldCustomers = []
         </div>
 
         <div className="grid grid-cols-3 gap-4">
-          {displayBrands.map((brand, idx) => {
+          {displayBrands.length === 0 ? (
+            <p className="col-span-3 text-sm text-gray-500 text-center py-6">
+              {t("NoDataAvailable") || "No brand data yet"}
+            </p>
+          ) : (
+          displayBrands.map((brand, idx) => {
             const style = pharmacyIcons[idx % pharmacyIcons.length];
             const IconComponent = style.icon;
 
@@ -125,7 +82,8 @@ const TopPopularSelling = ({ bestSeller = [], topBrands = [], goldCustomers = []
                 </span>
               </div>
             );
-          })}
+          })
+          )}
         </div>
       </div>
 
@@ -142,7 +100,12 @@ const TopPopularSelling = ({ bestSeller = [], topBrands = [], goldCustomers = []
         </div>
 
         <div className="space-y-4">
-          {displayMeds.map((med, index) => (
+          {displayMeds.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-6">
+              {t("NoDataAvailable") || "No sales data yet"}
+            </p>
+          ) : (
+          displayMeds.map((med, index) => (
             <div
               key={index}
               className="flex items-center justify-between p-2 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
@@ -162,7 +125,8 @@ const TopPopularSelling = ({ bestSeller = [], topBrands = [], goldCustomers = []
                 </span>
               </div>
             </div>
-          ))}
+          ))
+          )}
         </div>
       </div>
 
@@ -179,7 +143,12 @@ const TopPopularSelling = ({ bestSeller = [], topBrands = [], goldCustomers = []
         </div>
 
         <div className="space-y-4">
-          {mostLovedProducts.map((product, index) => (
+          {mostLovedProducts.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-6">
+              {t("NoDataAvailable") || "No product data yet"}
+            </p>
+          ) : (
+          mostLovedProducts.map((product, index) => (
             <div
               key={index}
               className="flex items-center justify-between p-2 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
@@ -202,7 +171,8 @@ const TopPopularSelling = ({ bestSeller = [], topBrands = [], goldCustomers = []
                 <FiHeart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
               </div>
             </div>
-          ))}
+          ))
+          )}
         </div>
       </div>
     </div>

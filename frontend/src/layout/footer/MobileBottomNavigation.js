@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCart } from "react-use-cart";
@@ -11,6 +11,11 @@ import useWishlist from "@hooks/useWishlist";
 import useGetSetting from "@hooks/useGetSetting";
 
 const MobileBottomNavigation = () => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const router = useRouter();
   const { totalItems } = useCart();
   const { count: wishlistCount } = useWishlist();
@@ -29,11 +34,15 @@ const MobileBottomNavigation = () => {
 
   const isActive = (href) => router.pathname === href;
 
+  if (!mounted) {
+    return null;
+  }
+
   return (
-    <div className="lg:hidden fixed bottom-0 w-full bg-white z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] border-t border-gray-100">
+    <div className="lg:hidden fixed bottom-0 w-full bg-[#050505]/95 backdrop-blur-md z-50 shadow-[0_-8px_30px_rgba(0,0,0,0.8)] border-t border-neutral-900/80">
       <div className="flex justify-between items-center px-4 py-2 pt-3">
         {/* Home */}
-        <Link href="/" className={`flex flex-col items-center justify-center w-full ${isActive("/") ? "text-store-500" : "text-gray-500"}`}>
+        <Link href="/" className={`flex flex-col items-center justify-center w-full ${isActive("/") ? "text-[#D4AF37]" : "text-neutral-400 hover:text-white"}`}>
           <FiHome className="w-6 h-6 mb-1" />
           <span className="text-[10px] font-medium">Home</span>
         </Link>
@@ -41,7 +50,7 @@ const MobileBottomNavigation = () => {
         {/* Notifications */}
         <Link
           href={isLoggedIn ? "/user/notifications" : "/auth/login"}
-          className={`flex flex-col items-center justify-center w-full relative ${isActive("/user/notifications") ? "text-store-500" : "text-gray-500"}`}
+          className={`flex flex-col items-center justify-center w-full relative ${isActive("/user/notifications") ? "text-[#D4AF37]" : "text-neutral-400 hover:text-white"}`}
         >
           <div className="relative">
             <FiBell className="w-6 h-6 mb-1" />
@@ -55,7 +64,7 @@ const MobileBottomNavigation = () => {
         </Link>
 
         {/* My Orders */}
-        <Link href="/user/my-orders" className={`flex flex-col items-center justify-center w-full ${isActive("/user/my-orders") ? "text-store-500" : "text-gray-500"}`}>
+        <Link href="/user/my-orders" className={`flex flex-col items-center justify-center w-full ${isActive("/user/my-orders") ? "text-[#D4AF37]" : "text-neutral-400 hover:text-white"}`}>
           <FiFileText className="w-6 h-6 mb-1" />
           <span className="text-[10px] font-medium">Orders</span>
         </Link>
@@ -63,12 +72,12 @@ const MobileBottomNavigation = () => {
         {/* Cart */}
         <button 
           onClick={toggleCartDrawer} 
-          className={`flex flex-col items-center justify-center w-full relative ${router.pathname === "/cart" ? "text-store-500" : "text-gray-500"}`}
+          className={`flex flex-col items-center justify-center w-full relative ${router.pathname === "/cart" ? "text-[#D4AF37]" : "text-neutral-400 hover:text-white"}`}
         >
           <div className="relative">
             <FiShoppingCart className="w-6 h-6 mb-1" />
             {totalItems > 0 && (
-              <span className="absolute -top-2 -right-2 bg-store-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 bg-[#D4AF37] text-black text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
                 {totalItems}
               </span>
             )}
@@ -79,18 +88,18 @@ const MobileBottomNavigation = () => {
         {/* Search */}
         <button 
           onClick={toggleSearch} 
-          className={`flex flex-col items-center justify-center w-full ${showSearch ? "text-store-500" : "text-gray-500"}`}
+          className={`flex flex-col items-center justify-center w-full ${showSearch ? "text-[#D4AF37]" : "text-neutral-400 hover:text-white"}`}
         >
           <FiSearch className="w-6 h-6 mb-1" />
           <span className="text-[10px] font-medium">Search</span>
         </button>
 
         {/* WishList */}
-        <Link href="/wishlist" className={`flex flex-col items-center justify-center w-full ${isActive("/wishlist") ? "text-store-500" : "text-gray-500"}`}>
+        <Link href="/wishlist" className={`flex flex-col items-center justify-center w-full ${isActive("/wishlist") ? "text-[#D4AF37]" : "text-neutral-400 hover:text-white"}`}>
           <div className="relative">
             <FiHeart className="w-6 h-6 mb-1" />
             {wishlistCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-store-500 text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 bg-[#D4AF37] text-black text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
                 {wishlistCount}
               </span>
             )}

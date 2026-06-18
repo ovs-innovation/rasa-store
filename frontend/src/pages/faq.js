@@ -10,14 +10,14 @@ import FaqServices from "@services/FaqServices";
 import { notifyError } from "@utils/toast";
 
 const AccordionItem = ({ question, answer, isOpen, onToggle }) => (
-  <div className="border-b border-gray-200">
+  <div className="border-b border-neutral-800">
     <button
       onClick={onToggle}
       className="w-full flex justify-between items-center py-5 text-left focus:outline-none"
     >
-      <span className="text-lg font-semibold text-gray-900">{question}</span>
+      <span className="text-lg font-semibold text-white">{question}</span>
       <span
-        className={`flex items-center justify-center w-9 h-9 rounded-full border border-purple-500 text-purple-600 text-2xl font-light transition-transform ${
+        className={`flex items-center justify-center w-9 h-9 rounded-full border border-[#D4AF37] text-[#D4AF37] text-2xl font-light transition-transform ${
           isOpen ? "" : ""
         }`}
       >
@@ -25,7 +25,7 @@ const AccordionItem = ({ question, answer, isOpen, onToggle }) => (
       </span>
     </button>
     {isOpen && (
-      <div className="pb-6 text-base leading-7 text-gray-700">{answer}</div>
+      <div className="pb-6 text-base leading-7 text-neutral-300">{answer}</div>
     )}
   </div>
 );
@@ -62,12 +62,12 @@ const Faq = () => {
       answer: "Most orders are delivered within 24-48 hours. For certain locations, it may take up to 3-5 business days. You can track your order in the 'My Orders' section.",
     },
     {
-      question: "Are the medicines sold on Farmacykart authentic?",
-      answer: "Absolutely. We only source products directly from authorized distributors and reputable manufacturers. All medicines undergo strict quality checks.",
+      question: "Are the products sold on Rasa Store authentic?",
+      answer: "Absolutely. We only source products directly from authorized distributors, verified collectors, and premium boutiques. Every single piece is fully authenticated.",
     },
     {
-      question: "Do I need a prescription to buy medicines?",
-      answer: "Yes, for prescription-only medicines (Schedule H & H1), a valid prescription from a registered medical practitioner is mandatory. You can upload it during checkout.",
+      question: "How do you verify the authenticity of sneakers and bags?",
+      answer: "Every item goes through a rigorous multi-point physical inspection by our team of expert authenticators before it is shipped to you, ensuring 100% genuine products.",
     },
     {
       question: "How do I return an item?",
@@ -83,55 +83,56 @@ const Faq = () => {
   const displayFaqs = faqs.length > 0 ? faqs : defaultFaqs;
 
   return (
-    <Layout title="FAQ" description="Frequently Asked Questions - Farmacykart">
+    <Layout title="FAQ" description="Frequently Asked Questions - Rasa Store">
       {/* Premium Header */}
-      <div className="bg-gradient-to-r from-store-600 to-store-800 py-16 lg:py-24">
+      <div className="bg-[#050505] py-16 lg:py-24 border-b border-neutral-900">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-10 text-center">
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6">
+          <h1 className="text-4xl md:text-5xl font-serif font-black text-white mb-6 uppercase tracking-tight flex items-center justify-center gap-3">
+            <span className="w-1.5 h-12 bg-[#D4AF37] rounded-full inline-block" />
             Frequently Asked Questions
           </h1>
-          <p className="text-store-100 text-lg md:text-xl max-w-3xl mx-auto">
+          <p className="text-neutral-400 text-lg md:text-xl max-w-3xl mx-auto">
             Find answers to common questions about ordering, delivery, prescriptions, and more. We're here to help you.
           </p>
         </div>
       </div>
 
-      <div className="bg-gray-50 py-12 lg:py-20">
+      <div className="bg-black py-12 lg:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-10">
-          <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+          <div className="bg-[#050505] rounded-3xl overflow-hidden border border-neutral-900 shadow-2xl">
             <div className="p-6 md:p-10 lg:p-16">
               {loadingFaqs ? (
                 <div className="space-y-4">
                   {[1, 2, 3, 4, 5].map((n) => (
-                    <div key={n} className="h-16 bg-gray-100 rounded-2xl animate-pulse" />
+                    <div key={n} className="h-16 bg-neutral-900 rounded-2xl animate-pulse" />
                   ))}
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 font-sans">
                   {displayFaqs.map((faq, idx) => (
                     <div 
                       key={faq._id || idx} 
                       className={`border rounded-2xl transition-all duration-300 ${
-                        openIndex === idx ? 'border-store-200 bg-store-50/30' : 'border-gray-100 bg-white hover:border-gray-200'
+                        openIndex === idx ? 'border-[#D4AF37]/30 bg-[#0A0A0A]' : 'border-neutral-900 bg-[#050505] hover:border-neutral-800'
                       }`}
                     >
                       <button
                         onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
                         className="w-full flex justify-between items-center p-5 md:p-6 text-left focus:outline-none"
                       >
-                        <span className={`text-lg font-bold transition-colors ${openIndex === idx ? 'text-store-700' : 'text-gray-900'}`}>
+                        <span className={`text-lg font-bold transition-colors ${openIndex === idx ? 'text-[#D4AF37]' : 'text-white'}`}>
                           {faq.question}
                         </span>
                         <div className={`flex-shrink-0 ml-4 w-8 h-8 rounded-full flex items-center justify-center border transition-all ${
-                          openIndex === idx ? 'bg-store-600 border-store-600 text-white' : 'bg-gray-50 border-gray-200 text-gray-400'
+                          openIndex === idx ? 'bg-[#D4AF37] border-[#D4AF37] text-black' : 'bg-neutral-950 border-neutral-800 text-neutral-400'
                         }`}>
                           <span className="text-xl leading-none">{openIndex === idx ? "−" : "+"}</span>
                         </div>
                       </button>
                       {openIndex === idx && (
                         <div className="px-5 pb-6 md:px-6 md:pb-8 animate-fadeIn">
-                          <div className="h-px bg-gray-200/50 mb-6 w-full" />
-                          <p className="text-gray-600 leading-relaxed text-base md:text-lg">
+                          <div className="h-px bg-neutral-800 mb-6 w-full" />
+                          <p className="text-neutral-300 leading-relaxed text-base md:text-lg">
                             {faq.answer}
                           </p>
                         </div>
@@ -145,9 +146,9 @@ const Faq = () => {
 
           {/* Still have questions? Section */}
           <div className="mt-12 text-center">
-            <div className="bg-white rounded-2xl p-8 border border-dashed border-gray-300">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Still have questions?</h3>
-              <p className="text-gray-500 mb-6">If you couldn't find the answer you're looking for, please get in touch with our team.</p>
+            <div className="bg-[#0A0A0A] rounded-2xl p-8 border border-dashed border-neutral-850">
+              <h3 className="text-xl font-serif font-black uppercase text-white mb-2 tracking-wide">Still have questions?</h3>
+              <p className="text-neutral-400 mb-6 font-sans">If you couldn't find the answer you're looking for, please get in touch with our team.</p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <a 
                   href={storeCustomizationSetting?.footer?.social_whatsapp?.startsWith('http') 
@@ -155,13 +156,13 @@ const Faq = () => {
                     : `https://wa.me/${storeCustomizationSetting?.footer?.social_whatsapp}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-8 py-3 bg-[#25D366] text-white rounded-xl font-bold hover:bg-[#128C7E] transition-all shadow-md"
+                  className="inline-flex items-center gap-2 px-8 py-3 bg-[#25D366] text-white rounded-xl font-bold hover:bg-[#128C7E] transition-all shadow-md font-sans"
                 >
                   Message on WhatsApp
                 </a>
                 <a 
                   href="/contact-us" 
-                  className="inline-flex items-center gap-2 px-8 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all shadow-md"
+                  className="inline-flex items-center gap-2 px-8 py-3 bg-[#D4AF37] text-black rounded-xl font-bold hover:bg-yellow-600 transition-all shadow-md font-sans"
                 >
                   Contact Support
                 </a>

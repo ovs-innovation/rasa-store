@@ -1,6 +1,6 @@
 import Link from "next/link";
-import React, { useEffect, useMemo, useState } from "react";
-import { FiPlus } from "react-icons/fi";
+import React, { useEffect, useState } from "react";
+import { FiPlus, FiEdit } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -10,7 +10,6 @@ import Dashboard from "@pages/user/dashboard";
 import Error from "@components/form/Error";
 import CustomerServices from "@services/CustomerServices";
 import { setToken } from "@services/httpServices";
-import Uploader from "@components/image-uploader/Uploader";
 import { notifySuccess, notifyError } from "@utils/toast";
 import { getDisplayEmail } from "@utils/profileAuth";
 
@@ -19,7 +18,6 @@ const MyAccount = () => {
   const userId = userInfo?._id || userInfo?.id || null;
   const queryClient = useQueryClient();
 
-  const [isEditingWholesaler, setIsEditingWholesaler] = useState(false);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
   const [addressForm, setAddressForm] = useState({
@@ -32,24 +30,8 @@ const MyAccount = () => {
     addressType: "Home",
     isDefault: false
   });
-  const [docs, setDocs] = useState({
-    aadhar: "",
-    aadharPublicId: "",
-    aadharDeleteToken: "",
-    pan: "",
-    panPublicId: "",
-    panDeleteToken: "",
-    gst: "",
-    gstPublicId: "",
-    gstDeleteToken: "",
-    gstNotRequired: false,
-    drugLicense: "",
-    drugLicensePublicId: "",
-    drugLicenseDeleteToken: "",
-    drugLicenseNotRequired: false,
-  });
 
-  // ensure axios has token if cookie holds token but context hasn't set it
+  // ensure axios has token
   useEffect(() => {
     if (userInfo?.token) {
       setToken(userInfo.token);
@@ -65,112 +47,6 @@ const MyAccount = () => {
     queryFn: async () => await CustomerServices.getCustomerById(userId),
     enabled: !!userId,
   });
-
-  useEffect(() => {
-    if (customer) {
-      setDocs({
-        aadhar: customer?.aadhar || "",
-        aadharPublicId: customer?.aadharPublicId || "",
-        aadharDeleteToken: customer?.aadharDeleteToken || "",
-        pan: customer?.pan || "",
-        panPublicId: customer?.panPublicId || "",
-        panDeleteToken: customer?.panDeleteToken || "",
-        gst: customer?.gst || "",
-        gstPublicId: customer?.gstPublicId || "",
-        gstDeleteToken: customer?.gstDeleteToken || "",
-        gstNotRequired: !!customer?.gstNotRequired,
-        drugLicense: customer?.drugLicense || "",
-        drugLicensePublicId: customer?.drugLicensePublicId || "",
-        drugLicenseDeleteToken: customer?.drugLicenseDeleteToken || "",
-        drugLicenseNotRequired: !!customer?.drugLicenseNotRequired,
-      });
-    }
-  }, [customer]);
-
-  const isWholesaler = useMemo(() => {
-    const role = customer?.role || userInfo?.role;
-    return role === "wholesaler";
-  }, [customer?.role, userInfo?.role]);
-
-  const acceptDocs = useMemo(
-    () => ({
-      "image/*": [".jpeg", ".jpg", ".png", ".webp"],
-      "application/pdf": [".pdf"],
-    }),
-    []
-  );
-
-  const handleDocUploadComplete = async (
-    field,
-    publicField,
-    deleteTokenField,
-    data
-  ) => {
-    try {
-      const url = data?.secure_url || data?.url || "";
-      const publicId = data?.public_id || "";
-      const deleteToken = data?.delete_token || data?.deleteToken || "";
-
-      setDocs((prev) => ({
-        ...prev,
-        [field]: url,
-        [publicField]: publicId,
-        ...(deleteTokenField ? { [deleteTokenField]: deleteToken } : {}),
-      }));
-
-      if (!userId) return;
-
-      const updateObj = { [field]: url, [publicField]: publicId };
-      if (deleteTokenField && deleteToken) {
-        updateObj[deleteTokenField] = deleteToken;
-      }
-
-      await CustomerServices.updateCustomer(userId, updateObj);
-      notifySuccess("Saved successfully");
-      queryClient.invalidateQueries({ queryKey: ["customer", { id: userId }] });
-    } catch (err) {
-      notifyError(
-        err?.response?.data?.message || err?.message || "Failed to save document"
-      );
-    }
-  };
-
-  const handleDocRemove = async (field, publicField, deleteTokenField) => {
-    try {
-      const publicId = docs?.[publicField] || "";
-
-      if (publicId) {
-        try {
-          await CustomerServices.deleteCloudinary({ publicId });
-        } catch (err) {
-          // still allow clearing the DB fields even if cloud deletion fails
-          console.warn(
-            "Cloudinary delete failed:",
-            err?.response?.data || err?.message || err
-          );
-        }
-      }
-
-      setDocs((prev) => ({
-        ...prev,
-        [field]: "",
-        [publicField]: "",
-        ...(deleteTokenField ? { [deleteTokenField]: "" } : {}),
-      }));
-
-      if (!userId) return;
-
-      const updateObj = { [field]: "", [publicField]: "" };
-      if (deleteTokenField) updateObj[deleteTokenField] = "";
-      await CustomerServices.updateCustomer(userId, updateObj);
-      notifySuccess("Removed successfully");
-      queryClient.invalidateQueries({ queryKey: ["customer", { id: userId }] });
-    } catch (err) {
-      notifyError(
-        err?.response?.data?.message || err?.message || "Failed to remove document"
-      );
-    }
-  };
 
   const { data: shippingAddressesResponse, error, isLoading } = useQuery({
     queryKey: ["shippingAddress", { id: userId }],
@@ -340,11 +216,6 @@ const MyAccount = () => {
                       <h2 className="text-2xl font-serif font-bold text-gray-800">
                         {userInfo?.name}
                       </h2>
-                      {isWholesaler && (
-                        <span className="px-3 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">
-                          Wholesaler
-                        </span>
-                      )}
                     </div>
                     <div className="space-y-1">
                       {(getDisplayEmail(userInfo) || getDisplayEmail(customer)) && (
@@ -365,9 +236,7 @@ const MyAccount = () => {
                   href="/user/update-profile"
                   className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-store-500 text-store-600 text-sm font-bold rounded-2xl hover:bg-store-500 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
+                  <FiEdit className="w-4 h-4" />
                   Edit Profile
                 </Link>
               </div>
@@ -473,78 +342,6 @@ const MyAccount = () => {
               )}
             </div>
           </div>
-
-          {/* Wholesaler Section - Only if applicable */}
-          {isWholesaler && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-6 border-b border-gray-50 bg-gray-50/30 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-500 rounded-xl text-white shadow-sm">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-serif font-bold text-gray-800">Business Documents</h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingWholesaler((v) => !v)}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                    isEditingWholesaler 
-                      ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
-                      : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200'
-                  }`}
-                >
-                  {isEditingWholesaler ? "Done" : "Update Documents"}
-                </button>
-              </div>
-
-              <div className="p-6">
-                {!customerLoading && customerError && <Error error={customerError} />}
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {[
-                    { label: "Aadhar Card", field: "aadhar", publicField: "aadharPublicId", tokenField: "aadharDeleteToken" },
-                    { label: "PAN Card", field: "pan", publicField: "panPublicId", tokenField: "panDeleteToken" },
-                    { label: "GST Certificate", field: "gst", publicField: "gstPublicId", tokenField: "gstDeleteToken", optional: docs?.gstNotRequired },
-                    { label: "Drug License", field: "drugLicense", publicField: "drugLicensePublicId", tokenField: "drugLicenseDeleteToken", optional: docs?.drugLicenseNotRequired }
-                  ].map((doc) => (
-                    <div key={doc.field} className="p-4 rounded-xl border border-gray-50 bg-gray-50/30">
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="text-sm font-bold text-gray-700">{doc.label}</span>
-                        {doc.optional && !isEditingWholesaler ? (
-                          <span className="text-[10px] font-black uppercase text-gray-400 bg-gray-100 px-2 py-0.5 rounded">Not Required</span>
-                        ) : isEditingWholesaler ? (
-                          <Uploader
-                            compact
-                            imageUrl={docs[doc.field]}
-                            setImageUrl={(url) => setDocs((p) => ({ ...p, [doc.field]: url || "" }))}
-                            folder="wholesaler"
-                            accept={acceptDocs}
-                            maxSize={10 * 1024 * 1024}
-                            uniquePublicId={true}
-                            onUploadComplete={(data) => handleDocUploadComplete(doc.field, doc.publicField, doc.tokenField, data)}
-                            onRemove={() => handleDocRemove(doc.field, doc.publicField, doc.tokenField)}
-                          />
-                        ) : docs[doc.field] ? (
-                          <a
-                            href={docs[doc.field]}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1 text-xs font-bold text-store-600 hover:underline"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                            View
-                          </a>
-                        ) : (
-                          <span className="text-[10px] font-black uppercase text-red-400 bg-red-50 px-2 py-0.5 rounded border border-red-100">Missing</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

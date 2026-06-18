@@ -56,10 +56,6 @@ const useCartSync = () => {
         const res = await CustomerServices.getCustomerById(userId);
         const backendCart = res.cart || [];
 
-        const isWholesalerUser =
-          userInfo?.role &&
-          String(userInfo.role).toLowerCase() === "wholesaler";
-
         // ── Step 2: Merge DB → Local ────────────────────────────────────────
         const itemsToProcess = [];
 
@@ -82,11 +78,7 @@ const useCartSync = () => {
             }
           } else if (!hasVariantInCart) {
             const effectivePrice =
-              isWholesalerUser &&
-                product.wholePrice &&
-                Number(product.wholePrice) > 0
-                ? Number(product.wholePrice)
-                : product.prices?.price || product.prices?.originalPrice || 0;
+              product.prices?.price || product.prices?.originalPrice || 0;
 
             itemsToProcess.push({
               type: "add",
@@ -107,7 +99,6 @@ const useCartSync = () => {
                     : product?.variants && product.variants[0]
                       ? product.variants[0].quantity
                       : undefined,
-                minQuantity: product?.minQuantity,
               },
               quantity: backendQty,
             });

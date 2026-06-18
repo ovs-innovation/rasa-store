@@ -6,35 +6,20 @@ import InvoiceOrderTable from "@/components/invoice/InvoiceOrderTable";
 
 // Modern invoice layout copied from frontend Invoice.js, adapted for admin
 const InvoiceLayout = ({ data, printRef, globalSetting, currency, getNumberTwo }) => {
+  const mrpTotal =
+    data?.cart?.reduce((sum, item) => {
+      const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
+      const qty = item.quantity || 1;
+      return sum + mrp * qty;
+    }, 0) || 0;
 
-  // Check if this is a wholesaler order
-  const isWholesaler = 
-    data?.user_info?.role?.toString().toLowerCase().trim() === "wholesaler" ||
-    data?.user?.role?.toString().toLowerCase().trim() === "wholesaler" ||
-    data?.role?.toString().toLowerCase().trim() === "wholesaler" ||
-    data?.user_info?.userType?.toString().toLowerCase().trim() === "wholesaler" ||
-    data?.userType?.toString().toLowerCase().trim() === "wholesaler" ||
-    data?.cart?.[0]?.wholePrice > 0;
-
-  // Aggregate values for summary box - match checkout page exactly
-  const mrpTotal = isWholesaler
-    ? data?.cart?.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0) || 0
-    : data?.cart?.reduce((sum, item) => {
-        const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
-        const qty = item.quantity || 1;
-        return sum + mrp * qty;
-      }, 0) || 0;
-
-  // Calculate total discount from cart items - match checkout page
-  // For wholesalers, discount is always 0
-  const totalDiscount = isWholesaler 
-    ? 0 
-    : data?.cart?.reduce((sum, item) => {
-        const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
-        const salePrice = item.price ?? 0;
-        const qty = item.quantity || 1;
-        return sum + ((mrp - salePrice) * qty);
-      }, 0) || 0;
+  const totalDiscount =
+    data?.cart?.reduce((sum, item) => {
+      const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
+      const salePrice = item.price ?? 0;
+      const qty = item.quantity || 1;
+      return sum + (mrp - salePrice) * qty;
+    }, 0) || 0;
 
   // Calculate total GST - use taxSummary from order data (same as checkout), fallback to calculating from cart
   const totalGst = data?.taxSummary?.exclusiveTax > 0 
@@ -87,7 +72,7 @@ const InvoiceLayout = ({ data, printRef, globalSetting, currency, getNumberTwo }
             {/* Bill From - from common settings */}
             <div className="flex-1 min-w-[0] items-start">
               <p className="text-semibold md:text-base font-semibold text-gray-900">
-                {globalSetting?.company_name || "AQOSU FARMACYKART PRIVATE LIMITED"}
+                {globalSetting?.company_name || "AQOSU RASA PRIVATE LIMITED"}
               </p>
               <p className="text-sm text-gray-600 leading-snug">
                 {globalSetting?.address ||
@@ -97,7 +82,7 @@ const InvoiceLayout = ({ data, printRef, globalSetting, currency, getNumberTwo }
                 <div className="flex gap-x-3">
                   <div className="flex gap-x-2 text-sm text-gray-600 leading-snug mt-0.5">
                     <div className="font-semibold">Email:</div>
-                    <div>{globalSetting?.email || "farmacykart@gmail.com"}</div>
+                    <div>{globalSetting?.email || "info@rasastore.com"}</div>
                   </div>
                   <div className="flex gap-x-2 text-sm text-gray-600 leading-snug mt-0.5">
                     <div className="font-semibold">Phone No:</div>
@@ -211,17 +196,11 @@ const InvoiceLayout = ({ data, printRef, globalSetting, currency, getNumberTwo }
                   <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-20">
                     HSN
                   </th>
-                  <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-24">
-                    Batch
-                  </th>
-                  <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-24">
-                    Expiry
-                  </th>
                   <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-16">
                     Qty
                   </th>
                   <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-24">
-                    {isWholesaler ? "Price" : "MRP"}
+                    MRP
                   </th>
                   <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-24">
                     Discount
@@ -293,7 +272,7 @@ const InvoiceLayout = ({ data, printRef, globalSetting, currency, getNumberTwo }
                   {globalSetting?.pharmacist_name || "Registered Pharmacist"}
                 </p>
                 <p className="text-[11px] text-gray-500 leading-snug">
-                  {globalSetting?.company_name || "Farmacykart"}
+                  {globalSetting?.company_name || "RASA"}
                 </p>
                 {globalSetting?.website && (
                   <p className="text-[11px] text-store-600 leading-snug">
@@ -309,7 +288,7 @@ const InvoiceLayout = ({ data, printRef, globalSetting, currency, getNumberTwo }
         <div className="invoice-amount-summary md:w-[580px] lg:w-[720px]">
           <div className="bg-white border border-gray-200 rounded-md text-xs md:text-sm text-gray-800 divide-y divide-gray-100">
             <div className="flex items-center justify-between px-3 py-1.5">
-              <span>{isWholesaler ? "Total Price" : "MRP Total"}</span>
+              <span>MRP Total</span>
               <span className="font-DejaVu">
                 {currency}
                 {getNumberTwo(mrpTotal)}
@@ -318,10 +297,7 @@ const InvoiceLayout = ({ data, printRef, globalSetting, currency, getNumberTwo }
             <div className="flex items-center justify-between px-3 py-1.5">
               <span>Total Discount</span>
               <span className="font-DejaVu text-green-600">
-                {isWholesaler 
-                  ? `${currency}${getNumberTwo(0)}`
-                  : `-${currency}${getNumberTwo(totalDiscount)}`
-                }
+                -{currency}{getNumberTwo(totalDiscount)}
               </span>
             </div>
             {data?.coupon?.couponCode && (

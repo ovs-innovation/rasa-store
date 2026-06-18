@@ -101,8 +101,8 @@ const DeleteModal = ({ id, ids, setIsCheck, category, title, useParamId }) => {
         }
       }
 
-      // Customer/Wholesaler Deletion
-      if (location.pathname === "/customers" || location.pathname === "/wholesalers") {
+      // Customer Deletion
+      if (location.pathname === "/customers") {
         const res = await CustomerServices.deleteCustomer(id);
         setIsUpdate(true);
         notifySuccess(res.message);

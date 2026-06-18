@@ -22,10 +22,8 @@ const {
   updateShippingAddress,
   deleteShippingAddress,
   getCustomerStatistics,
-  createWholesaler,
   deleteCloudinaryAsset,
   cloudinarySign,
-  getAllWholesalers,
   // Cart management
   getCart,
   addToCart,
@@ -38,6 +36,8 @@ const {
   resendVerificationEmail,
   sendPhoneEmailOTP,
   verifyPhoneEmailOTP,
+  sendEmailOtpLogin,
+  verifyEmailOtpLogin,
   signupPhone,
   completeProfile,
   sendProfileEmailOtp,
@@ -53,6 +53,10 @@ const { isAuth, isAdmin } = require("../config/auth");
 router.post("/login-phone", loginWithPhone);
 router.post("/send-phone-otp", sendPhoneEmailOTP);
 router.post("/verify-phone-otp", verifyPhoneEmailOTP);
+
+//login with email OTP
+router.post("/send-email-otp", sendEmailOtpLogin);
+router.post("/verify-email-otp", verifyEmailOtpLogin);
 
 // shipping address send to array
 router.post("/shipping/address/:id", isAuth, addShippingAddress);
@@ -71,9 +75,6 @@ router.post("/register/:token", registerCustomer);
 
 //register a user directly
 router.post("/signup", registerCustomerDirect);
-
-// Wholesaler accounts: admin panel only (not public storefront)
-router.post("/wholesaler", isAuth, isAdmin, createWholesaler);
 
 // Delete uploaded Cloudinary asset
 router.post("/cloudinary-delete", deleteCloudinaryAsset);
@@ -103,20 +104,6 @@ router.get("/cloudinary-status", (req, res) => {
     res.status(500).send({ message: err.message });
   }
 });
-
-// Send credentials to wholesaler
-router.post('/send-credentials/:id', async (req, res) => {
-  try {
-    const controller = require('../controller/customerController');
-    return controller.sendCredentials(req, res);
-  } catch (err) {
-    console.error('send-credentials route error:', err);
-    res.status(500).send({ message: err.message });
-  }
-});
-
-// Admin: get wholesalers
-router.get("/wholesalers", isAuth, isAdmin, getAllWholesalers);
 
 //login a user
 router.post("/login", loginCustomer);

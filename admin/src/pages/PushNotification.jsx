@@ -251,7 +251,7 @@ const PushNotification = () => {
                       <Label className="text-sm font-semibold">Click Action URL (Optional)</Label>
                       <Input
                         {...register("clickAction")}
-                        placeholder="https://farmacykart.com/products/example"
+                        placeholder="https://rasastore.com/products/example"
                         className="border-[#e5e7eb] focus:border-teal-400 focus:ring-0 h-10"
                       />
                     </div>

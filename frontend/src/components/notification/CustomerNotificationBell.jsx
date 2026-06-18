@@ -59,7 +59,7 @@ const CustomerNotificationBell = () => {
     return (
       <Link
         href="/auth/login"
-        className="relative p-2 text-gray-600 hover:text-store-600 rounded-lg hover:bg-store-50"
+        className="relative p-2.5 text-neutral-300 hover:text-white rounded-none hover:bg-neutral-900/50 transition-colors"
         aria-label="Login to see notifications"
         title="Login for notifications"
       >
@@ -124,7 +124,7 @@ const CustomerNotificationBell = () => {
       <button
         type="button"
         onClick={handleOpen}
-        className="relative p-2 text-gray-600 hover:text-store-600 rounded-lg hover:bg-store-50"
+        className="relative p-2.5 text-neutral-300 hover:text-white rounded-none hover:bg-neutral-900/50 transition-colors"
         aria-label="Notifications"
       >
         <FiBell className="text-xl" />

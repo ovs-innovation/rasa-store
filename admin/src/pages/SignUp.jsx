@@ -26,7 +26,7 @@ const SignUp = () => {
               aria-hidden="true"
               className="object-contain h-20 w-20"
               src={ADMIN_BRAND_LOGO}
-              alt="Farmacykart"
+              alt="RASA"
             />
           </div>
           <main className="flex items-center justify-center p-6 sm:p-12">

@@ -42,22 +42,6 @@ exports.formatProductForCSV = (product) => {
 
     hsnCode: product.hsnCode || "",
 
-    batchNo: product.batchNo || "",
-
-    expDate: product.expDate
-      ? new Date(product.expDate).toISOString()
-      : "",
-
-    manufactureDate: product.manufactureDate
-      ? new Date(product.manufactureDate).toISOString()
-      : "",
-
-    isWholesale: product.isWholesaler ? "Yes" : "No",
-
-    wholePrice: product.wholePrice || 0,
-
-    minQuantity: product.minQuantity || 0,
-
     isCombination: product.isCombination ? "Yes" : "No",
 
     averageRating: product.averageRating || 0,
@@ -122,18 +106,6 @@ exports.formatCSVToProduct = (row) => {
     isPriceInclusive: row.isPriceInclusive === "Yes",
 
     hsnCode: row.hsnCode,
-
-    batchNo: row.batchNo,
-
-    expDate: row.expDate ? new Date(row.expDate) : null,
-
-    manufactureDate: row.manufactureDate ? new Date(row.manufactureDate) : null,
-
-    isWholesaler: row.isWholesale === "Yes",
-
-    wholePrice: Number(row.wholePrice) || 0,
-
-    minQuantity: Number(row.minQuantity) || 0,
 
     isCombination: row.isCombination === "Yes",
 

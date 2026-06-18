@@ -25,7 +25,7 @@ const footerText = (shop, supportPhone) => {
 };
 
 const refundSuccessEmail = (option) => {
-  const shop = option.shop_name || "Farmacykart";
+  const shop = option.shop_name || "RASA";
   const support = getSupportEmail();
   const orderUrl = `${storeBaseUrl()}/order/${option.orderId || ""}`;
   const settlement = option.settlementDays || "3–5 business days";

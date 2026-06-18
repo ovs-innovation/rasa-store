@@ -2,18 +2,14 @@ import Link from "next/link";
 import Image from "next/image";
 import useGetSetting from "@hooks/useGetSetting";
 import { pickBrandLogo } from "@utils/brandAssets";
-import { FaPrescriptionBottleAlt } from "react-icons/fa";
 import { FiShield, FiTruck, FiClock, FiCheck } from "react-icons/fi";
 
 const TRUST_ITEMS = [
   { icon: FiShield, text: "Secure OTP login" },
-  { icon: FiTruck, text: "Fast medicine delivery" },
+  { icon: FiTruck, text: "Fast delivery on every drop" },
   { icon: FiClock, text: "Takes under a minute" },
 ];
 
-/**
- * Shared shell for login, signup & complete-profile pages.
- */
 const AuthPageShell = ({
   title,
   subtitle,
@@ -22,83 +18,71 @@ const AuthPageShell = ({
   alternateLink,
   badge,
 }) => {
-  const { storeCustomizationSetting, globalSetting } = useGetSetting();
-  const shopName = globalSetting?.shop_name || "Farmacykart";
-  const logoSrc = pickBrandLogo(
-    storeCustomizationSetting?.navbar?.logo,
-    storeCustomizationSetting?.seo?.favicon,
-    globalSetting?.logo
-  );
+  const { globalSetting } = useGetSetting();
+  const shopName = globalSetting?.shop_name || "RASA";
 
   return (
-    <div className="min-h-[calc(100vh-10rem)] bg-[#f1f3f6] pb-20 lg:pb-0">
+    <div className="min-h-[calc(100vh-10rem)] bg-[#050505] pb-20 lg:pb-0">
       <div className="mx-auto max-w-5xl px-4 py-8 sm:py-10 lg:py-14">
-        {/* Flipkart-like 2-panel card */}
-        <div className="overflow-hidden rounded-2xl bg-white shadow-[0_8px_28px_rgba(15,23,42,0.12)] ring-1 ring-slate-900/5">
+        <div className="overflow-hidden rounded-2xl bg-[#0D0D0D] shadow-[0_8px_28px_rgba(0,0,0,0.45)] ring-1 ring-neutral-800">
           <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr]">
-            {/* Left panel */}
-            <div className="bg-store-700 text-white px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12">
+            <div className="bg-[#111111] text-white px-6 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12 border-r border-neutral-800">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
-                  {logoSrc ? (
-                    <Image
-                      src={logoSrc}
-                      alt={shopName}
-                      width={44}
-                      height={44}
-                      className="h-9 w-auto max-w-[44px] object-contain"
-                    />
-                  ) : (
-                    <FaPrescriptionBottleAlt className="text-2xl" />
-                  )}
+                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#050505] ring-1 ring-neutral-800">
+                  <Image
+                    src="/rasaLogo.png"
+                    alt={shopName}
+                    width={48}
+                    height={48}
+                    className="h-12 w-auto max-w-[48px] object-contain"
+                  />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold text-white/95">
+                  <div className="text-sm font-black uppercase tracking-widest text-white">
                     {shopName}
                   </div>
-                  <div className="text-xs text-white/75">
-                    Trusted medicines. Fast delivery.
+                  <div className="text-xs text-neutral-400">
+                    Premium sneakers & streetwear.
                   </div>
                 </div>
               </div>
 
               {badge && (
-                <div className="mt-6 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.16em] ring-1 ring-white/20">
+                <div className="mt-6 inline-flex items-center rounded-full bg-[#050505] px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.16em] ring-1 ring-neutral-800 text-[#D4AF37]">
                   {badge}
                 </div>
               )}
 
-              <h1 className="mt-6 text-2xl sm:text-3xl font-extrabold leading-tight tracking-tight">
+              <h1 className="mt-6 text-2xl sm:text-3xl font-black leading-tight tracking-tight uppercase">
                 {title}
               </h1>
               {subtitle && (
-                <p className="mt-3 text-sm leading-relaxed text-white/80">
+                <p className="mt-3 text-sm leading-relaxed text-neutral-400">
                   {subtitle}
                 </p>
               )}
 
               <ul className="mt-7 space-y-3">
                 {TRUST_ITEMS.map(({ text }) => (
-                  <li key={text} className="flex items-center gap-2 text-sm text-white/90">
-                    <FiCheck className="h-4 w-4 text-white/90" aria-hidden />
+                  <li key={text} className="flex items-center gap-2 text-sm text-neutral-300">
+                    <FiCheck className="h-4 w-4 text-[#D4AF37]" aria-hidden />
                     <span className="font-medium">{text}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Right panel */}
-            <div className="px-6 py-8 sm:px-10 sm:py-10">
+            <div className="px-6 py-8 sm:px-10 sm:py-10 bg-[#0D0D0D]">
               {children}
 
               {(alternateLink || footer) && (
-                <div className="mt-6 border-t border-slate-100 pt-5">
+                <div className="mt-6 border-t border-neutral-800 pt-5">
                   {alternateLink && (
-                    <p className="text-center text-sm text-slate-600">
+                    <p className="text-center text-sm text-neutral-400">
                       {alternateLink.text}{" "}
                       <Link
                         href={alternateLink.href}
-                        className="font-bold text-store-700 hover:text-store-800 hover:underline"
+                        className="font-bold text-[#D4AF37] hover:underline"
                       >
                         {alternateLink.label}
                       </Link>

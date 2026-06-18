@@ -38,7 +38,7 @@ const DEFAULT_ORDER_SETTINGS = {
   extraPackagingFood: true,
   extraPackagingPharmacy: true,
   extraPackagingEcommerce: true,
-  prescriptionOrder: true,
+  prescriptionOrder: false,
   deliveryVerification: false,
   confirmOrderBy: "store",
   cancellationReasons: [
@@ -958,6 +958,8 @@ const OrderSettings = () => {
 
                     <div className="bg-[#f8fafc] p-6 rounded-2xl dark:bg-gray-900/40">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {/* @deprecated — prescription orders removed for RASA (Phase 2A) */}
+                        {false && (
                         <div>
                           <div className="flex items-center gap-2 mb-3 text-[14px] font-bold text-[#42526b] dark:text-gray-100">
                             Place Order by Prescription <FiInfo className="h-4 w-4 text-[#93a1b3]" />
@@ -976,6 +978,7 @@ const OrderSettings = () => {
                             />
                           </div>
                         </div>
+                        )}
 
                         <div>
                           <div className="flex items-center gap-2 mb-3 text-[14px] font-bold text-[#42526b] dark:text-gray-100">

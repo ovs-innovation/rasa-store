@@ -16,12 +16,9 @@ if (!admin.apps.length) {
           privateKey,
         }),
       });
-      console.log("Firebase Admin initialized successfully.");
-    } else {
-      console.warn("Firebase Admin credentials missing. ID token verification will fail.");
     }
   } catch (error) {
-    console.error("Firebase Admin initialization error:", error);
+    // Silent catch
   }
 }
 

@@ -172,7 +172,7 @@ const TrackOrder = () => {
             </div>
             <h3 className="text-2xl font-bold text-gray-800">Track Your Parcel</h3>
             <p className="text-sm text-gray-500 mt-3 max-w-xs mx-auto leading-relaxed">
-              Enter your tracking number above to see exactly where your FarmacyKart order is.
+              Enter your tracking number above to see exactly where your Rasa Store order is.
             </p>
           </div>
         )}

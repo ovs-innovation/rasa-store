@@ -199,7 +199,7 @@ const OrderTracking = ({ order }) => {
             >
               <FiTruck className="text-lg" /> Track on Official Website <FiExternalLink />
             </a>
-            <p className="text-[10px] text-gray-400 mt-4 uppercase font-bold tracking-widest">Powered by FarmacyKart Logistics</p>
+            <p className="text-[10px] text-gray-400 mt-4 uppercase font-bold tracking-widest">Powered by Rasa Store Logistics</p>
           </div>
         )}
       </div>

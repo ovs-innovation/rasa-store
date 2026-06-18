@@ -18,6 +18,13 @@ export const SidebarProvider = ({ children }) => {
 
   const [limitData, setLimitData] = useState(20);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("adminSidebarCollapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isBulkDrawerOpen, setIsBulkDrawerOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -82,6 +89,17 @@ export const SidebarProvider = ({ children }) => {
 
   const closeSidebar = () => setIsSidebarOpen(false);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const toggleSidebarCollapse = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("adminSidebarCollapsed", String(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
 
   const closeDrawer = () => setIsDrawerOpen(false);
   const toggleDrawer = () => setIsDrawerOpen(!isDrawerOpen);
@@ -214,6 +232,8 @@ export const SidebarProvider = ({ children }) => {
         isSidebarOpen,
         toggleSidebar,
         closeSidebar,
+        sidebarCollapsed,
+        toggleSidebarCollapse,
         isDrawerOpen,
         toggleDrawer,
         closeDrawer,

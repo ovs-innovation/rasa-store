@@ -1,4 +1,3 @@
-// Wholesaler Section moved inside the ProductDrawer component's return below
 import ReactTagInput from "@pathofdev/react-tag-input";
 import {
   Button,
@@ -45,6 +44,10 @@ import TaxServices from "@/services/TaxServices";
 import CategoryServices from "@/services/CategoryServices";
 import { SidebarContext } from "@/context/SidebarContext";
 import useAsync from "@/hooks/useAsync";
+import ProductPlacementFlags from "@/components/product/ProductPlacementFlags";
+import { UK_SIZES } from "@/components/product/FashionProductCoreFields";
+import ColorVariantManager from "@/components/product/ColorVariantManager";
+import ProductPreviewCard from "@/components/product/ProductPreviewCard";
 
 //internal import
 
@@ -120,16 +123,16 @@ const ProductDrawer = ({ id }) => {
     
     // New Sections Props
     productDescription: productDescriptionSection, setProductDescription: setProductDescriptionSection,
-    ingredients, setIngredients,
-    keyUses, setKeyUses,
-    howToUse, setHowToUse,
-    safetyInformation, setSafetyInformation,
     additionalInformation, setAdditionalInformation,
-    composition, setComposition,
     productHighlights, setProductHighlights,
     manufacturerDetails, setManufacturerDetails,
     disclaimer, setDisclaimer,
     faqSection, setFaqSection,
+    featuredImage, setFeaturedImage,
+    hoverImage, setHoverImage,
+    badge, setBadge,
+    video, setVideo,
+    seoImage, setSeoImage,
   } = useProductSubmit(id);
   const { currency, showingTranslateValue } = useUtilsFunction();
   
@@ -138,6 +141,7 @@ const ProductDrawer = ({ id }) => {
   
   // Local state to manage taxes (allows immediate updates)
   const [taxOptions, setTaxOptions] = useState([]);
+  const [selectedUkSizes, setSelectedUkSizes] = useState([]);
   
   // Update local tax state when API data changes
   React.useEffect(() => {
@@ -1886,1393 +1890,375 @@ const ProductDrawer = ({ id }) => {
       </div>
 
       <Scrollbars className="track-horizontal thumb-horizontal w-full md:w-7/12 lg:w-8/12 xl:w-8/12 relative dark:bg-gray-700 dark:text-gray-200">
-        <form onSubmit={handleSubmit(onSubmit)} className="block" id="block">
+        <form onSubmit={handleSubmit(onSubmit)} className="block" id="productForm">
           {tapValue === "Basic Info" && (
-            <div className="px-6 pt-8 flex-grow w-full h-full max-h-full pb-40 md:pb-32 lg:pb-32 xl:pb-32">
-              {/* <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label={t("ProductID")} />
-                <div className="col-span-8 sm:col-span-4">{productId}</div>
-              </div> */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label={t("ProductTitleName")} />
-                <div className="col-span-8 sm:col-span-4">
-                  <Input
-                    {...register(`title`, {
-                      required: "TItle is required!",
-                    })}
-                    name="title"
-                    type="text"
-                    placeholder={t("ProductTitleName")}
-                    onBlur={(e) => handleProductSlug(e.target.value)}
-                  />
-                  <Error errorName={errors.title} />
-                </div>
-              </div>
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Short Description" />
-                <div className="col-span-8 sm:col-span-4">
-                  <Textarea
-                    className="border text-sm  block w-full bg-gray-100 border-gray-200"
-                    {...register("description", {
-                      required: false,
-                    })}
-                    name="description"
-                    placeholder="Short Description"
-                    rows="4"
-                    spellCheck="false"
-                  />
-                  <Error errorName={errors.description} />
-                </div>
-              </div>
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label={t("ProductImage")} />
-                <div className="col-span-8 sm:col-span-4">
-                  <Uploader
-                    product
-                    folder="product"
-                    imageUrl={imageUrl}
-                    setImageUrl={setImageUrl}
-                    useOriginalSize={true} 
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Thumbnail Image" />
-                <div className="col-span-8 sm:col-span-4">
-                  <Uploader
-                    product={false}
-                    folder="product"
-                    imageUrl={thumbnailUrl}
-                    setImageUrl={setThumbnailUrl}
-                    useOriginalSize={true} 
-                  />
-                </div>
-              </div>
-
-              {/* Product video URL (stored inside images array) */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Product Video URL" />
-                <div className="col-span-8 sm:col-span-4">
-                  <Input
-                    type="text"
-                    placeholder="https://example.com/video.mp4"
-                    value={
-                      Array.isArray(imageUrl)
-                        ? imageUrl.find((item) =>
-                            typeof item === "string" && isVideoUrl(item)
-                          ) || ""
-                        : ""
-                    }
-                    onChange={(e) => {
-                      const url = e.target.value.trim();
-                      const isVideo = isVideoUrl(url);
-
-                      setImageUrl((prev = []) => {
-                        const prevArray = Array.isArray(prev) ? prev : prev ? [prev] : [];
-                        const filtered = prevArray.filter(
-                          (item) =>
-                            !(typeof item === "string" && isVideoUrl(item))
-                        );
-
-                        if (!isVideo) {
-                          return filtered;
-                        }
-
-                        return [...filtered, url];
-                      });
-                    }}
-                  />
-                  <p className="text-xs text-gray-400 mt-1">
-                    Only video URLs (.mp4, .mov, .webm). Stored together with product images.
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label={`${t("ProductSKU")} / ${t("ProductBarcode")}`} />
-                <div className="col-span-8 sm:col-span-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-
-                    <InputArea
-                      register={register}
-                      label={t("ProductSKU")}
-                      name="sku"
-                      type="text"
-                      placeholder={t("ProductSKU")}
-                    />
-                    <Error errorName={errors.sku} />
-                  </div>
-                  <div>
-                    <InputArea
-                      register={register}
-                      label={t("ProductBarcode")}
-                      name="barcode"
-                      type="text"
-                      placeholder={t("ProductBarcode")}
-                    />
-                    <Error errorName={errors.barcode} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Batch & Manufacturing Info */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Batch / Expiry / Manufacturing" />
-                <div className="col-span-8 sm:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <InputArea
-                      register={register}
-                      label="Batch No."
-                      name="batchNo"
-                      type="text"
-                      placeholder="Batch Number"
-                    />
-                  </div>
-                  <div>
-                    <InputArea
-                      register={register}
-                      label="Expiry Date"
-                      name="expDate"
-                      type="date"
-                    />
-                  </div>
-                  <div>
-                    <InputArea
-                      register={register}
-                      label="Manufacturing Date"
-                      name="manufactureDate"
-                      type="date"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label={t("Category")} />
-                <div className="col-span-8 sm:col-span-4">
-                  <ParentCategory
-                    lang={language}
-                    selectedCategory={selectedCategory}
-                    setSelectedCategory={setSelectedCategory}
-                    setDefaultCategory={setDefaultCategory}
-                  />
-                  <div className="mt-2">
-                    <span className="text-xs text-gray-500 mr-2">
-                      Need to create a sub-category?
-                    </span>
-                    <Button
-                      type="button"
-                      size="small"
-                      onClick={() => setIsQuickCategoryOpen(true)}
-                      className="text-xs h-8 px-3"
-                    >
-                      + Quick Add Sub-Category
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label={t("DefaultCategory")} />
-                <div className="col-span-8 sm:col-span-4">
-                  <Multiselect
-                    displayValue="name"
-                    isObject={true}
-                    singleSelect={true}
-                    ref={resetRefTwo}
-                    hidePlaceholder={true}
-                    onKeyPressFn={function noRefCheck() {}}
-                    onRemove={function noRefCheck() {}}
-                    onSearch={function noRefCheck() {}}
-                    onSelect={(v) => setDefaultCategory(v)}
-                    selectedValues={defaultCategory}
-                    options={selectedCategory}
-                    placeholder={"Default Category"}
-                  ></Multiselect>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label={t("ProductBrand")} />
-                <div className="col-span-8 sm:col-span-4">
-                  <select
-                    value={brand?._id || ""}
-                    onChange={(e) => {
-                      const selected = brandOptions?.find(
-                        (item) => item._id === e.target.value
-                      );
-                      setBrand(selected || null);
-                    }}
-                    className="block w-full rounded-md border border-gray-200 focus:border-store-500 focus:ring-0 text-sm h-12"
-                  >
-                    <option value="">{t("SelectBrandPlaceholder")}</option>
-                    {brandOptions?.map((item) => (
-                      <option key={item._id} value={item._id}>
-                        {showingTranslateValue(item.name)}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="mt-2">
-                    <span className="text-xs text-gray-500 mr-2">
-                      Brand not found?
-                    </span>
-                    <Button
-                      type="button"
-                      size="small"
-                      onClick={() => setIsQuickBrandOpen(true)}
-                      className="text-xs h-8 px-3"
-                    >
-                      + Quick Create Brand
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Product Price" />
-                <div className="col-span-8 sm:col-span-4">
-                  <InputValue
-                    disabled={isCombination}
-                    register={register}
-                    maxValue={2000}
-                    minValue={1}
-                    label="Original Price"
-                    name="originalPrice"
-                    type="number"
-                    placeholder="OriginalPrice"
-                    defaultValue={0.0}
-                    required={true}
-                    product
-                    currency={currency}
-                  />
-                  <Error errorName={errors.originalPrice} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Discount Type" />
-                <div className="col-span-8 sm:col-span-4">
-                  <select
-                    {...register("discountType")}
-                    className="block w-full rounded-md border border-gray-200 focus:border-store-500 focus:ring-0 text-sm h-12"
-                  >
-                    <option value="flat">Flat (₹)</option>
-                    <option value="percentage">Percentage (%)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label={`Discount ${watch("discountType") === "percentage" ? "(%)" : "(₹)"}`} />
-                <div className="col-span-8 sm:col-span-4">
-                  <InputValue
-                    disabled={isCombination}
-                    product
-                    register={register}
-                    minValue={0}
-                    defaultValue={0.0}
-                    required={true}
-                    label="Discount"
-                    name="discount"
-                    type="number"
-                    placeholder="Discount"
-                    currency={currency}
-                  />
-                  <Error errorName={errors.discount} />
-                </div>
-              </div>
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Sale Price" />
-                <div className="col-span-8 sm:col-span-4">
-                   <div className="block w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-600 font-semibold">
-                      {currency}
-                      {watch("discountType") === "percentage"
-                        ? (Math.max(0, (Number(watch("originalPrice") || 0) - (Number(watch("originalPrice") || 0) * Number(watch("discount") || 0) / 100)))).toFixed(2)
-                        : (Math.max(0, (Number(watch("originalPrice") || 0) - Number(watch("discount") || 0)))).toFixed(2)}
-                   </div>
-                </div>
-              </div>
-              {/* Wholesaler Section (conditional fields) */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Retailer?" />
-                <div className="col-span-8 sm:col-span-4 flex items-center gap-4">
-                  <input
-                    type="checkbox"
-                    {...register("isWholesaler")}
-                    className="h-5 w-5 text-emerald-500 border-gray-300 rounded focus:ring-emerald-500"
-                  />
-                  <span className="text-sm text-gray-700">Enable retailer pricing for this product</span>
-                </div>
-              </div>
-              {Boolean(watch && watch("isWholesaler")) && (
-                <>
-                  <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                    <LabelArea label="Retailer Price" />
-                    <div className="col-span-8 sm:col-span-4">
-                      <InputValue
-                        register={register}
-                        minValue={0}
-                        defaultValue={0}
-                        label="Retailer Price"
-                        name="wholePrice"
-                        type="number"
-                        placeholder="Retailer Price"
-                        currency={currency}
-                      />
-                      <Error errorName={errors.wholePrice} />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                    <LabelArea label="Min Retailer Quantity" />
-                    <div className="col-span-8 sm:col-span-4">
-                      <InputValue
-                        register={register}
-                        minValue={0}
-                        defaultValue={0}
-                        label="Min Retailer Quantity"
-                        name="minQuantity"
-                        type="number"
-                        placeholder="Minimum quantity for retailer price"
-                      />
-                      <Error errorName={errors.minQuantity} />
-                    </div>
-                  </div>
-
-                  {/* Wholesale total (wholePrice * minQuantity) */}
-                  <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                    <LabelArea label="Retailer Total" />
-                    <div className="col-span-8 sm:col-span-4">
-                      <div className="block w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-700 font-semibold">
-                        {currency}{(Number(watch && watch("wholePrice") ? watch("wholePrice") : 0) * Number(watch && watch("minQuantity") ? watch("minQuantity") : 0)).toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
+            <div className="px-6 pt-8 flex-grow w-full h-full max-h-full pb-40 md:pb-32 lg:pb-32 xl:pb-32 space-y-8">
               
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="HSN Code" />
-                <div className="col-span-8 sm:col-span-4">
-                  <Input
-                    {...register("hsnCode")}
-                    name="hsnCode"
-                    type="text"
-                    placeholder="Enter HSN code"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="GST Rate" />
-                <div className="col-span-8 sm:col-span-4">
-                  <Controller
-                    control={control}
-                    name="taxRate"
-                    render={({ field }) => (
-                      <div className="relative">
-                        <select
-                          value={field.value ?? 0}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
-                          className="w-full appearance-none rounded-md border border-gray-200 bg-white py-3 px-4 text-sm text-gray-700 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-emerald-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                        >
-                          {gstRates.map((rate) => (
-                            <option key={rate.value} value={rate.value}>
-                              {rate.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  />
-                  <div className="mt-2">
-                    <span className="text-xs text-gray-500 mr-2">
-                      Tax rate not found?
-                    </span>
-                    <Button
-                      type="button"
-                      size="small"
-                      onClick={() => setIsQuickTaxOpen(true)}
-                      className="text-xs h-8 px-3"
-                    >
-                      + Quick Add Tax
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Tax Included in Price?" />
-                <div className="col-span-8 sm:col-span-4">
-                  <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Show customer-friendly inclusive pricing.
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Toggle to treat sale price as tax inclusive.
-                      </p>
-                    </div>
-                    <label className="flex cursor-pointer items-center">
-                      <input
-                        type="checkbox"
-                        {...register("isPriceInclusive")}
-                        className="sr-only"
-                      />
-                      <div
-                        className={`flex h-6 w-12 items-center rounded-full p-1 transition-colors duration-200 ${
-                          isPriceInclusiveChecked
-                            ? "bg-emerald-500"
-                            : "bg-gray-300"
-                        }`}
-                      >
-                        <div
-                          className={`h-4 w-4 rounded-full bg-white shadow-md transition-transform duration-200 ${
-                            isPriceInclusiveChecked ? "translate-x-6" : ""
-                          }`}
-                        />
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6 relative">
-                <LabelArea label={t("ProductQuantity")} />
-                <div className="col-span-8 sm:col-span-4">
-                  <InputValueFive
-                    required={true}
-                    disabled={isCombination}
-                    register={register}
-                    minValue={0}
-                    defaultValue={0}
-                    label="Quantity"
-                    name="stock"
-                    type="number"
-                    placeholder={t("ProductQuantity")}
-                  />
-                  <Error errorName={errors.stock} />
-                </div>
-              </div>
-
-              {/* Show slug input for new products OR existing products without variations */}
-              {(!id || !isCombination) && (
-                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                  <LabelArea label={t("ProductSlug")} />
+              {/* SECTION 1 — BASIC INFORMATION */}
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+                <h3 className="text-md font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700 pb-2">
+                  Section 1: Basic Information
+                </h3>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Product Name *" />
                   <div className="col-span-8 sm:col-span-4">
                     <Input
-                      {...register(`slug`, {
-                        required: "slug is required!",
-                      })}
-                      className=" mr-2 p-2"
-                      name="slug"
-                      type="text"
-                      defaultValue={slug}
-                      placeholder={t("ProductSlug")}
+                      {...register("title", { required: "Product Name is required!" })}
+                      placeholder="e.g. Nike Air Max 90"
                       onBlur={(e) => handleProductSlug(e.target.value)}
                     />
+                    <Error errorName={errors.title} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Slug (Auto Generate) *" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Input
+                      {...register("slug", { required: "Slug is required!" })}
+                      defaultValue={slug}
+                      placeholder="nike-air-max-90"
+                    />
                     <Error errorName={errors.slug} />
-                    {!id && isCombination && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        Note: After saving, individual variant slugs will be managed in the Combination tab.
-                      </p>
-                    )}
-                    {id && isCombination && (
-                      <p className="text-xs text-gray-400 mt-1">
-                        Note: Individual variant slugs are managed in the Combination tab.
-                      </p>
-                    )}
                   </div>
                 </div>
-              )}
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label={t("ProductTag")} />
-                <div className="col-span-8 sm:col-span-4">
-                  <ReactTagInput
-                    placeholder={t("ProductTagPlaseholder")}
-                    tags={tag}
-                    onChange={(newTags) => setTag(newTags)}
-                  />
-                </div>
-              </div>
-
-              {/* --- New Sections Start --- */}
-
-              <hr />
-                
-              {/* Composition Section */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-10 mt-10">
-                <LabelArea label="Composition" />
-                <div className="col-span-8 sm:col-span-4 border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <div className="space-y-4">
-                      <div>
-                        <LabelArea label="Icon" />
-                        <Uploader
-                          product={false}
-                          folder="product-icons"
-                          imageUrl={composition.icon}
-                          setImageUrl={(url) => setComposition({ ...composition, icon: url })}
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Title" />
-                        <Input
-                          value={composition.title || "Composition"}
-                          onChange={(e) => setComposition({ ...composition, title: e.target.value })}
-                          placeholder="Section Title"
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Description" />
-                        <Textarea
-                          rows="4"
-                          value={composition.description || ""}
-                          onChange={(e) => setComposition({ ...composition, description: e.target.value })}
-                          placeholder="Composition details"
-                        />
-                      </div>
-                    </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-10">
-                <LabelArea label="Product Highlights" />
-                <div className="col-span-8 sm:col-span-4 border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <div className="space-y-4">
-                      <div>
-                        <LabelArea label="Title" />
-                        <Input
-                          value={productHighlights.title || "Product Highlights"}
-                          onChange={(e) => setProductHighlights({ ...productHighlights, title: e.target.value })}
-                          placeholder="Section Title"
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Highlights (List)" />
-                        <div className="space-y-3">
-                          {productHighlights.items?.map((item, idx) => (
-                            <div key={idx} className="flex gap-2 items-center">
-                              <Input
-                                placeholder="Highlight Item"
-                                value={item || ""}
-                                onChange={(e) => {
-                                  const newItems = [...productHighlights.items];
-                                  newItems[idx] = e.target.value;
-                                  setProductHighlights({ ...productHighlights, items: newItems });
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newItems = productHighlights.items.filter((_, i) => i !== idx);
-                                  setProductHighlights({ ...productHighlights, items: newItems });
-                                }}
-                                className="text-red-500 hover:text-red-700"
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            size="small"
-                            onClick={() => setProductHighlights({ ...productHighlights, items: [...productHighlights.items, ""] })}
-                          >
-                            Add Highlight
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-              </div>
-              <hr />
-              {/* Product Description Section */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6 mt-5">
-                <LabelArea label="Product Description" />
-                <div className="col-span-8 sm:col-span-4 border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <div className="space-y-4">
-                      <div>
-                        <LabelArea label="Icon" />
-                        <Uploader
-                          product={false}
-                          folder="product-icons"
-                          imageUrl={productDescriptionSection.icon}
-                          setImageUrl={(url) => setProductDescriptionSection({ ...productDescriptionSection, icon: url })}
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Title" />
-                        <Input
-                          value={productDescriptionSection.title || ""}
-                          onChange={(e) => setProductDescriptionSection({ ...productDescriptionSection, title: e.target.value })}
-                          placeholder="Section Title"
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Description" />
-                        <Textarea
-                          rows="4"
-                          value={productDescriptionSection.description || ""}
-                          onChange={(e) => setProductDescriptionSection({ ...productDescriptionSection, description: e.target.value })}
-                          placeholder="Product Description"
-                        />
-                      </div>
-                    </div>
-                </div>
-              </div>
-
-              {/* Ingredients Section */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Ingredients" />
-                <div className="col-span-8 sm:col-span-4 border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <div className="space-y-4">
-                      <div>
-                        <LabelArea label="Icon" />
-                        <Uploader
-                          product={false}
-                          folder="product-icons"
-                          imageUrl={ingredients.icon}
-                          setImageUrl={(url) => setIngredients({ ...ingredients, icon: url })}
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Title" />
-                        <Input
-                          value={ingredients.title || ""}
-                          onChange={(e) => setIngredients({ ...ingredients, title: e.target.value })}
-                          placeholder="Section Title"
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Items (Key - Value)" />
-                        <div className="space-y-3">
-                          {ingredients.items?.map((item, idx) => (
-                            <div key={idx} className="flex gap-2 items-center">
-                              <Input
-                                placeholder="Key"
-                                value={item.key || ""}
-                                onChange={(e) => {
-                                  const newItems = [...ingredients.items];
-                                  newItems[idx].key = e.target.value;
-                                  setIngredients({ ...ingredients, items: newItems });
-                                }}
-                              />
-                              <Input
-                                placeholder="Value"
-                                value={item.value || ""}
-                                onChange={(e) => {
-                                  const newItems = [...ingredients.items];
-                                  newItems[idx].value = e.target.value;
-                                  setIngredients({ ...ingredients, items: newItems });
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newItems = ingredients.items.filter((_, i) => i !== idx);
-                                  setIngredients({ ...ingredients, items: newItems });
-                                }}
-                                className="text-red-500 hover:text-red-700"
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            size="small"
-                            onClick={() => setIngredients({ ...ingredients, items: [...ingredients.items, { key: "", value: "" }] })}
-                          >
-                            Add Item
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-              </div>
-
-              {/* Key Uses Section */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Key Uses" />
-                <div className="col-span-8 sm:col-span-4 border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <div className="space-y-4">
-                      <div>
-                        <LabelArea label="Icon" />
-                        <Uploader
-                          product={false}
-                          folder="product-icons"
-                          imageUrl={keyUses.icon}
-                          setImageUrl={(url) => setKeyUses({ ...keyUses, icon: url })}
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Title" />
-                        <Input
-                          value={keyUses.title || ""}
-                          onChange={(e) => setKeyUses({ ...keyUses, title: e.target.value })}
-                          placeholder="Section Title"
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Items (Key - Value)" />
-                        <div className="space-y-3">
-                          {keyUses.items?.map((item, idx) => (
-                            <div key={idx} className="flex gap-2 items-center">
-                              <Input
-                                placeholder="Key"
-                                value={item.key || ""}
-                                onChange={(e) => {
-                                  const newItems = [...keyUses.items];
-                                  newItems[idx].key = e.target.value;
-                                  setKeyUses({ ...keyUses, items: newItems });
-                                }}
-                              />
-                              <Input
-                                placeholder="Value"
-                                value={item.value || ""}
-                                onChange={(e) => {
-                                  const newItems = [...keyUses.items];
-                                  newItems[idx].value = e.target.value;
-                                  setKeyUses({ ...keyUses, items: newItems });
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newItems = keyUses.items.filter((_, i) => i !== idx);
-                                  setKeyUses({ ...keyUses, items: newItems });
-                                }}
-                                className="text-red-500 hover:text-red-700"
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            size="small"
-                            onClick={() => setKeyUses({ ...keyUses, items: [...keyUses.items, { key: "", value: "" }] })}
-                          >
-                            Add Item
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-              </div>
-
-              {/* How to Use Section */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="How to Use" />
-                <div className="col-span-8 sm:col-span-4 border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <div className="space-y-4">
-                      <div>
-                        <LabelArea label="Icon" />
-                        <Uploader
-                          product={false}
-                          folder="product-icons"
-                          imageUrl={howToUse.icon}
-                          setImageUrl={(url) => setHowToUse({ ...howToUse, icon: url })}
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Title" />
-                        <Input
-                          value={howToUse.title || ""}
-                          onChange={(e) => setHowToUse({ ...howToUse, title: e.target.value })}
-                          placeholder="Section Title"
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Items (List)" />
-                        <div className="space-y-3">
-                          {howToUse.items?.map((item, idx) => (
-                            <div key={idx} className="flex gap-2 items-center">
-                              <Input
-                                placeholder="How to use instruction"
-                                value={item || ""}
-                                onChange={(e) => {
-                                  const newItems = [...howToUse.items];
-                                  newItems[idx] = e.target.value;
-                                  setHowToUse({ ...howToUse, items: newItems });
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newItems = howToUse.items.filter((_, i) => i !== idx);
-                                  setHowToUse({ ...howToUse, items: newItems });
-                                }}
-                                className="text-red-500 hover:text-red-700"
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            size="small"
-                            onClick={() => setHowToUse({ ...howToUse, items: [...(howToUse.items || []), ""] })}
-                          >
-                            Add Item
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-              </div>
-
-              {/* Safety Information Section */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Safety Information" />
-                <div className="col-span-8 sm:col-span-4 border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <div className="space-y-4">
-                      <div>
-                        <LabelArea label="Icon" />
-                        <Uploader
-                          product={false}
-                          folder="product-icons"
-                          imageUrl={safetyInformation.icon}
-                          setImageUrl={(url) => setSafetyInformation({ ...safetyInformation, icon: url })}
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Title" />
-                        <Input
-                          value={safetyInformation.title || ""}
-                          onChange={(e) => setSafetyInformation({ ...safetyInformation, title: e.target.value })}
-                          placeholder="Section Title"
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Items (List)" />
-                        <div className="space-y-3">
-                          {safetyInformation.items?.map((item, idx) => (
-                            <div key={idx} className="flex gap-2 items-center">
-                              <Input
-                                placeholder="Safety information item"
-                                value={item || ""}
-                                onChange={(e) => {
-                                  const newItems = [...safetyInformation.items];
-                                  newItems[idx] = e.target.value;
-                                  setSafetyInformation({ ...safetyInformation, items: newItems });
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newItems = safetyInformation.items.filter((_, i) => i !== idx);
-                                  setSafetyInformation({ ...safetyInformation, items: newItems });
-                                }}
-                                className="text-red-500 hover:text-red-700"
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            size="small"
-                            onClick={() => setSafetyInformation({ ...safetyInformation, items: [...(safetyInformation.items || []), ""] })}
-                          >
-                            Add Item
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-              </div>
-
-              {/* Additional Information Section */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-                <LabelArea label="Additional Information" />
-                <div className="col-span-8 sm:col-span-4 border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <div className="space-y-4">
-                      <div>
-                        <LabelArea label="Icon" />
-                        <Uploader
-                          product={false}
-                          folder="product-icons"
-                          imageUrl={additionalInformation.icon}
-                          setImageUrl={(url) => setAdditionalInformation({ ...additionalInformation, icon: url })}
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Title" />
-                        <Input
-                          value={additionalInformation.title || ""}
-                          onChange={(e) => setAdditionalInformation({ ...additionalInformation, title: e.target.value })}
-                          placeholder="Section Title"
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Sub-Sections" />
-                        <div className="space-y-6">
-                          {additionalInformation.subsections?.map((subsection, subIdx) => (
-                            <div key={subIdx} className="border border-gray-300 rounded-lg p-4 bg-white">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex-1 mr-2">
-                              <Input
-                                    placeholder="Sub-section Label (e.g., Good to Know, Quick Tips)"
-                                    value={subsection.label || ""}
-                                onChange={(e) => {
-                                      const newSubsections = [...additionalInformation.subsections];
-                                      newSubsections[subIdx].label = e.target.value;
-                                      setAdditionalInformation({ ...additionalInformation, subsections: newSubsections });
-                                    }}
-                                  />
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newSubsections = additionalInformation.subsections.filter((_, i) => i !== subIdx);
-                                    setAdditionalInformation({ ...additionalInformation, subsections: newSubsections });
-                                }}
-                                  className="text-red-500 hover:text-red-700 ml-2"
-                                >
-                                  <FiTrash2 size={20} />
-                                </button>
-                              </div>
-                              <div className="space-y-2">
-                                <LabelArea label="Items" />
-                                {subsection.items?.map((item, itemIdx) => (
-                                  <div key={itemIdx} className="flex gap-2 items-center">
-                              <Input
-                                      placeholder="Item text"
-                                      value={item || ""}
-                                onChange={(e) => {
-                                        const newSubsections = [...additionalInformation.subsections];
-                                        newSubsections[subIdx].items[itemIdx] = e.target.value;
-                                        setAdditionalInformation({ ...additionalInformation, subsections: newSubsections });
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                        const newSubsections = [...additionalInformation.subsections];
-                                        newSubsections[subIdx].items = newSubsections[subIdx].items.filter((_, i) => i !== itemIdx);
-                                        setAdditionalInformation({ ...additionalInformation, subsections: newSubsections });
-                                }}
-                                className="text-red-500 hover:text-red-700"
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            size="small"
-                                  onClick={() => {
-                                    const newSubsections = [...additionalInformation.subsections];
-                                    if (!newSubsections[subIdx].items) {
-                                      newSubsections[subIdx].items = [];
-                                    }
-                                    newSubsections[subIdx].items = [...newSubsections[subIdx].items, ""];
-                                    setAdditionalInformation({ ...additionalInformation, subsections: newSubsections });
-                                  }}
-                          >
-                            Add Item
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            size="small"
-                            onClick={() => setAdditionalInformation({ 
-                              ...additionalInformation, 
-                              subsections: [...(additionalInformation.subsections || []), { label: "", items: [] }] 
-                            })}
-                          >
-                            Add Sub-Section
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-              </div>
-              
-             
-
-              
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-10">
-                <LabelArea label="FAQ" />
-                <div className="col-span-8 sm:col-span-4 border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <div className="space-y-4">
-                      <div>
-                        <LabelArea label="Icon" />
-                        <Uploader
-                          product={false}
-                          folder="product-icons"
-                          imageUrl={faqSection.icon}
-                          setImageUrl={(url) => setFaqSection({ ...faqSection, icon: url })}
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Title" />
-                        <Input
-                          value={faqSection.title || ""}
-                          onChange={(e) => setFaqSection({ ...faqSection, title: e.target.value })}
-                          placeholder="Section Title"
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Questions & Answers" />
-                        <div className="space-y-3">
-                          {faqSection.items?.map((item, idx) => (
-                            <div key={idx} className="flex gap-2 items-center">
-                              <Input
-                                placeholder="Question"
-                                value={item.key || ""}
-                                onChange={(e) => {
-                                  const newItems = [...faqSection.items];
-                                  newItems[idx].key = e.target.value;
-                                  setFaqSection({ ...faqSection, items: newItems });
-                                }}
-                              />
-                              <Input
-                                placeholder="Answer"
-                                value={item.value || ""}
-                                onChange={(e) => {
-                                  const newItems = [...faqSection.items];
-                                  newItems[idx].value = e.target.value;
-                                  setFaqSection({ ...faqSection, items: newItems });
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newItems = faqSection.items.filter((_, i) => i !== idx);
-                                  setFaqSection({ ...faqSection, items: newItems });
-                                }}
-                                className="text-red-500 hover:text-red-700"
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            size="small"
-                            onClick={() => setFaqSection({ ...faqSection, items: [...faqSection.items, { key: "", value: "" }] })}
-                          >
-                            Add Question
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-              </div>
-
-              <hr />
-
-              {/* Manufacturer Details Section */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-10 mt-10">
-                <LabelArea label="Manufacturer Details" />
-                <div className="col-span-8 sm:col-span-4 border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <div className="space-y-4">
-                      <div>
-                        <LabelArea label="Title" />
-                        <Input
-                          value={manufacturerDetails.title || "Manufacturer Details"}
-                          onChange={(e) => setManufacturerDetails({ ...manufacturerDetails, title: e.target.value })}
-                          placeholder="Section Title"
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Details (List)" />
-                        <div className="space-y-3">
-                          {manufacturerDetails.items?.map((item, idx) => (
-                            <div key={idx} className="flex gap-2 items-center">
-                              <Input
-                                placeholder="Detail Item"
-                                value={item || ""}
-                                onChange={(e) => {
-                                  const newItems = [...manufacturerDetails.items];
-                                  newItems[idx] = e.target.value;
-                                  setManufacturerDetails({ ...manufacturerDetails, items: newItems });
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newItems = manufacturerDetails.items.filter((_, i) => i !== idx);
-                                  setManufacturerDetails({ ...manufacturerDetails, items: newItems });
-                                }}
-                                className="text-red-500 hover:text-red-700"
-                              >
-                                <FiTrash2 />
-                              </button>
-                            </div>
-                          ))}
-                          <Button
-                            type="button"
-                            size="small"
-                            onClick={() => setManufacturerDetails({ ...manufacturerDetails, items: [...manufacturerDetails.items, ""] })}
-                          >
-                            Add Item
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-              </div>
-
-              {/* Disclaimer Section */}
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-10">
-                <LabelArea label="Disclaimer" />
-                <div className="col-span-8 sm:col-span-4 border border-gray-200 rounded-md p-4 bg-gray-50">
-                    <div className="space-y-4">
-                      <div>
-                        <LabelArea label="Title" />
-                        <Input
-                          value={disclaimer.title || "Disclaimer"}
-                          onChange={(e) => setDisclaimer({ ...disclaimer, title: e.target.value })}
-                          placeholder="Section Title"
-                        />
-                      </div>
-                      <div>
-                        <LabelArea label="Description" />
-                        <Textarea
-                          rows="4"
-                          value={disclaimer.description || ""}
-                          onChange={(e) => setDisclaimer({ ...disclaimer, description: e.target.value })}
-                          placeholder="Disclaimer text"
-                        />
-                      </div>
-                    </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-10">
-                <LabelArea label="Media Sections" />
-                <div className="col-span-8 sm:col-span-4">
-                  <div className="flex justify-end mb-3">
-                    <Button type="button" onClick={handleAddMediaSection}>
-                      Add Media Section
-                    </Button>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Product Type *" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <select
+                      {...register("productType", { required: "Product Type is required!" })}
+                      className="block w-full rounded-md border border-gray-200 focus:border-store-500 focus:ring-0 text-sm h-12 dark:bg-gray-700 dark:text-gray-200"
+                    >
+                      <option value="">Choose Type</option>
+                      <option value="Sneakers">Sneakers</option>
+                      <option value="Bags">Bags</option>
+                      <option value="Slides">Slides</option>
+                      <option value="Heels">Heels</option>
+                      <option value="Accessories">Accessories</option>
+                    </select>
+                    <Error errorName={errors.productType} />
                   </div>
-                  {mediaSections?.length === 0 && (
-                    <p className="text-gray-500 text-sm mb-4">
-                      No media sections added yet.
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Gender *" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <select
+                      {...register("gender", { required: "Gender is required!" })}
+                      className="block w-full rounded-md border border-gray-200 focus:border-store-500 focus:ring-0 text-sm h-12 dark:bg-gray-700 dark:text-gray-200"
+                    >
+                      <option value="">Choose Gender</option>
+                      <option value="Men">Men</option>
+                      <option value="Women">Women</option>
+                      <option value="Unisex">Unisex</option>
+                    </select>
+                    <Error errorName={errors.gender} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Short Description *" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Textarea
+                      {...register("description", { required: "Short description is required!" })}
+                      rows="2"
+                      placeholder="Provide a quick summary of the product."
+                    />
+                    <Error errorName={errors.description} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Full Description" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Textarea
+                      {...register("highlights")}
+                      rows="4"
+                      placeholder="Detailed product information."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2 — MEDIA */}
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+                <h3 className="text-md font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700 pb-2">
+                  Section 2: Media
+                </h3>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Featured Image" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Uploader
+                      product={false}
+                      folder="product"
+                      imageUrl={featuredImage ? [featuredImage] : []}
+                      setImageUrl={(url) => setFeaturedImage(Array.isArray(url) ? url[0] : (url || ""))}
+                      useOriginalSize={true}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Hover Image" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Uploader
+                      product={false}
+                      folder="product"
+                      imageUrl={hoverImage ? [hoverImage] : []}
+                      setImageUrl={(url) => setHoverImage(Array.isArray(url) ? url[0] : (url || ""))}
+                      useOriginalSize={true}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Gallery Images" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Uploader
+                      product={true}
+                      folder="product"
+                      imageUrl={imageUrl}
+                      setImageUrl={setImageUrl}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Product Video URL" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Input
+                      value={video}
+                      onChange={(e) => setVideo(e.target.value)}
+                      placeholder="e.g. https://www.youtube.com/watch?v=..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3 — PRODUCT ORGANIZATION */}
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+                <h3 className="text-md font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700 pb-2">
+                  Section 3: Product Organization
+                </h3>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Brand *" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <select
+                      value={brand?._id || ""}
+                      onChange={(e) => {
+                        const selected = brandOptions?.find((item) => item._id === e.target.value);
+                        setBrand(selected || null);
+                      }}
+                      className="block w-full rounded-md border border-gray-200 focus:border-store-500 focus:ring-0 text-sm h-12 dark:bg-gray-700 dark:text-gray-200"
+                    >
+                      <option value="">Select Brand</option>
+                      {brandOptions?.map((item) => (
+                        <option key={item._id} value={item._id}>
+                          {showingTranslateValue(item.name)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Category *" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <ParentCategory
+                      lang={language}
+                      selectedCategory={selectedCategory}
+                      setSelectedCategory={setSelectedCategory}
+                      setDefaultCategory={setDefaultCategory}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Product Badge" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <select
+                      value={badge}
+                      onChange={(e) => setBadge(e.target.value)}
+                      className="block w-full rounded-md border border-gray-200 focus:border-store-500 focus:ring-0 text-sm h-12 dark:bg-gray-700 dark:text-gray-200"
+                    >
+                      <option value="">No Badge</option>
+                      <option value="New">New</option>
+                      <option value="Trending">Trending</option>
+                      <option value="Best Seller">Best Seller</option>
+                      <option value="Limited Edition">Limited Edition</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4 — PRICING */}
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+                <h3 className="text-md font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700 pb-2">
+                  Section 4: Pricing
+                </h3>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="MRP (₹) *" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
+                      {...register("originalPrice", { required: "MRP is required!" })}
+                      placeholder="0"
+                    />
+                    <Error errorName={errors.originalPrice} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Selling Price (₹) *" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
+                      {...register("price", { required: "Selling Price is required!" })}
+                      placeholder="0"
+                    />
+                    <Error errorName={errors.price} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Sale Price (Optional)" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
+                      {...register("salePrice")}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 5 — INVENTORY & STATUS */}
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+                <h3 className="text-md font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700 pb-2">
+                  Section 5: Inventory
+                </h3>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Total Stock *" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Input
+                      type="number"
+                      min="0"
+                      {...register("stock", {
+                        required: variants?.length ? false : "Stock is required!",
+                        min: { value: 0, message: "Stock cannot be negative" },
+                      })}
+                      placeholder="e.g. 50"
+                    />
+                    <Error errorName={errors.stock} />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {variants?.length > 0
+                        ? "Using color/size variants? Set qty per UK size in the Combination tab."
+                        : "Total units available on the storefront."}
                     </p>
-                  )}
-                  <div className="space-y-4">
-                    {mediaSections?.map((section, sectionIndex) => {
-                      const sectionVisible = section?.isVisible !== false;
-                      return (
-                        <div
-                          key={`media-section-${sectionIndex}`}
-                          className="border border-gray-200 rounded-lg bg-gray-50"
-                        >
-                          <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 px-4 py-3">
-                            <button
-                              type="button"
-                              className="p-2 rounded-md bg-white shadow text-gray-600 hover:text-store-600 focus:outline-none"
-                              onClick={() =>
-                                toggleMediaSectionVisibility(sectionIndex)
-                              }
-                            >
-                              {sectionVisible ? (
-                                <FiChevronUp className="text-lg" />
-                              ) : (
-                                <FiChevronDown className="text-lg" />
-                              )}
-                            </button>
-                            <Input
-                              value={section.name}
-                              onChange={(e) =>
-                                handleMediaSectionChange(
-                                  sectionIndex,
-                                  "name",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Section name"
-                            />
-                            <button
-                              type="button"
-                              className="ml-auto text-red-500 hover:text-red-600 focus:outline-none"
-                              onClick={() =>
-                                handleRemoveMediaSection(sectionIndex)
-                              }
-                            >
-                              <FiTrash2 className="text-lg" />
-                            </button>
-                          </div>
-
-                          <div
-                            className={`px-4 pt-4 pb-6 transition-all duration-200 origin-top ${
-                              sectionVisible
-                                ? "opacity-100 scale-100"
-                                : "opacity-0 scale-95 pointer-events-none h-0 overflow-hidden"
-                            }`}
-                          >
-                            <Textarea
-                              rows="2"
-                              className="mb-4"
-                              value={section.description || ""}
-                              onChange={(e) =>
-                                handleMediaSectionChange(
-                                  sectionIndex,
-                                  "description",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Section description (optional)"
-                            />
-
-                            <div className="space-y-3">
-                              {section.items?.map((item, itemIndex) => (
-                                <div
-                                  key={`media-item-${sectionIndex}-${itemIndex}`}
-                                  className="border border-gray-200 rounded-md p-3 bg-white"
-                                >
-                                  <div className="flex justify-between items-center mb-3">
-                                    <span className="text-sm font-semibold">
-                                      Item {itemIndex + 1}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      className="text-red-500 hover:text-red-600 focus:outline-none"
-                                      onClick={() =>
-                                        handleRemoveMediaItem(
-                                          sectionIndex,
-                                          itemIndex
-                                        )
-                                      }
-                                    >
-                                      <FiTrash2 />
-                                    </button>
-                                  </div>
-                                  <div className="mb-3">
-                                    <Uploader
-                                      product={false}
-                                      folder="product-media"
-                                      imageUrl={item.image}
-                                      setImageUrl={(url) =>
-                                        handleMediaItemImageUpdate(
-                                          sectionIndex,
-                                          itemIndex,
-                                          url
-                                        )
-                                      }
-                                    />
-                                  </div>
-                                  <Textarea
-                                    rows="2"
-                                    value={item.details}
-                                    onChange={(e) =>
-                                      handleMediaItemChange(
-                                        sectionIndex,
-                                        itemIndex,
-                                        "details",
-                                        e.target.value
-                                      )
-                                    }
-                                    placeholder="Details"
-                                  />
-                                </div>
-                              ))}
-                            </div>
-
-                            <Button
-                              type="button"
-                              className="mt-4"
-                              onClick={() => handleAddMediaItem(sectionIndex)}
-                            >
-                              Add Image + Details
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
                   </div>
                 </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Base SKU" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Input
+                      {...register("sku")}
+                      placeholder="e.g. NIKE-AM90-BLK"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Low Stock Alert *" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Input
+                      type="number"
+                      min="0"
+                      {...register("lowStockAlert")}
+                      placeholder="e.g. 5"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Status" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <select
+                      {...register("status")}
+                      className="block w-full rounded-md border border-gray-200 focus:border-store-500 focus:ring-0 text-sm h-12 dark:bg-gray-700 dark:text-gray-200"
+                    >
+                      <option value="Published">Published (Live on store)</option>
+                      <option value="Draft">Draft</option>
+                      <option value="Hidden">Hidden</option>
+                      <option value="Out Of Stock">Out Of Stock</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 7 — SEO */}
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm space-y-4">
+                <h3 className="text-md font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700 pb-2">
+                  Section 7: SEO
+                </h3>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Meta Title" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Input
+                      {...register("metaTitle")}
+                      placeholder="Meta listing title"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="Meta Description" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Textarea
+                      {...register("metaDescription")}
+                      rows="3"
+                      placeholder="Meta listing description"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+                  <LabelArea label="SEO Image" />
+                  <div className="col-span-8 sm:col-span-4">
+                    <Uploader
+                      product={false}
+                      folder="seo"
+                      imageUrl={seoImage ? [seoImage] : []}
+                      setImageUrl={(urls) => setSeoImage(urls?.[0] || "")}
+                      useOriginalSize={true}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* HOMEPAGE PLACEMENT */}
+              <div className="space-y-4">
+                <ProductPlacementFlags tag={tag} setTag={setTag} />
+              </div>
+
+              {/* LIVE CARD PREVIEW */}
+              <div className="mt-8">
+                <ProductPreviewCard
+                  title={watch("title")}
+                  brandName={brand ? (brand.name?.en || brand.name) : ""}
+                  originalPrice={watch("originalPrice")}
+                  discount={Number(watch("originalPrice") || 0) - (Number(watch("salePrice")) || Number(watch("price")) || Number(watch("originalPrice") || 0))}
+                  discountType="flat"
+                  badge={badge}
+                  featuredImage={featuredImage}
+                  hoverImage={hoverImage}
+                />
               </div>
             </div>
           )}
 
-          {tapValue === "Combination" &&
-            isCombination &&
-            (attribue.length < 1 ? (
-              <div
-                className="bg-teal-100 border border-teal-600 rounded-md text-teal-900 px-4 py-3 m-4"
-                role="alert"
-              >
-                <div className="flex">
-                  <div className="py-1">
-                    <svg
-                      className="fill-current h-6 w-6 text-teal-500 mr-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm">
-                      {t("AddCombinationsDiscription")}{" "}
-                      <Link to="/attributes" className="font-bold">
-                        {t("AttributesFeatures")}
-                      </Link>
-                      {t("AddCombinationsDiscriptionTwo")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="p-6">
-                {/* <h4 className="mb-4 font-semibold text-lg">Variants</h4> */}
-                <div className="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-3 md:gap-3 xl:gap-3 lg:gap-2 mb-3">
-                  <MultiSelect
-                    options={attTitle}
-                    value={attributes}
-                    onChange={(v) => handleAddAtt(v)}
-                    labelledBy="Select"
-                  />
-
-                  {attributes?.map((attribute, i) => (
-                    <div key={attribute._id}>
-                      <div className="flex w-full h-10 justify-between font-sans rounded-tl rounded-tr bg-gray-200 px-4 py-3 text-left text-sm font-normal text-gray-700 hover:bg-gray-200">
-                        {"Select"}
-                        {showingTranslateValue(attribute?.title)}
-                      </div>
-
-                      <AttributeOptionTwo
-                        id={i + 1}
-                        values={values}
-                        lang={language}
-                        attributes={attribute}
-                        setValues={setValues}
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex justify-end mb-6">
-                  {attributes?.length > 0 && (
-                    <Button
-                      onClick={handleGenerateCombination}
-                      type="button"
-                      className="mx-2"
-                    >
-                      <span className="text-xs">{t("GenerateVariants")}</span>
-                    </Button>
-                  )}
-
-                  {variantTitle.length > 0 && (
-                    <Button onClick={handleClearVariant} className="mx-2">
-                      <span className="text-xs">{t("ClearVariants")}</span>
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
+          {tapValue === "Combination" && isCombination && (
+            <div className="p-6">
+              <ColorVariantManager
+                variants={variants}
+                setVariants={setVariants}
+                watch={watch}
+              />
+            </div>
+          )}
 
           {isCombination ? (
             <DrawerButton
@@ -3290,47 +2276,6 @@ const ProductDrawer = ({ id }) => {
             <DrawerButton id={id} title="Product" isSubmitting={isSubmitting} />
           )}
         </form>
-
-        {tapValue === "Combination" &&
-          isCombination &&
-          variantTitle.length > 0 && (
-            <div className="px-6 overflow-x-auto">
-              {/* {variants?.length >= 0 && ( */}
-              {isCombination && (
-                <TableContainer className="md:mb-32 mb-40 rounded-b-lg">
-                  <Table>
-                    <TableHeader>
-                      <tr>
-                        <TableCell>{t("Image")}</TableCell>
-                        <TableCell>{t("Combination")}</TableCell>
-                        <TableCell>{t("Sku")}</TableCell>
-                        <TableCell>{t("Barcode")}</TableCell>
-                        <TableCell>{t("Price")}</TableCell>
-                        <TableCell>{t("SalePrice")}</TableCell>
-                        <TableCell>{t("QuantityTbl")}</TableCell>
-                        <TableCell className="text-right">
-                          {t("Action")}
-                        </TableCell>
-                      </tr>
-                    </TableHeader>
-
-                    <AttributeListTable
-                      lang={language}
-                      variants={variants}
-                      setTapValue={setTapValue}
-                      variantTitle={variantTitle}
-                      isBulkUpdate={isBulkUpdate}
-                      handleSkuBarcode={handleSkuBarcode}
-                      handleEditVariant={openVariantEditModal}
-                      handleRemoveVariant={handleRemoveVariant}
-                      handleQuantityPrice={handleQuantityPrice}
-                      handleSelectInlineImage={handleSelectInlineImage}
-                    />
-                  </Table>
-                </TableContainer>
-              )}
-            </div>
-          )}
       </Scrollbars>
     </>
   );

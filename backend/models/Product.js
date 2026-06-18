@@ -104,20 +104,6 @@ const faqSchema = new mongoose.Schema(
 
 const productSchema = new mongoose.Schema(
   {
-        // Wholesaler fields
-        isWholesaler: {
-          type: Boolean,
-          default: false,
-        },
-        wholePrice: {
-          type: Number,
-          default: 0,
-          min: [0, "Wholesale price cannot be negative"],
-        },
-        minQuantity: {
-          type: Number,
-          default: 0,
-        },
     productId: {
       type: String,
       required: false,
@@ -128,20 +114,6 @@ const productSchema = new mongoose.Schema(
     },
     barcode: {
       type: String,
-      required: false,
-    },
-    // Batch & manufacturing metadata
-    batchNo: {
-      type: String,
-      required: false,
-      trim: true,
-    },
-    expDate: {
-      type: Date,
-      required: false,
-    },
-    manufactureDate: {
-      type: Date,
       required: false,
     },
     title: {
@@ -195,9 +167,52 @@ const productSchema = new mongoose.Schema(
       ref: "Brand",
       required: false,
     },
+    // RASA: Men | Women | Unisex
+    gender: {
+      type: String,
+      enum: ["Men", "Women", "Unisex", ""],
+      default: "",
+      trim: true,
+    },
+    // RASA: Sneakers | Bags | Slides | Accessories
+    productType: {
+      type: String,
+      enum: ["Sneakers", "Bags", "Slides", "Accessories", ""],
+      default: "",
+      trim: true,
+    },
+    // SEO fields
+    metaTitle: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    metaDescription: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    seoImage: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     image: {
       type: Array,
       required: false,
+    },
+    featuredImage: {
+      type: String,
+      default: "",
+    },
+    hoverImage: {
+      type: String,
+      default: "",
+    },
+    badge: {
+      type: String,
+      default: "",
+      trim: true,
     },
     stock: {
       type: Number,
@@ -254,25 +269,17 @@ const productSchema = new mongoose.Schema(
     status: {
       type: String,
       default: "show",
-      enum: ["show", "hide"],
     },
-    
-    suitableFor: {
-      type: [String],
-      default: [],
+    lowStockAlert: {
+      type: Number,
+      default: 5,
     },
 
-    // New structured sections
     productDescription: { type: paragraphSectionSchema, default: {} },
-    ingredients: { type: listSectionSchema, default: {} },
-    keyUses: { type: listSectionSchema, default: {} },
-    howToUse: { type: highlightSectionSchema, default: {} },
-    safetyInformation: { type: highlightSectionSchema, default: {} },
-    additionalInformation: { type: additionalInformationSectionSchema, default: {} },
-    composition: { type: paragraphSectionSchema, default: {} },
     productHighlights: { type: highlightSectionSchema, default: {} },
     manufacturerDetails: { type: highlightSectionSchema, default: {} },
     disclaimer: { type: paragraphSectionSchema, default: {} },
+    additionalInformation: { type: additionalInformationSectionSchema, default: {} },
 
     dynamicSections: {
       type: [dynamicSectionSchema],

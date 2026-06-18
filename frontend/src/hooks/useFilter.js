@@ -64,55 +64,55 @@ const useFilter = (data, allCategories = []) => {
 
     // Filter by Brand
     if (selectedBrands.length > 0) {
-      services = services.filter((product) =>
-        selectedBrands.includes(product.brand?._id || product.brand)
-      );
+      services = services.filter((product) => {
+        const pBrand = product.brand?._id || product.brand;
+        const rawBrandName = product.brandName || (product.brand && typeof product.brand.name === 'object' ? showingTranslateValue(product.brand.name) : product.brand?.name) || "";
+        const brandName = typeof rawBrandName === 'string' ? rawBrandName.toLowerCase().trim() : "";
+        return selectedBrands.some(selectedId => {
+          const selId = selectedId.toLowerCase().trim();
+          return (pBrand && pBrand.toString().toLowerCase() === selId) || 
+                 (brandName && (brandName.includes(selId) || selId.includes(brandName)));
+        });
+      });
     }
 
     // Filter by Category
     if (selectedCategories.length > 0) {
-      // Get names of selected categories for fallback matching
-      const selectedNames = new Set();
-      
-      const findNameInTree = (cats, id) => {
-        for (const c of cats) {
-          if (c._id === id) {
-            const name = c.name?.en || c.name;
-            if (typeof name === 'string') selectedNames.add(name.toLowerCase().trim());
-          }
-          if (c.children) findNameInTree(c.children, id);
-        }
-      };
-
-      selectedCategories.forEach(id => findNameInTree(allCategories, id));
-
       services = services.filter((product) => {
-        const productCategoryIds = [];
-        const productCategoryNames = [];
-        
-        const processCategory = (cat) => {
-          if (!cat) return;
-          const id = (cat._id || cat).toString();
-          productCategoryIds.push(id);
+        const catSlug = (product.categorySlug || "").toLowerCase().trim();
+        const titleLower = showingTranslateValue(product.title)?.toLowerCase() || "";
+        const descLower = showingTranslateValue(product.description)?.toLowerCase() || "";
+        const rawBrandName = product.brandName || (product.brand && typeof product.brand.name === 'object' ? showingTranslateValue(product.brand.name) : product.brand?.name) || "";
+        const brandName = typeof rawBrandName === 'string' ? rawBrandName.toLowerCase().trim() : "";
+
+        return selectedCategories.some(selectedId => {
+          const selId = selectedId.toLowerCase().trim();
           
-          const name = cat.name?.en || cat.name;
-          if (typeof name === 'string') {
-            productCategoryNames.push(name.toLowerCase().trim());
+          // Match main categories
+          if (selId === "footwear" && catSlug === "footwear") return true;
+          if (selId === "bags" && catSlug === "bags") return true;
+          if (selId === "slides" && (catSlug === "footwear" && (titleLower.includes("slide") || descLower.includes("slide")))) return true;
+          if (selId === "accessories" && catSlug === "accessories") return true;
+
+          // Match subcategory brand for Sneakers
+          if (catSlug === "footwear" && ["nike", "adidas", "jordan"].includes(selId)) {
+            return brandName.includes(selId) || titleLower.includes(selId);
           }
-        };
 
-        processCategory(product.category);
-        if (product.categories && Array.isArray(product.categories)) {
-          product.categories.forEach(processCategory);
-        }
+          // Match subcategory bag type for Bags
+          if (catSlug === "bags" && ["tote", "shoulder", "crossbody", "backpack", "sling", "wallet"].includes(selId)) {
+            return titleLower.includes(selId) || descLower.includes(selId);
+          }
 
-        // Match by ID
-        if (productCategoryIds.some(id => selectedCategories.includes(id))) return true;
+          // Match direct ID or slug match as fallback
+          const productCategoryIds = [
+            (product.category?._id || product.category || "").toString().toLowerCase(),
+            ...(product.categories || []).map(c => (c._id || c || "").toString().toLowerCase())
+          ];
+          if (productCategoryIds.includes(selId)) return true;
 
-        // Match by Name (Fallback for duplicates)
-        if (productCategoryNames.some(name => selectedNames.has(name))) return true;
-        
-        return false;
+          return false;
+        });
       });
     }
 

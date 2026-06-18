@@ -23,6 +23,13 @@ const getCloudinaryErrorMessage = (err) => {
   return "Error uploading image";
 };
 
+const normalizeImageList = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val.filter((item) => typeof item === "string" && item);
+  if (typeof val === "string" && val.trim()) return [val];
+  return [];
+};
+
 const fileToDataUrl = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -48,7 +55,7 @@ const Uploader = ({
   setImageUrl,
   imageUrl,
   product,
-  folder = "farmacykart",
+  folder = "rasa",
   targetWidth = 800, // Set default fixed width
   targetHeight = 800, // Set default fixed height
   useOriginalSize = false,
@@ -153,7 +160,7 @@ const Uploader = ({
       files.forEach((file) => {
         if (
           product &&
-          imageUrl?.length + files?.length >
+          normalizeImageList(imageUrl).length + files?.length >
             globalSetting?.number_of_image_per_product
         ) {
           return showAlert(
@@ -175,10 +182,20 @@ const Uploader = ({
         setLoading(true);
         setError("Uploading....");
 
-        const safeFolder = folder && folder !== "undefined" ? folder : "farmacykart";
+        const safeFolder = folder && folder !== "undefined" ? folder : "rasa";
         const name = file.name.replaceAll(/\s/g, "");
-        const basePublicId = name?.substring(0, name.lastIndexOf("."));
-        const public_id = uniquePublicId ? `${basePublicId}_${Date.now()}` : basePublicId;
+        const basePublicId = name?.substring(0, name.lastIndexOf(".")) || "image";
+        
+        const cleanPublicId = basePublicId
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9-_]/g, "-")
+          .replace(/-+/g, "-")
+          .replace(/^-+|-+$/g, "");
+
+        const public_id = cleanPublicId && cleanPublicId.trim().length > 0
+          ? (uniquePublicId ? `${cleanPublicId}_${Date.now()}` : cleanPublicId)
+          : `image_${Date.now()}`;
 
         const formData = new FormData();
         formData.append("file", file);
@@ -201,8 +218,9 @@ const Uploader = ({
             onUploadComplete(payload);
           }
           if (product) {
-            setImageUrl((imgUrl) => [...imgUrl, payload.secure_url]);
+            setImageUrl((imgUrl) => [...normalizeImageList(imgUrl), payload.secure_url]);
           } else {
+            // For single-image fields, always call with the plain URL string
             setImageUrl(payload.secure_url);
           }
         };
@@ -276,6 +294,7 @@ const Uploader = ({
           return prev?.filter((i) => i !== img) || [];
         });
       } else {
+        // For single-image fields, pass empty string so parent can clear state
         setImageUrl("");
       }
     } catch (err) {
@@ -312,33 +331,38 @@ const Uploader = ({
               handleRemoveImage={handleRemoveImage}
             />
           </DndProvider>
-        ) : !product && imageUrl ? (
-          <div className="relative">
-            {typeof imageUrl === "string" && /\.pdf(\?|$)/i.test(imageUrl) ? (
-              <a
-                className="inline-flex border rounded-md border-gray-100 dark:border-gray-600 w-24 max-h-24 p-2 items-center justify-center text-sm underline"
-                href={imageUrl}
-                target="_blank"
-                rel="noreferrer"
+        ) : !product && imageUrl && (Array.isArray(imageUrl) ? imageUrl.length > 0 : true) ? (() => {
+          const singleUrl = Array.isArray(imageUrl) ? imageUrl[0] : imageUrl;
+          if (!singleUrl) return null;
+          return (
+            <div className="relative">
+              {typeof singleUrl === "string" && /\.pdf(\?|$)/i.test(singleUrl) ? (
+                <a
+                  className="inline-flex border rounded-md border-gray-100 dark:border-gray-600 w-24 max-h-24 p-2 items-center justify-center text-sm underline"
+                  href={singleUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  PDF
+                </a>
+              ) : (
+                <img
+                  className="inline-flex border rounded-md border-gray-100 dark:border-gray-600 w-24 max-h-24 p-2"
+                  src={resolveCloudinaryUrl(singleUrl) || "/favicon-transparent.png"}
+                  alt="product"
+                />
+              )}
+              <button
+                type="button"
+                className="absolute top-0 right-0 text-red-500 focus:outline-none"
+                onClick={() => handleRemoveImage(singleUrl)}
               >
-                PDF
-              </a>
-            ) : (
-              <img
-                className="inline-flex border rounded-md border-gray-100 dark:border-gray-600 w-24 max-h-24 p-2"
-                src={resolveCloudinaryUrl(imageUrl) || "/favicon-transparent.png"}
-                alt="product"
-              />
-            )}
-            <button
-              type="button"
-              className="absolute top-0 right-0 text-red-500 focus:outline-none"
-              onClick={() => handleRemoveImage(imageUrl)}
-            >
-              <FiXCircle />
-            </button>
-          </div>
-        ) : (
+                <FiXCircle />
+              </button>
+            </div>
+          );
+        })()
+        : (
           thumbs
         )}
       </aside>

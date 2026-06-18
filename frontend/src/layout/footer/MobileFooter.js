@@ -1,7 +1,6 @@
-import React, { useContext, useState, useRef } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import { useCart } from "react-use-cart";
 import { FiHome, FiUser, FiShoppingCart, FiAlignLeft, FiHeart } from "react-icons/fi";
 import { IoSearchOutline, IoLockClosedOutline } from "react-icons/io5";
@@ -17,7 +16,6 @@ import useWishlist from "@hooks/useWishlist";
 import LocationButton from "@components/location/LocationButton";
 import SearchSuggestions from "@components/search/SearchSuggestions";
 import CustomerNotificationBell from "@components/notification/CustomerNotificationBell";
-import { pickBrandLogo } from "@utils/brandAssets";
 const MobileFooter = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -30,6 +28,15 @@ const MobileFooter = () => {
   const { t } = useTranslation("common");
   const { storeCustomizationSetting } = useGetSetting();
   const storeColor = storeCustomizationSetting?.theme?.color || "green";
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
 
   const handleSearchChange = (value) => {
     setSearchText(value);
@@ -70,15 +77,15 @@ const MobileFooter = () => {
     <>
       {/* Drawer lives off-canvas; keep it mounted without forcing page layout/scroll */}
       <CategoryDrawer />
-      <footer className="lg:hidden fixed z-[60] top-0 bg-white flex items-center justify-between w-full h-16 px-3 sm:px-10 shadow-sm">
-        <div className="flex items-center gap-4">
+      <footer className="lg:hidden fixed z-[60] top-0 bg-[#050505]/95 backdrop-blur-md flex items-center justify-between w-full h-16 px-3 sm:px-10 border-b border-neutral-900/60 shadow-md">
+        <div className="flex items-center gap-3">
           <button
             aria-label="Bar"
             onClick={toggleCategoryDrawer}
             className="flex items-center justify-center flex-shrink-0 h-auto relative focus:outline-none"
           >
-            <span className={`text-xl text-store-500`}>
-              <FiAlignLeft className="w-6 h-6 drop-shadow-xl" />
+            <span className="text-white hover:text-[#D4AF37] transition-colors duration-200">
+              <FiAlignLeft className="w-6 h-6" />
             </span>
           </button>
           <Link
@@ -87,46 +94,43 @@ const MobileFooter = () => {
             rel="noreferrer"
             aria-label={t("Home") || "Home"}
           >
-            <div className="relative w-[72px] h-[72px]">
+            <div className="relative w-[56px] h-[56px]">
               <Image
-                src={pickBrandLogo(
-                  storeCustomizationSetting?.navbar?.logo,
-                  storeCustomizationSetting?.seo?.favicon
-                )}
-                alt="logo"
+                src="/rasaLogo.png"
+                alt="The Rasa Store"
                 fill
                 className="object-contain"
-                sizes="72px"
+                sizes="56px"
                 priority
               />
             </div>
           </Link>
           <Link
             href="/"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-900 hover:bg-gray-100 hover:text-black shrink-0 ml-6"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-900 hover:text-[#D4AF37] shrink-0 transition-all duration-200 ml-2"
             aria-label="Home"
             title="Home"
           >
             <FiHome className="w-5 h-5" />
           </Link>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <CustomerNotificationBell />
           <div className="flex items-center justify-center relative">
-            {userInfo?.image ? (
-              <Link href="/user/dashboard" className="relative top-1 w-8 h-8 block">
-                <Image
+            {mounted && userInfo?.image ? (
+              <Link href="/user/dashboard" className="relative top-0.5 w-8 h-8 block">
+                <img
                   width={32}
                   height={32}
                   src={userInfo.image}
                   alt="user"
-                  className="rounded-full object-cover w-8 h-8 border-2 border-gray-200"
+                  className="rounded-full object-cover w-8 h-8 border border-neutral-800"
                 />
               </Link>
-            ) : userInfo?.name ? (
+            ) : mounted && userInfo?.name ? (
               <Link
                 href="/user/dashboard"
-                className={`leading-none font-bold font-serif block px-3 py-2 border rounded-full border-store-500 text-store-500`}
+                className="leading-none font-bold block px-3 py-2 border rounded-full border-[#D4AF37] text-[#D4AF37]"
               >
                 {userInfo?.name[0]}
               </Link>
@@ -134,9 +138,11 @@ const MobileFooter = () => {
               <div className="relative">
                 <Link
                   href="/auth/login"
-                  className="bg-store-500 text-white px-4 py-2 rounded-full flex items-center gap-2 font-bold text-sm hover:bg-store-600 transition-colors"
+                  className="bg-[#D4AF37] text-black w-9 h-9 sm:w-auto sm:px-4 sm:py-2 rounded-full flex items-center justify-center gap-1.5 font-extrabold text-xs uppercase tracking-wider hover:bg-[#c29e2e] transition-colors"
+                  title="Login"
                 >
-                  <IoLockClosedOutline className="text-lg" /> Login
+                  <FiUser className="text-base" />
+                  <span className="hidden sm:inline">Login</span>
                 </Link>
               </div>
             )}
@@ -145,13 +151,13 @@ const MobileFooter = () => {
         </div>
       </footer>
       {showSearch && (
-        <div className="fixed z-50 top-16 left-0 w-full bg-white px-3 py-2 shadow" style={{ overflow: 'visible' }}>
+        <div className="fixed z-50 top-16 left-0 w-full bg-[#050505]/95 backdrop-blur-md px-3 py-2.5 border-b border-neutral-900 shadow-xl" style={{ overflow: 'visible' }}>
           <form
             onSubmit={handleSubmit}
-            className="relative bg-white shadow-sm rounded-md w-full flex items-center overflow-visible"
+            className="relative bg-[#0d0d0d] border border-neutral-800 rounded-md w-full flex items-center overflow-visible"
           >
             {/* Location Button */}
-            <LocationButton className="h-10 flex-shrink-0" />
+            <LocationButton className="h-10 flex-shrink-0 !bg-transparent text-neutral-300 hover:text-[#D4AF37]" />
 
             {/* Search Input */}
             <div className="flex-1 relative">
@@ -160,8 +166,8 @@ const MobileFooter = () => {
                 onChange={(e) => handleSearchChange(e.target.value)}
                 value={searchText}
                 type="text"
-                placeholder="Search for medicine or store..."
-                className="w-full pl-3 pr-12 appearance-none transition ease-in-out text-input text-sm font-sans rounded-md min-h-10 h-10 duration-200 bg-[#F3F4F6] focus:ring-2 focus:ring-store-500 outline-none border-none focus:outline-none placeholder-gray-500 placeholder-opacity-75"
+                placeholder="Search sneakers, bags, brands..."
+                className="w-full pl-3 pr-12 appearance-none transition ease-in-out text-sm font-sans rounded-md min-h-10 h-10 duration-200 bg-transparent text-white focus:outline-none placeholder-neutral-500"
                 onFocus={() => searchText.trim().length > 0 && setShowSuggestions(true)}
                 onBlur={(e) => {
                   const relatedTarget = e.relatedTarget;
@@ -180,7 +186,7 @@ const MobileFooter = () => {
               <button
                 aria-label="Search"
                 type="submit"
-                className={`outline-none text-xl text-gray-400 absolute top-0 right-0 end-0 w-12 h-full flex items-center justify-center transition duration-200 ease-in-out hover:text-heading focus:outline-none text-store-500 z-10`}>
+                className="outline-none text-xl text-neutral-400 absolute top-0 right-0 end-0 w-12 h-full flex items-center justify-center transition duration-200 ease-in-out hover:text-[#D4AF37] focus:outline-none z-10">
                 <IoSearchOutline />
               </button>
               <SearchSuggestions
@@ -201,5 +207,5 @@ const MobileFooter = () => {
   );
 };
 
-export default dynamic(() => Promise.resolve(MobileFooter), { ssr: false });
+export default MobileFooter;
 

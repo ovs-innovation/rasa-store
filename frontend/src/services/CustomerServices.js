@@ -42,6 +42,15 @@ const CustomerServices = {
   checkPhoneRegistered: async (phone) => {
     return requests.post("/customer/check-user", { phone });
   },
+  sendEmailOtp: async (body) => {
+    return requests.post("/customer/send-email-otp", body);
+  },
+  verifyEmailOtp: async (body) => {
+    return requests.post("/customer/verify-email-otp", body);
+  },
+  checkEmailRegistered: async (email) => {
+    return requests.post("/customer/check-user", { email });
+  },
 
   registerCustomer: async (token, body) => {
     return requests.post(`/customer/register/${token}`, body);
@@ -49,13 +58,6 @@ const CustomerServices = {
 
   registerUser: async (body) => {
     return requests.post("/customer/signup", body);
-  },
-
-  createWholesaler: async (formData) => {
-    // formData should be a FormData instance
-    return requests.post(`/customer/wholesaler`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
   },
 
   signUpWithOauthProvider: async (body) => {
@@ -80,11 +82,6 @@ const CustomerServices = {
 
   updateCustomer: async (id, body) => {
     return requests.put(`/customer/${id}`, body);
-  },
-
-  // Create wholesaler - accepts JSON payload with file URLs
-  createWholesaler: async (body) => {
-    return requests.post(`/customer/wholesaler`, body);
   },
 
   deleteCloudinary: async (body) => {

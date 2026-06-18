@@ -30,7 +30,7 @@ const Login = () => {
                 aria-hidden="true"
                 className="object-contain h-20 w-20"
                 src={ADMIN_BRAND_LOGO}
-                alt={globalSetting?.company_name || "Farmacykart"}
+                alt={globalSetting?.company_name || "RASA"}
               />
             </div>
             <main className="flex items-center justify-center p-6 sm:p-12">

@@ -50,7 +50,7 @@ const WriteReviewForm = ({
   const { state: userState } = useContext(UserContext) || {};
   
   // Robust login check using both NextAuth and Custom Context
-  const isLoggedIn = (status === "authenticated" && session?.user) || !!userState?.userInfo;
+  const isLoggedIn = (status === "authenticated" && session?.user) || !!(userState?.userInfo?.token || userState?.userInfo?._id || userState?.userInfo?.email);
   const userInfo = session?.user || userState?.userInfo;
 
   const [rating, setRating] = useState(existingReview?.rating || 0);
@@ -90,13 +90,13 @@ const WriteReviewForm = ({
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-4 md:p-5 shadow-sm">
-      <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-1">
+    <div className="bg-[#0d0d0d] border border-neutral-900 rounded-xl p-4 md:p-5 shadow-sm">
+      <h3 className="text-base md:text-lg font-semibold text-white mb-1">
         {isEditing ? "Update your review" : "Rate and review this product"}
       </h3>
-      <p className="text-xs md:text-sm text-gray-500 mb-3">
+      <p className="text-xs md:text-sm text-neutral-400 mb-3">
         Only customers who have actually purchased this product will be marked
-        as <span className="font-semibold">Verified Buyer</span>.
+        as <span className="font-semibold text-white">Verified Buyer</span>.
       </p>
       {isLoggedIn ? (
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -112,7 +112,7 @@ const WriteReviewForm = ({
               value={reviewText}
               onChange={(e) => setReviewText(e.target.value)}
               rows={3}
-              className="w-full text-sm border border-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-300"
+              className="w-full text-sm bg-[#050505] text-white border border-neutral-800 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-[#D4AF37] focus:border-[#D4AF37] placeholder-neutral-500"
               placeholder="Share your experience with this product..."
               disabled={isSubmitting}
             />
@@ -121,7 +121,7 @@ const WriteReviewForm = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-semibold text-white bg-store-600 rounded-md hover:bg-store-700 disabled:opacity-60"
+              className="px-4 py-2 text-sm font-semibold text-black bg-[#D4AF37] hover:bg-[#bfa232] rounded-md transition-colors disabled:opacity-60"
             >
               {isSubmitting
                 ? "Submitting..."
@@ -132,11 +132,11 @@ const WriteReviewForm = ({
           </div>
         </form>
       ) : (
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-neutral-400">
           Please{" "}
           <a
             href="/auth/login"
-            className="text-store-600 hover:text-store-700 font-semibold"
+            className="text-[#D4AF37] hover:text-[#bfa232] hover:underline font-semibold"
           >
             login
           </a>{" "}

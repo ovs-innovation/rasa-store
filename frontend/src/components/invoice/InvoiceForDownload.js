@@ -300,36 +300,25 @@ const InvoiceForDownload = ({
   globalSetting,
   getNumberTwo,
   logo,
-  isWholesaler,
 }) => {
   // Calculate discount same as Invoice.js
   const mrpTotal = data?.cart?.reduce((sum, item) => {
-    const mrp = isWholesaler 
-      ? (item.wholePrice ?? item.price ?? 0)
-      : (item.mrp ?? item.originalPrice ?? item.price ?? 0);
+    const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
     const qty = item.quantity || 1;
-    return sum + (mrp * qty);
+    return sum + mrp * qty;
   }, 0) || 0;
   
-  // Calculate total discount like checkout page: sum of (MRP - Sale Price) * quantity
   const totalDiscount = data?.cart?.reduce((sum, item) => {
-    const mrp = isWholesaler 
-      ? (item.wholePrice ?? item.price ?? 0)
-      : (item.mrp ?? item.originalPrice ?? item.price ?? 0);
+    const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
     const salePrice = item.price ?? 0;
     const qty = item.quantity || 1;
     return sum + ((mrp - salePrice) * qty);
   }, 0) || 0;
 
-  // Calculate total GST - use taxSummary from order data (same as checkout), fallback to calculating from cart
   const totalGstRaw = data?.taxSummary?.exclusiveTax > 0 
     ? data.taxSummary.exclusiveTax 
     : data?.cart?.reduce((sum, item) => {
-        // For wholesalers, selling price is just item.price
-        // For customers, selling price = MRP - discount
-        const sellingPrice = isWholesaler
-          ? (Number(item.price) || Number(item.wholePrice) || 0)
-          : (Number(item.price) || (item.mrp ?? item.originalPrice ?? item.price ?? 0));
+        const sellingPrice = Number(item.price) || (item.mrp ?? item.originalPrice ?? item.price ?? 0);
         const qty = item.quantity || 1;
         const gstRate = parseFloat(item.taxRate || item.gstRate || item.gstPercentage || 12);
         const gstAmount = (Math.abs(sellingPrice) * qty * gstRate) / 100;
@@ -367,7 +356,7 @@ const InvoiceForDownload = ({
               )}
 
               <Text style={{ fontSize: 9, fontWeight: "bold", color: "#111827", marginBottom: 2 }}>
-                {globalSetting?.company_name || "Farmacykart Private Limited"}
+                {globalSetting?.company_name || "Rasa Store Private Limited"}
               </Text>
               <Text style={{ fontSize: 7, color: "#4b5563", lineHeight: 1.3, marginBottom: 3 }}>
                 {globalSetting?.address || "C-39, Basement, Block-5, Okhla Industrial Area-2, New Delhi, Delhi-110020"}
@@ -522,16 +511,6 @@ const InvoiceForDownload = ({
                     <Text style={styles.header}>hsn</Text>
                   </Text>
                 </View>
-                <View style={styles.tableColSmall}>
-                  <Text style={styles.tableCell}>
-                    <Text style={styles.header}>batch</Text>
-                  </Text>
-                </View>
-                <View style={styles.tableColSmall}>
-                  <Text style={styles.tableCell}>
-                    <Text style={styles.header}>expiry</Text>
-                  </Text>
-                </View>
                 <View style={styles.tableColQty}>
                   <Text style={styles.tableCell}>
                     <Text style={styles.header}>qty</Text>
@@ -539,7 +518,7 @@ const InvoiceForDownload = ({
                 </View>
                 <View style={styles.tableColSmall}>
                   <Text style={styles.tableCell}>
-                    <Text style={styles.header}>{isWholesaler ? "price" : "mrp"}</Text>
+                    <Text style={styles.header}>mrp</Text>
                   </Text>
                 </View>
                 <View style={styles.tableColSmall}>
@@ -564,55 +543,26 @@ const InvoiceForDownload = ({
                 </View>
               </View>
             {data?.cart?.map((item, i) => {
-              // For wholesalers, use wholePrice instead of MRP
-              // Ensure we always get a positive number
-              let mrpValue = 0;
-              if (isWholesaler) {
-                // Ensure price is always positive
-                const rawPrice = Number(item.wholePrice) || Number(item.price) || 0;
-                mrpValue = Math.abs(rawPrice);
-              } else {
-                mrpValue = Number(item.mrp) || Number(item.originalPrice) || Number(item.price) || 0;
-              }
-              const mrp = Math.abs(mrpValue) || 0;
-              
+              const mrp = Math.abs(Number(item.mrp) || Number(item.originalPrice) || Number(item.price) || 0);
               const quantity = item.quantity || 1;
               
-              // Calculate discount per item
               let discountPerItem = 0;
-              if (!isWholesaler) {
-                const itemPrice = Number(item.price);
-                const hasValidPrice = !isNaN(itemPrice) && itemPrice > 0;
-                
-                if (hasValidPrice && itemPrice < mrp) {
-                  // Price exists and is less than MRP - calculate difference
-                  discountPerItem = mrp - itemPrice;
-                } else if (typeof item.discount === "number" && item.discount > 0) {
-                  // Use percentage discount if available
-                  discountPerItem = (mrp * item.discount) / 100;
-                } else if (item.originalPrice && item.price && item.originalPrice > item.price) {
-                  // Fallback: check originalPrice vs price
-                  discountPerItem = item.originalPrice - item.price;
-                }
+              const itemPrice = Number(item.price);
+              const hasValidPrice = !isNaN(itemPrice) && itemPrice > 0;
+              
+              if (hasValidPrice && itemPrice < mrp) {
+                discountPerItem = mrp - itemPrice;
+              } else if (typeof item.discount === "number" && item.discount > 0) {
+                discountPerItem = (mrp * item.discount) / 100;
+              } else if (item.originalPrice && item.price && item.originalPrice > item.price) {
+                discountPerItem = item.originalPrice - item.price;
               }
               
-              // Calculate GST on selling price
               const gstRate = parseFloat(item.taxRate || item.gstRate || item.gstPercentage || 12);
-              
-              // For wholesalers: selling price is just item.price or wholePrice (ensure positive)
-              // For customers: selling price = MRP - discount
-              const sellingPrice = isWholesaler
-                ? (Number(item.price) ? Math.abs(Number(item.price)) : Math.abs(Number(item.wholePrice) || 0))
-                : (Number(item.price) || (mrp - discountPerItem) || 0);
-              
-              // Ensure selling price is always positive
+              const sellingPrice = Number(item.price) || (mrp - discountPerItem) || 0;
               const positiveSellingPrice = Math.abs(sellingPrice);
               const gstAmount = Math.abs(((positiveSellingPrice * quantity * gstRate) / 100) || 0);
-              
-              // Pay. AMT = (MRP - Discount) × Quantity (without GST)
               const payableAmount = (mrp - discountPerItem) * quantity;
-              
-              // Final safety: ensure all values are positive numbers
               const finalGstAmount = Math.abs(Number(gstAmount) || 0);
               const finalPayableAmount = Math.abs(Number(payableAmount) || 0);
 
@@ -636,20 +586,6 @@ const InvoiceForDownload = ({
                       {item.hsn || "-"}
                     </Text>
                   </View>
-                  <View style={styles.tableColSmall}>
-                    <Text style={styles.tableCell}>
-                      {item.batchNo || "-"}
-                    </Text>
-                  </View>
-                  <View style={styles.tableColSmall}>
-                    <Text style={styles.tableCell}>
-                      {item.expDate 
-                        ? (typeof item.expDate === "string"
-                            ? item.expDate.split("T")[0]
-                            : dayjs(item.expDate).format("YYYY-MM-DD"))
-                        : "-"}
-                    </Text>
-                  </View>
                   <View style={styles.tableColQty}>
                     <Text style={styles.tableCellNumeric}>
                       {item.quantity}
@@ -657,12 +593,12 @@ const InvoiceForDownload = ({
                   </View>
                   <View style={styles.tableColSmall}>
                     <Text style={styles.tableCellNumeric}>
-                      {isWholesaler ? `${currency}${getNumberTwo(item.price || 0)}` : `${currency}${getNumberTwo(mrp)}`}
+                      {`${currency}${getNumberTwo(mrp)}`}
                     </Text>
                   </View>
                   <View style={styles.tableColSmall}>
                     <Text style={styles.tableCellNumeric}>
-                      {isWholesaler ? `${currency}0.00` : `${currency}${getNumberTwo(Math.abs((discountPerItem || 0) * quantity))}`}
+                      {`${currency}${getNumberTwo(Math.abs((discountPerItem || 0) * quantity))}`}
                     </Text>
                   </View>
                   <View style={styles.tableColHsn}>
@@ -677,9 +613,7 @@ const InvoiceForDownload = ({
                   </View>
                   <View style={styles.tableColSmall}>
                     <Text style={styles.tableCellNumeric}>
-                      {isWholesaler 
-                        ? `${currency}${getNumberTwo(Math.abs(positiveSellingPrice * quantity))}`
-                        : `${currency}${getNumberTwo(finalPayableAmount)}`}
+                      {`${currency}${getNumberTwo(finalPayableAmount)}`}
                     </Text>
                   </View>
                 </View>
@@ -696,16 +630,16 @@ const InvoiceForDownload = ({
                 TERMS AND CONDITIONS
               </Text>
               <Text style={{ fontSize: 7, color: "#374151", lineHeight: 1.4, marginBottom: 3 }}>
-                This invoice is issued by a registered pharmacist. Medicines once dispensed will not be taken back or exchanged unless required by law. Please verify the medicine name, batch, expiry date and quantity before leaving the counter.
+                This invoice is issued by RASA Store. Products once sold will not be taken back or exchanged unless required by law. Please verify the product name, size, and quantity before accepting delivery.
               </Text> */}
               <Text style={{ fontSize: 7, fontWeight: "bold", color: "#1f2937", marginBottom: 0 }}>
                 Registered Pharmacist
               </Text>
               <Text style={{ fontSize: 7, color: "#006E44", marginBottom: 0 }}>
-                {globalSetting?.company_name || "Farmacykart Private Limited"}
+                {globalSetting?.company_name || "Rasa Store Private Limited"}
               </Text>
               <Text style={{ fontSize: 7, color: "#006E44" }}>
-                {globalSetting?.website || "www.farmacykart.com"}
+                {globalSetting?.website || "www.Rasa Store.com"}
               </Text>
             </View>
 
@@ -713,9 +647,9 @@ const InvoiceForDownload = ({
             <View style={{ width: "40%", borderLeft: 1, borderColor: "#e5e7eb", paddingLeft: 10 }}>
               {/* MRP Total */}
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 0 }}>
-                <Text style={{ fontSize: 7, color: "#374151" }}>{isWholesaler ? "Total Price" : "MRP Total"}</Text>
+                <Text style={{ fontSize: 7, color: "#374151" }}>MRP Total</Text>
                 <Text style={{ fontSize: 7, color: "#374151", fontWeight: "bold", fontFamily: "DejaVu Sans" }}>
-                  {currency}{getNumberTwo(Math.abs(isWholesaler ? (data?.cart?.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0) || 0) : mrpTotal))}
+                  {currency}{getNumberTwo(Math.abs(mrpTotal))}
                 </Text>
               </View>
               
@@ -723,7 +657,7 @@ const InvoiceForDownload = ({
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 0 }}>
                 <Text style={{ fontSize: 7, color: "#374151" }}>Total Discount</Text>
                 <Text style={{ fontSize: 7, color: "#16a34a", fontWeight: "bold", fontFamily: "DejaVu Sans" }}>
-                  -{currency}{getNumberTwo(Math.abs(isWholesaler ? 0 : totalDiscount))}
+                  -{currency}{getNumberTwo(Math.abs(totalDiscount))}
                 </Text>
               </View>
               

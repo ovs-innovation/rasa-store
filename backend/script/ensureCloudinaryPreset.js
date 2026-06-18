@@ -29,7 +29,7 @@ async function main() {
     await cloudinary.api.create_upload_preset({
       name: PRESET_NAME,
       unsigned: true,
-      folder: "farmacykart",
+      folder: "rasa",
     });
     console.log(`Created upload preset: ${PRESET_NAME}`);
   } catch (err) {

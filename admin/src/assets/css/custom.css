@@ -18,7 +18,17 @@ body,
   margin: auto;
 }
 :root {
-  --brand-token: pink;
+  --brand-token: #D4AF37;
+  --store-color-50: #fefdf5;
+  --store-color-100: #fdfbe6;
+  --store-color-200: #faf6c0;
+  --store-color-300: #f6ee8d;
+  --store-color-400: #eec046;
+  --store-color-500: #D4AF37;
+  --store-color-600: #c19b2a;
+  --store-color-700: #a07c1e;
+  --store-color-800: #7e6018;
+  --store-color-900: #674e14;
   --brand-50: var(--store-color-50);
   --brand-100: var(--store-color-100);
   --brand-200: var(--store-color-200);

@@ -32,37 +32,8 @@ const connectDB = async () => {
   }
 };
 
-// Create separate MongoDB connection for modules that need it
-let mongo_connection = null;
-if (process.env.MONGO_URI) {
-  const mongoUri = process.env.MONGO_URI.trim();
-  try {
-    mongo_connection = mongoose.createConnection(mongoUri, {
-      useFindAndModify: false,
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      useCreateIndex: true,
-      keepAlive: 1,
-      poolSize: 10, // Reduced from 100 to be more reasonable for dev
-      bufferMaxEntries: 0,
-      connectTimeoutMS: 10000,
-      socketTimeoutMS: 30000,
-    });
-
-    mongo_connection.on("error", (err) => {
-      console.error("⚠️ Secondary MongoDB connection error:", err.message);
-      if (err.message.includes("Could not connect")) {
-         console.warn("Verify your IP whitelist in MongoDB Atlas.");
-      }
-    });
-
-    mongo_connection.on("connected", () => {
-      console.log("✅ Secondary MongoDB connected!");
-    });
-  } catch (err) {
-    console.warn("Warning: Could not create separate MongoDB connection:", err.message);
-  }
-}
+// Reuse the default connection to avoid spawning a second connection pool
+const mongo_connection = mongoose.connection;
 
 module.exports = {
   connectDB,

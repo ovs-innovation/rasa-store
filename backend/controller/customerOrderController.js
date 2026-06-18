@@ -25,7 +25,7 @@ const { newOrderAdminEmailBody } = require("../lib/email-sender/templates/order-
 const { sendSMS } = require("../lib/sms-sender/sender");
 const { populateCartTaxFields } = require("../utils/cartTaxUtils");
 
-const PLACEHOLDER_EMAIL_DOMAIN = "phone.farmacykart.com";
+const PLACEHOLDER_EMAIL_DOMAIN = "phone.rasastore.com";
 const isPlaceholderEmail = (email) =>
   !!email && String(email).toLowerCase().endsWith(`@${PLACEHOLDER_EMAIL_DOMAIN}`);
 const getRealEmail = (email) => {
@@ -49,15 +49,15 @@ const getEmailLogoUrl = async () => {
   } catch (_) {}
 
   if (process.env.STORE_LOGO_URL) return process.env.STORE_LOGO_URL;
-  const base = (process.env.STORE_URL || "https://farmacykart.com").replace(/\/$/, "");
+  const base = (process.env.STORE_URL || "https://rasastore.com").replace(/\/$/, "");
   return `${base}/favicon.png`;
 };
 
 const sendOrderNotifications = async (order) => {
   try {
     const globalSetting = await Setting.findOne({ name: "globalSetting" });
-    const shopName = globalSetting?.setting?.shop_name || "Farmacykart";
-    const contactEmail = globalSetting?.setting?.email || "support@farmacykart.com";
+    const shopName = globalSetting?.setting?.shop_name || "RASA";
+    const contactEmail = globalSetting?.setting?.email || "support@rasastore.com";
     const currency = order.company_info?.currency || "₹";
     const logo = await getEmailLogoUrl();
     const customerEmail = getRealEmail(order.user_info?.email);
@@ -81,7 +81,7 @@ const sendOrderNotifications = async (order) => {
       const emailBody = {
         to: customerEmail,
         replyTo: contactEmail,
-        subject: `Farmacykart – Order #${order.invoice} confirmed`,
+        subject: `${shopName} – Order #${order.invoice} confirmed`,
         html: orderConfirmationBody(emailOption),
         emailType: "order-confirmation",
       };
@@ -131,7 +131,7 @@ const sendOrderNotifications = async (order) => {
         await sendEmail({
           to: customerEmail,
           replyTo: contactEmail,
-          subject: `Farmacykart – Invoice #${order.invoice}`,
+          subject: `${shopName} – Invoice #${order.invoice}`,
           html: customerInvoiceEmailBody(option),
           attachments: [
             {
@@ -592,6 +592,7 @@ const sendEmailInvoiceToCustomer = async (req, res) => {
     // console.log("sendEmailInvoiceToCustomer");
     const pdf = await handleCreateInvoice(req.body, `${req.body.invoice}.pdf`);
     const globalSetting = await Setting.findOne({ name: "globalSetting" });
+    const shopName = globalSetting?.setting?.shop_name || "RASA";
 
     const option = {
       date: req.body.date,
@@ -611,8 +612,8 @@ const sendEmailInvoiceToCustomer = async (req, res) => {
       vat_number: req.body?.company_info?.vat_number,
       name: user?.name,
       email: user?.email,
-      contact_email: globalSetting?.setting?.email || "support@Farmacykart.com",
-      shop_name: globalSetting?.setting?.shop_name || "Farmacykart",
+      contact_email: globalSetting?.setting?.email || "support@rasastore.com",
+      shop_name: globalSetting?.setting?.shop_name || "RASA",
       phone: user?.phone,
       address: user?.address,
       cart: req.body.cart,
@@ -621,7 +622,7 @@ const sendEmailInvoiceToCustomer = async (req, res) => {
     const body = {
       to: user.email,
       replyTo: globalSetting?.setting?.email || req.body.company_info?.email,
-      subject: `Farmacykart – Invoice #${req.body.invoice}`,
+      subject: `${shopName} – Invoice #${req.body.invoice}`,
       html: customerInvoiceEmailBody(option),
       attachments: [
         {

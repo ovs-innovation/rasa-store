@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import React, { useEffect, useState, useContext } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 //internal import
@@ -7,15 +7,12 @@ import OrderTable from "@components/order/OrderTable";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import useGetSetting from "@hooks/useGetSetting";
 import { pickBrandLogo } from "@utils/brandAssets";
-import { UserContext } from "@context/UserContext";
 
 const Invoice = ({ data, printRef, globalSetting, currency }) => {
   // console.log('invoice data',data)
 
   const { getNumberTwo } = useUtilsFunction();
   const { storeCustomizationSetting } = useGetSetting();
-  const { state } = useContext(UserContext) || {};
-  const isWholesaler = state?.userInfo?.role && state.userInfo.role.toString().toLowerCase() === "wholesaler";
   const storeColor = storeCustomizationSetting?.theme?.color || "green";
   // Aggregate values for summary box - match checkout page exactly
   const mrpTotal =
@@ -89,7 +86,7 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
               <div className="flex-1 min-w-[0] items-start">
                 
                 <p className="text-semibold md:text-base font-semibold text-gray-900">
-                  {globalSetting?.company_name || "AQOSU FARMACYKART PRIVATE LIMITED"}
+                  {globalSetting?.company_name || "AQOSU Rasa Store PRIVATE LIMITED"}
                 </p>
                 <p className=" text-sm text-gray-600 leading-snug">
                   {globalSetting?.address ||
@@ -99,7 +96,7 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
                <div  className="flex gap-x-3">
                   <div className="flex gap-x-2 text-sm text-gray-600 leading-snug mt-0.5">
                     <div className="font-semibold">Email:</div>
-                    <div>{globalSetting?.email || "farmacykart@gmail.com"}</div>
+                    <div>{globalSetting?.email || "Rasa Store@gmail.com"}</div>
                   </div>
 
                   <div className="flex gap-x-2 text-sm text-gray-600 leading-snug mt-0.5">
@@ -259,17 +256,11 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
                 <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-20">
                   HSN
                 </th>
-                  <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-24">
-                    Batch
-                  </th>
-                  <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-24">
-                    Expiry
-                  </th>
                   <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-16">
                     Qty
                   </th>
                   <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-24">
-                    {isWholesaler ? "Price" : "MRP"}
+                    MRP
                   </th>
                   <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-24">
                     Discount
@@ -345,10 +336,9 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
                 <div className="mt-3">
                   
                   <p className="leading-relaxed">
-                    This invoice is issued by a registered pharmacist. Medicines once
-                    dispensed will not be taken back or exchanged unless required by
-                    law. Please verify the medicine name, batch, expiry date and
-                    quantity before leaving the counter.
+                    This invoice is issued by RASA Store. Products once sold will not be
+                    taken back or exchanged unless required by law. Please verify the
+                    product name, size, and quantity before accepting delivery.
                   </p>
                 </div> */}
 
@@ -359,10 +349,10 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
             <div className="w-full md:w-64 flex flex-col items-start md:items-start text-xs md:text-sm space-y-0.5">
               <div className="w-24 md:ml-auto" />
               <p className="font-semibold text-gray-700 leading-snug">
-                {globalSetting?.pharmacist_name || "Registered Pharmacist"}
+                {globalSetting?.authorized_signatory || "RASA Store"}
               </p>
               <p className="text-[11px] text-gray-500 leading-snug">
-                {globalSetting?.company_name || "Farmacykart"}
+                {globalSetting?.company_name || "Rasa Store"}
               </p>
               {globalSetting?.website && (
                 <p className="text-[11px] text-store-600 leading-snug">
@@ -379,17 +369,17 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
                 <div className="invoice-amount-summary md:w-[580px] lg:w-[720px] w-full ">
           <div className="bg-white border border-gray-200 rounded-md text-xs md:text-sm text-gray-800 divide-y divide-gray-100">
             <div className="flex items-center justify-between px-3 py-1.5">
-              <span>{isWholesaler ? "Total Price" : "MRP Total"}</span>
+              <span>MRP Total</span>
               <span className="font-DejaVu">
                 {currency}
-                {getNumberTwo(isWholesaler ? (data?.cart?.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0) || 0) : mrpTotal)}
+                {getNumberTwo(mrpTotal)}
               </span>
             </div>
             <div className="flex items-center justify-between px-3 py-1.5">
               <span>Total Discount</span>
               <span className="font-DejaVu text-green-600">
                 -{currency}
-                {getNumberTwo(isWholesaler ? 0 : totalDiscount)}
+                {getNumberTwo(totalDiscount)}
               </span>
             </div>
             {data?.coupon?.couponCode && (

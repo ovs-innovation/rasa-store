@@ -1,4 +1,4 @@
-const customerController = require("d:/farmcy_kart/backend/controller/customerController");
+const customerController = require("../backend/controller/customerController");
 console.log("updateCustomer:", typeof customerController.updateCustomer);
 console.log("updateFcmToken:", typeof customerController.updateFcmToken);
 console.log("getCart:", typeof customerController.getCart);

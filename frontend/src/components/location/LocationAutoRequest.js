@@ -83,7 +83,7 @@ const LocationAutoRequest = () => {
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
               {
                 headers: {
-                  'User-Agent': 'Farmacykart-App'
+                  'User-Agent': 'Rasa Store-App'
                 }
               }
             );

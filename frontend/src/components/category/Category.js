@@ -84,22 +84,23 @@ const Category = () => {
   ];
 
   return (
-    <div className="flex flex-col w-full h-full bg-white cursor-pointer scrollbar-hide">
+    <div className="flex flex-col w-full h-full bg-[#050505] text-white cursor-pointer scrollbar-hide border-r border-neutral-900/40">
       {categoryDrawerOpen && (
-        <div className="w-full flex justify-between items-center h-16 px-6 py-4 bg-white text-white border-b border-gray-100">
-          <h2 className="font-semibold font-serif text-lg m-0 text-heading flex align-center">
-            <Link href="/" className="mr-10">
+        <div className="w-full flex justify-between items-center h-16 px-6 py-4 bg-[#050505] border-b border-neutral-900/60">
+          <h2 className="font-semibold text-lg m-0 flex items-center">
+            <Link href="/" className="flex items-center">
               <Image
-                width={100}
-                height={38}
-                src="/logo/logo.png"
+                width={56}
+                height={56}
+                src="/rasaLogo.png"
                 alt="logo"
+                className="object-contain"
               />
             </Link>
           </h2>
           <button
             onClick={closeCategoryDrawer}
-            className="flex text-xl items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-red-500 p-2 focus:outline-none transition-opacity hover:text-red-600"
+            className="flex text-xl items-center justify-center w-8 h-8 rounded-full bg-neutral-900 text-neutral-400 hover:text-[#D4AF37] p-2 focus:outline-none transition-all duration-200"
             aria-label="close"
           >
             <IoClose />
@@ -108,23 +109,23 @@ const Category = () => {
       )}
       <div className="w-full max-h-full overflow-y-auto">
         {/* Tabs */}
-        <div className="flex border-b border-gray-100">
+        <div className="flex border-b border-neutral-900 bg-[#0A0A0A]">
           <button
             onClick={() => setActiveTab("category")}
-            className={`flex-1 py-4 text-center font-serif font-semibold text-sm transition-colors duration-300 ${
+            className={`flex-1 py-4 text-center font-bold text-xs uppercase tracking-widest transition-colors duration-300 ${
               activeTab === "category"
-                ? `text-store-600 border-b-2 border-store-600`
-                : "text-gray-500 hover:text-gray-700"
+                ? `text-[#D4AF37] border-b-2 border-[#D4AF37]`
+                : "text-neutral-500 hover:text-neutral-300"
             }`}
           >
             Category
           </button>
           <button
             onClick={() => setActiveTab("pages")}
-            className={`flex-1 py-4 text-center font-serif font-semibold text-sm transition-colors duration-300 ${
+            className={`flex-1 py-4 text-center font-bold text-xs uppercase tracking-widest transition-colors duration-300 ${
               activeTab === "pages"
-                ? `text-store-600 border-b-2 border-store-600`
-                : "text-gray-500 hover:text-gray-700"
+                ? `text-[#D4AF37] border-b-2 border-[#D4AF37]`
+                : "text-neutral-500 hover:text-neutral-300"
             }`}
           >
             Pages
@@ -139,7 +140,7 @@ const Category = () => {
                   <Link
                     href={item.href}
                     onClick={closeCategoryDrawer}
-                    className={`flex items-center rounded-md px-2 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-store-600`}
+                    className="flex items-center rounded-md px-2 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-300 hover:bg-neutral-900 hover:text-[#D4AF37] transition-all duration-150"
                   >
                     <item.icon className="flex-shrink-0 h-4 w-4 mr-3" />
                     <span>{item.title}</span>
@@ -162,11 +163,11 @@ const Category = () => {
                   <div key={mainCategory._id}>
                     {/* Main Categories - Direct display without parent */}
                     {mainCategory?.children?.length > 0 && (
-                      <div className="border-b border-gray-100 last:border-b-0">
+                      <div className="border-b border-neutral-900/60 last:border-b-0">
                         {mainCategory.children.map((subcategory1) => (
                           <div key={subcategory1._id}>
                             <div 
-                              className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50 hover:text-store-500 transition-colors cursor-pointer"
+                              className="flex items-center gap-3 px-3 py-3 text-xs font-black uppercase tracking-widest text-neutral-200 hover:bg-neutral-900 hover:text-[#D4AF37] border-b border-neutral-900/30 transition-colors cursor-pointer"
                               onClick={() => toggleCategoryExpansion(subcategory1._id)}
                             >
                               {subcategory1?.icon ? (
@@ -180,7 +181,7 @@ const Category = () => {
                               ) : (
                                 <div className="w-5 h-5 flex-shrink-0"></div>
                               )}
-                              <span className="uppercase">
+                              <span>
                                 {showingTranslateValue(subcategory1?.name)}
                               </span>
                               {subcategory1?.children?.length > 0 && (
@@ -196,7 +197,7 @@ const Category = () => {
                             
                             {/* Subcategories Level 2 - Collapsible */}
                             {subcategory1?.children?.length > 0 && expandedCategories[subcategory1._id] && (
-                              <div className="bg-gray-50">
+                              <div className="bg-[#0A0A0A] rounded-md overflow-hidden my-1">
                                 {subcategory1.children.map((subcategory2) => (
                                   <div
                                     key={subcategory2._id}
@@ -207,7 +208,7 @@ const Category = () => {
                                       router.push(`/search?category=${name}&_id=${subcategory2._id}`);
                                       closeCategoryDrawer();
                                     }}
-                                    className="flex items-center gap-3 px-6 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-store-500 transition-colors cursor-pointer"
+                                    className="flex items-center gap-3 px-6 py-2.5 text-xs text-neutral-400 hover:bg-neutral-900/60 hover:text-[#D4AF37] transition-colors cursor-pointer border-b border-neutral-900/20 last:border-b-0"
                                   >
                                     {subcategory2?.icon ? (
                                       <Image

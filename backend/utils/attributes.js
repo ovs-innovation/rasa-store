@@ -13,51 +13,51 @@ const attributes = [
     variants: [
       {
         status: "show",
-        _id: "63f078f54b86ed26b05281b3",
-        name: {
-          en: "Red",
-        },
-        hexColor: "#FF0000",
+        _id: "rasa-color-black",
+        name: { en: "Black" },
+        hexColor: "#000000",
       },
       {
         status: "show",
-        _id: "63f078f54b86ed26b05281b4",
-        name: {
-          en: "Green",
-        },
-        hexColor: "#00FF00",
+        _id: "rasa-color-white",
+        name: { en: "White" },
+        hexColor: "#FFFFFF",
       },
       {
         status: "show",
-        _id: "63f078f54b86ed26b05281b5",
-        name: {
-          en: "Blue",
-        },
-        hexColor: "#0000FF",
+        _id: "rasa-color-blue",
+        name: { en: "Blue" },
+        hexColor: "#2563EB",
       },
       {
         status: "show",
-        _id: "63f078f54b86ed26b05281b6",
-        name: {
-          en: "Yellow",
-        },
-        hexColor: "#FFFF00",
+        _id: "rasa-color-red",
+        name: { en: "Red" },
+        hexColor: "#DC2626",
       },
       {
         status: "show",
-        _id: "63f078f54b86ed26b05281b7",
-        name: {
-          en: "Purple",
-        },
-        hexColor: "#800080",
+        _id: "rasa-color-green",
+        name: { en: "Green" },
+        hexColor: "#16A34A",
       },
       {
         status: "show",
-        _id: "63f078f54b86ed26b05281b8",
-        name: {
-          en: "Orange",
-        },
-        hexColor: "#FFA500",
+        _id: "rasa-color-brown",
+        name: { en: "Brown" },
+        hexColor: "#92400E",
+      },
+      {
+        status: "show",
+        _id: "rasa-color-pink",
+        name: { en: "Pink" },
+        hexColor: "#EC4899",
+      },
+      {
+        status: "show",
+        _id: "rasa-color-grey",
+        name: { en: "Grey" },
+        hexColor: "#6B7280",
       },
     ],
     option: "Dropdown",
@@ -74,27 +74,14 @@ const attributes = [
       en: "Size",
     },
     variants: [
-      {
-        status: "show",
-        _id: "63f078f54b86ed26b05281b7",
-        name: {
-          en: "Small",
-        },
-      },
-      {
-        status: "show",
-        _id: "63f078f54b86ed26b05281b8",
-        name: {
-          en: "Medium",
-        },
-      },
-      {
-        status: "show",
-        _id: "63f078f54b86ed26b05281b9",
-        name: {
-          en: "Large",
-        },
-      },
+      { status: "show", _id: "rasa-size-uk3", name: { en: "UK 3" } },
+      { status: "show", _id: "rasa-size-uk4", name: { en: "UK 4" } },
+      { status: "show", _id: "rasa-size-uk5", name: { en: "UK 5" } },
+      { status: "show", _id: "rasa-size-uk6", name: { en: "UK 6" } },
+      { status: "show", _id: "rasa-size-uk7", name: { en: "UK 7" } },
+      { status: "show", _id: "rasa-size-uk8", name: { en: "UK 8" } },
+      { status: "show", _id: "rasa-size-uk9", name: { en: "UK 9" } },
+      { status: "show", _id: "rasa-size-uk10", name: { en: "UK 10" } },
     ],
     option: "Radio",
   },

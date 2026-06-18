@@ -16,7 +16,6 @@ import Loading from "@components/preloader/Loading";
 import ProductServices from "@services/ProductServices";
 import ProductCard from "@components/product/ProductCard";
 import { SidebarContext } from "@context/SidebarContext";
-import { UserContext } from "@context/UserContext";
 import AttributeServices from "@services/AttributeServices";
 import CategoryServices from "@services/CategoryServices";
 import CategoryCarousel from "@components/carousel/CategoryCarousel";
@@ -79,10 +78,6 @@ const Search = ({ products, attributes }) => {
     setVisibleProduct(18);
   }, [sortedField, selectedBrands, selectedCategories, router.query]);
 
-  const { state } = useContext(UserContext) || {};
-  const isWholesaler = state?.userInfo?.role && state.userInfo.role.toString().toLowerCase() === "wholesaler";
-  const filteredProductData = isWholesaler ? (productData || []).filter(p => (p.wholePrice && Number(p.wholePrice) > 0) || p.isWholesaler) : productData;
-
   // Sync sort state from URL when route is ready or query changes
   useEffect(() => {
     if (!router.isReady) return;
@@ -131,38 +126,18 @@ const Search = ({ products, attributes }) => {
     const fetchByQuery = async () => {
       setIsLoading(true);
       try {
-        const id = router.query._id;
-        const categorySlug = router.query.category;
         const q = router.query.query;
         const brand = router.query.brand;
 
+        // Fetch products without category constraint so client-side filters work on all items
         const response = await ProductServices.getShowingStoreProducts({
-          category: id ? id : categorySlug ? categorySlug : "", 
+          category: "", 
           title: q ? encodeURIComponent(q) : "",
           brand: brand ? brand : "",
         });
 
         if (response?.products) {
           setInitialProducts(response.products);
-          
-          // Sync selection with URL if not a sidebar action
-          if (id && !isSidebarAction.current) {
-            const findAndSelect = (cats, targetId) => {
-              for (const c of cats) {
-                if (c._id === targetId) {
-                  const ids = (c.children && c.children.length > 0) ? [c._id, ...c.children.map(child => child._id)] : [c._id];
-                  setSelectedCategories(ids);
-                  return true;
-                }
-                if (c.children && findAndSelect(c.children, targetId)) return true;
-              }
-              return false;
-            };
-            
-            if (!findAndSelect(categories, id)) {
-              setSelectedCategories([id]);
-            }
-          }
         }
       } catch (err) {
         console.error("Error fetching products:", err);
@@ -173,13 +148,22 @@ const Search = ({ products, attributes }) => {
     };
 
     if (router.isReady) {
-      // Clear selection ONLY if there is NO category in URL AND it's not a sidebar action
-      if (!router.query._id && !isSidebarAction.current) {
-        setSelectedCategories([]);
+      // Initialize selectedCategories from URL on first load or URL changes (when not triggered by sidebar checkbox itself)
+      if (!isSidebarAction.current) {
+        const catSlug = router.query.category;
+        const id = router.query._id;
+        
+        if (catSlug) {
+          setSelectedCategories([catSlug]);
+        } else if (id) {
+          setSelectedCategories([id]);
+        } else {
+          setSelectedCategories([]);
+        }
       }
       fetchByQuery();
     }
-  }, [router.isReady, router.query._id, router.query.category, router.query.query, router.query.brand, categories]);
+  }, [router.isReady, router.query._id, router.query.category, router.query.query, router.query.brand]);
 
   // Clear search query and URL filters when sidebar filters are applied
   const clearSearchQuery = () => {
@@ -324,6 +308,178 @@ const Search = ({ products, attributes }) => {
 
   return (
     <Layout title="Search" description="This is search page" hideMobileHeader={true}>
+      <style jsx global>{`
+        /* Search page layout dark theme */
+        body {
+          background-color: #050505 !important;
+          color: #ffffff !important;
+        }
+        
+        /* Mobile Header */
+        .lg\:hidden.sticky.top-0 {
+          background-color: #050505 !important;
+          border-bottom: 1px solid #141414 !important;
+        }
+        .lg\:hidden.sticky.top-0 form {
+          background-color: #0a0a0a !important;
+          border-color: #1a1a1a !important;
+        }
+        .lg\:hidden.sticky.top-0 input {
+          background-color: #0a0a0a !important;
+          color: #ffffff !important;
+        }
+        .lg\:hidden.sticky.top-0 button,
+        .lg\:hidden.sticky.top-0 h1 {
+          color: #ffffff !important;
+        }
+
+        /* Mobile Sort/Filter Bar */
+        .lg\:hidden.sticky.top-\[57px\] {
+          background-color: #050505 !important;
+          border-bottom: 1px solid #141414 !important;
+          divide-color: #141414 !important;
+        }
+        .lg\:hidden.sticky.top-\[57px\] button {
+          color: #a3a3a3 !important;
+        }
+        .lg\:hidden.sticky.top-\[57px\] button:hover {
+          color: #ffffff !important;
+        }
+
+        /* Desktop Filter Sidebar */
+        .hidden.lg\:block.w-1\/5 {
+          background-color: #0a0a0a !important;
+          border: 1px solid #141414 !important;
+          border-radius: 1rem !important;
+          padding: 20px !important;
+        }
+        .hidden.lg\:block.w-1\/5 h4,
+        .hidden.lg\:block.w-1\/5 h3,
+        .hidden.lg\:block.w-1\/5 h5 {
+          color: #ffffff !important;
+          font-weight: 800 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.05em !important;
+        }
+        .hidden.lg\:block.w-1\/5 span,
+        .hidden.lg\:block.w-1\/5 label,
+        .hidden.lg\:block.w-1\/5 p {
+          color: #a3a3a3 !important;
+        }
+        .hidden.lg\:block.w-1\/5 input[type="checkbox"] {
+          background-color: #050505 !important;
+          border-color: #262626 !important;
+        }
+        .hidden.lg\:block.w-1\/5 input[type="checkbox"]:checked {
+          background-color: #d4af37 !important;
+          border-color: #d4af37 !important;
+        }
+
+        /* Sort Header Bar */
+        .bg-orange-100 {
+          background-color: #0a0a0a !important;
+          border-color: #141414 !important;
+          color: #ffffff !important;
+        }
+        .bg-orange-100 h6 {
+          color: #ffffff !important;
+        }
+        .bg-orange-100 select {
+          background-color: #050505 !important;
+          border: 1px solid #1a1a1a !important;
+          color: #ffffff !important;
+        }
+        .bg-orange-100 select:focus {
+          border-color: #d4af37 !important;
+          outline: none !important;
+        }
+
+        /* Load More Button */
+        button.bg-indigo-100 {
+          background-color: #0f0f0f !important;
+          border: 1px solid #1f1f1f !important;
+          color: #d4d4d4 !important;
+          font-weight: 700 !important;
+          transition: all 0.2s !important;
+        }
+        button.bg-indigo-100:hover {
+          background-color: #d4af37 !important;
+          color: #000000 !important;
+          border-color: #d4af37 !important;
+        }
+
+        /* Mobile Sort Modal */
+        .bg-white.w-full.rounded-t-2xl {
+          background-color: #0a0a0a !important;
+          border-top: 1px solid #141414 !important;
+        }
+        .bg-white.w-full.rounded-t-2xl h3 {
+          color: #ffffff !important;
+        }
+        .bg-white.w-full.rounded-t-2xl button[class*="text-gray-700"] {
+          color: #a3a3a3 !important;
+        }
+        .bg-white.w-full.rounded-t-2xl button[class*="text-gray-700"]:hover {
+          color: #ffffff !important;
+        }
+        .bg-white.w-full.rounded-t-2xl div.space-y-4 button {
+          background-color: #0f0f0f !important;
+          color: #d4d4d4 !important;
+          border: 1px solid #1f1f1f !important;
+          transition: all 0.2s !important;
+        }
+        .bg-white.w-full.rounded-t-2xl div.space-y-4 button:hover {
+          color: #d4af37 !important;
+          border-color: #d4af37 !important;
+        }
+        .bg-white.w-full.rounded-t-2xl div.space-y-4 button[class*="bg-store-100"] {
+          background-color: #d4af3715 !important;
+          color: #d4af37 !important;
+          border-color: #d4af3750 !important;
+        }
+
+        /* Filter Drawer for Mobile */
+        .rc-drawer-content {
+          background-color: #050505 !important;
+          color: #ffffff !important;
+        }
+        .rc-drawer-header {
+          background-color: #050505 !important;
+          border-bottom: 1px solid #141414 !important;
+          color: #ffffff !important;
+        }
+        .rc-drawer-title {
+          color: #ffffff !important;
+        }
+        .rc-drawer-body {
+          background-color: #050505 !important;
+        }
+        .rc-drawer-body h4,
+        .rc-drawer-body h3,
+        .rc-drawer-body h5 {
+          color: #ffffff !important;
+        }
+        .rc-drawer-body span,
+        .rc-drawer-body label {
+          color: #a3a3a3 !important;
+        }
+        .rc-drawer-body button.bg-store-600 {
+          background-color: #d4af37 !important;
+          color: #000000 !important;
+        }
+        .rc-drawer-body button.bg-store-600:hover {
+          background-color: #c29e2e !important;
+        }
+        .rc-drawer-body button.bg-gray-100 {
+          background-color: #141414 !important;
+          color: #ffffff !important;
+        }
+
+        /* Empty / No Result Text */
+        .mx-auto.p-5.my-5 h2 {
+          color: #a3a3a3 !important;
+        }
+      `}</style>
       {/* Mobile Header */}
       <div className="lg:hidden sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3">
         {isSearchOpen ? (
@@ -349,7 +505,7 @@ const Search = ({ products, attributes }) => {
                 type="text"
                 value={searchText}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Search for medicine or store..."
+                placeholder="Search sneakers, bags, brands..."
                 className="w-full py-2.5 pl-4 pr-12 rounded-full bg-white focus:outline-none outline-none focus:ring-0 focus:border-transparent focus:shadow-none text-gray-700 text-sm"
                 onFocus={() => searchText.length > 0 && setShowSuggestions(true)}
                 onBlur={(e) => {
@@ -434,17 +590,17 @@ const Search = ({ products, attributes }) => {
       </div>
 
       {/* Mobile Sort/Filter Bar */}
-      <div className="lg:hidden sticky top-[57px] z-40 bg-white border-b border-gray-100 flex divide-x divide-gray-100">
+      <div className="lg:hidden sticky top-[57px] z-40 bg-[#0D0D0D] border-b border-neutral-850 flex divide-x divide-neutral-850">
         <button
           onClick={() => setIsSortModalOpen(true)}
-          className="flex-1 py-3 flex items-center justify-center gap-2 text-sm font-medium text-gray-700"
+          className="flex-1 py-3 flex items-center justify-center gap-2 text-sm font-semibold text-white hover:text-[#D4AF37] transition-colors"
         >
           <FiList size={18} />
           Sort
         </button>
         <button
           onClick={toggleFilterDrawer}
-          className="flex-1 py-3 flex items-center justify-center gap-2 text-sm font-medium text-gray-700"
+          className="flex-1 py-3 flex items-center justify-center gap-2 text-sm font-semibold text-white hover:text-[#D4AF37] transition-colors"
         >
           <FiFilter size={18} />
           Filter
@@ -478,7 +634,7 @@ const Search = ({ products, attributes }) => {
               {/* <div className="relative block">
                 <CategoryCarousel />
               </div> */}
-              {filteredProductData?.length === 0 ? (
+              {productData?.length === 0 ? (
                 <div className="mx-auto p-5 my-5">
                   <Image
                     className="my-4 mx-auto"
@@ -492,34 +648,34 @@ const Search = ({ products, attributes }) => {
                   </h2>
                 </div>
               ) : (
-                <div className="hidden lg:flex justify-between my-3 bg-orange-100 border border-gray-100 rounded p-3">
-                  <h6 className="text-sm font-serif">
+                <div className="hidden lg:flex justify-between items-center my-3 bg-[#0D0D0D] border border-neutral-800 rounded-xl p-4 mb-6">
+                  <h6 className="text-sm font-sans text-white font-semibold">
                     {t("totalI")}{" "}
-                    <span className="font-bold">{filteredProductData?.length}</span>{" "}
+                    <span className="font-bold text-[#D4AF37]">{productData?.length}</span>{" "}
                     {t("itemsFound")}
                   </h6>
-                  <span className="text-sm font-serif">
+                  <span className="text-sm font-sans">
                     <select
                       onChange={(e) => handleSortChange(e.target.value)}
                       value={sortedField}
-                      className="py-0 text-sm font-serif font-medium block w-full rounded border-0 bg-white pr-10 cursor-pointer focus:ring-0"
+                      className="py-2 text-xs font-sans font-bold block w-full rounded-lg border border-neutral-800 bg-neutral-950 text-white pr-10 cursor-pointer focus:ring-[#D4AF37] focus:border-[#D4AF37] focus:outline-none"
                     >
-                      <option className="px-3" value="All" defaultValue hidden>
+                      <option className="px-3 bg-neutral-950 text-white" value="All" defaultValue hidden>
                         {t("sortByPrice")}
                       </option>
-                      <option className="px-3" value="Low">
+                      <option className="px-3 bg-neutral-950 text-white" value="Low">
                         {t("lowToHigh")}
                       </option>
-                      <option className="px-3" value="High">
+                      <option className="px-3 bg-neutral-950 text-white" value="High">
                         {t("highToLow")}
                       </option>
-                      <option className="px-3" value="newest">
+                      <option className="px-3 bg-neutral-950 text-white" value="newest">
                         Latest
                       </option>
-                      <option className="px-3" value="best-selling">
+                      <option className="px-3 bg-neutral-950 text-white" value="best-selling">
                         Best Selling
                       </option>
-                      <option className="px-3" value="most-discounted">
+                      <option className="px-3 bg-neutral-950 text-white" value="most-discounted">
                         Most Discounted
                       </option>
                     </select>
@@ -532,7 +688,7 @@ const Search = ({ products, attributes }) => {
               ) : (
                 <>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-5 gap-2 md:gap-3 lg:gap-3">
-                    {filteredProductData?.slice(0, visibleProduct).map((product, i) => (
+                    {productData?.slice(0, visibleProduct).map((product, i) => (
                       <ProductCard
                         key={i + 1}
                         product={product}
@@ -541,7 +697,7 @@ const Search = ({ products, attributes }) => {
                     ))}
                   </div>
 
-                  {filteredProductData?.length > visibleProduct && (
+                  {productData?.length > visibleProduct && (
                     <button
                       onClick={() => setVisibleProduct((pre) => pre + 10)}
                       className={`w-auto mx-auto md:text-sm leading-5 flex items-center transition ease-in-out duration-300 font-medium text-center justify-center border-0 border-transparent rounded-md focus-visible:outline-none focus:outline-none bg-indigo-100 text-gray-700 px-5 md:px-6 lg:px-8 py-2 md:py-3 lg:py-3 hover:text-white hover:bg-store-600 h-12 mt-6 text-sm lg:text-sm`}
@@ -659,11 +815,11 @@ const Search = ({ products, attributes }) => {
 export default Search;
 
 export const getServerSideProps = async (context) => {
-  const { query, _id, brand, category } = context.query;
+  const { query, brand } = context.query;
 
   const [dataResult, attributesResult] = await Promise.allSettled([
     ProductServices.getShowingStoreProducts({
-      category: _id ? _id : category ? category : "",
+      category: "", // Fetch all products to support full client-side category filtering
       title: query ? encodeURIComponent(query) : "",
       brand: brand ? brand : "",
     }),

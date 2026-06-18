@@ -3,118 +3,140 @@ import Image from "next/image";
 import Link from "next/link";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import useGetSetting from "@hooks/useGetSetting";
-import { getPalette } from "@utils/themeColors";
 
 const TrustedBrandsSection = ({ brands = [] }) => {
   const { showingTranslateValue, showingImage } = useUtilsFunction();
   const { storeCustomizationSetting } = useGetSetting();
-  const storeColor = storeCustomizationSetting?.theme?.color || "green";
-  const palette = getPalette(storeColor);
 
   // Filter brands that have logos
   const brandsWithLogos = brands.filter(brand => brand?.logo && brand.logo.trim() !== '');
 
-  if (!brandsWithLogos.length) return null;
+  const fallbackBrands = [
+    { _id: "fb_brand1", name: "ESSENTIALS" },
+    { _id: "fb_brand2", name: "VETEMENTS" },
+    { _id: "fb_brand3", name: "OFF-WHITE" },
+    { _id: "fb_brand4", name: "BALENCIAGA" },
+    { _id: "fb_brand5", name: "HELMUT LANG" },
+    { _id: "fb_brand6", name: "VALENTINO" },
+  ];
+
+  const hasBrands = brandsWithLogos.length > 0;
 
   return (
-    <div className="bg-white ">
-      <div className="w-full px-4 sm:px-6 lg:px-10">
-        <div className=" ">
-          {/* Left Side - Title and Description */}
-          <div className="order-1 lg:order-1">
-            <h2 className="text-2xl md:text-3xl lg:text-3xl font-bold text-gray-900 mt-10 mb-4">
-              {storeCustomizationSetting?.home?.brand_title || "Top Brands You Can Trust"}
-            </h2>
-           
-          
-          </div>
+    <div className="bg-[#050505] border-t border-b border-neutral-900 py-16 overflow-hidden">
+      <div className="w-full">
+        {/* Header Title */}
+        <div className="text-center mb-12">
+          <span className="text-[10px] font-black text-[#D4AF37] uppercase tracking-widest px-4 py-1.5 bg-[#0F0F0F] border border-neutral-800 rounded-full">
+            Collaborators
+          </span>
+          <h2 className="text-xs font-black uppercase tracking-widest text-neutral-500 mt-6">
+            {storeCustomizationSetting?.home?.brand_title || "CURATED BRANDS & COLLABORATORS"}
+          </h2>
+        </div>
 
-          {/* Right Side - Full-width horizontal marquee */}
-          <div className="  w-full">
-            <div className="relative overflow-hidden w-full">
-              <div className="flex gap-6 items-center marquee-track"  >
-                {/* First set of brands */}
+        {/* Marquee Container */}
+        <div className="relative w-full flex items-center">
+          {/* Fading side gradients */}
+          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[#050505] to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-[#050505] to-transparent z-10 pointer-events-none" />
+
+          <div className="flex marquee-track">
+            {hasBrands ? (
+              /* Database Brands list */
+              <>
+                {/* First loop */}
                 {brandsWithLogos.map((brand) => {
                   const logoUrl = showingImage(brand.logo) || "https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png";
                   return (
                     <Link
                       key={`brand-marquee-1-${brand._id}`}
                       href={`/search?brand=${brand._id}`}
-                      className="flex-shrink-0 group"
+                      className="flex-shrink-0 group mx-6"
                     >
-                      <div className="bg-white rounded-xl p-3 md:p-4 shadow-sm hover:shadow-md transition-all duration-300 w-20 h-20 md:w-28 md:h-28 flex items-center justify-center border border-gray-100 relative overflow-hidden">
-                        <Image
-                          src={logoUrl}
-                          alt={showingTranslateValue(brand.name) || "Brand"}
-                          fill
-                          sizes="(max-width: 768px) 80px, 112px"
-                          className="object-contain p-2 group-hover:scale-110 transition-transform duration-300"
-                          unoptimized
-                        />
+                      <div className="bg-[#0F0F0F] rounded-none p-4 w-28 h-20 md:w-36 md:h-24 flex items-center justify-center border border-neutral-800 hover:border-[#D4AF37]/50 transition-all duration-300 relative overflow-hidden">
+                        <div className="relative w-full h-full opacity-50 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500">
+                          <Image
+                            src={logoUrl}
+                            alt={showingTranslateValue(brand.name) || "Brand"}
+                            fill
+                            sizes="(max-width: 768px) 100px, 140px"
+                            className="object-contain p-1 group-hover:scale-105 transition-transform duration-500"
+                            unoptimized
+                          />
+                        </div>
                       </div>
                     </Link>
                   );
                 })}
-                {/* Duplicate set for seamless looping */}
+                {/* Second loop */}
                 {brandsWithLogos.map((brand) => {
                   const logoUrl = showingImage(brand.logo) || "https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png";
                   return (
                     <Link
                       key={`brand-marquee-2-${brand._id}`}
                       href={`/search?brand=${brand._id}`}
-                      className="flex-shrink-0 group"
+                      className="flex-shrink-0 group mx-6"
                     >
-                      <div className="bg-white rounded-xl p-3 md:p-4 shadow-sm hover:shadow-md transition-all duration-300 w-20 h-20 md:w-28 md:h-28 flex items-center justify-center border border-gray-100 relative overflow-hidden">
-                        <Image
-                          src={logoUrl}
-                          alt={showingTranslateValue(brand.name) || "Brand"}
-                          fill
-                          sizes="(max-width: 768px) 80px, 112px"
-                          className="object-contain p-2 group-hover:scale-110 transition-transform duration-300"
-                          unoptimized
-                        />
+                      <div className="bg-[#0F0F0F] rounded-none p-4 w-28 h-20 md:w-36 md:h-24 flex items-center justify-center border border-neutral-800 hover:border-[#D4AF37]/50 transition-all duration-300 relative overflow-hidden">
+                        <div className="relative w-full h-full opacity-50 grayscale group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500">
+                          <Image
+                            src={logoUrl}
+                            alt={showingTranslateValue(brand.name) || "Brand"}
+                            fill
+                            sizes="(max-width: 768px) 100px, 140px"
+                            className="object-contain p-1 group-hover:scale-105 transition-transform duration-500"
+                            unoptimized
+                          />
+                        </div>
                       </div>
                     </Link>
                   );
                 })}
-              </div>
-            </div>
+              </>
+            ) : (
+              /* Typographical Fallback Marquee */
+              <>
+                {/* First Loop */}
+                {fallbackBrands.map((brand) => (
+                  <div
+                    key={`fallback-1-${brand._id}`}
+                    className="flex-shrink-0 mx-10 text-neutral-600 hover:text-white transition-colors duration-300 font-extrabold text-2xl md:text-4xl uppercase tracking-[0.25em] cursor-default font-serif"
+                  >
+                    {brand.name}
+                  </div>
+                ))}
+                {/* Second Loop */}
+                {fallbackBrands.map((brand) => (
+                  <div
+                    key={`fallback-2-${brand._id}`}
+                    className="flex-shrink-0 mx-10 text-neutral-600 hover:text-white transition-colors duration-300 font-extrabold text-2xl md:text-4xl uppercase tracking-[0.25em] cursor-default font-serif"
+                  >
+                    {brand.name}
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* CSS Animation for Vertical Scrolling */}
+      {/* CSS Animation */}
       <style dangerouslySetInnerHTML={{
         __html: `
-          /* Horizontal marquee animation */
           @keyframes marqueeLeft {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
           }
           .marquee-track {
             display: inline-flex;
-            gap: 1.5rem;
+            align-items: center;
             width: max-content;
             will-change: transform;
-            animation: marqueeLeft 6s linear infinite;
+            animation: marqueeLeft 18s linear infinite;
           }
-          /* Pause on hover */
           .marquee-track:hover {
             animation-play-state: paused;
-          }
-
-          /* Ensure images don't stretch when container shrinks */
-          .marquee-track .group {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          /* Reduce movement speed on small screens */
-          @media (max-width: 640px) {
-            .marquee-track {
-              animation-duration: 10s;
-            }
           }
         `
       }} />
@@ -123,4 +145,3 @@ const TrustedBrandsSection = ({ brands = [] }) => {
 };
 
 export default TrustedBrandsSection;
-

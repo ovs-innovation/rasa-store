@@ -34,7 +34,7 @@ const ProductServices = {
     return requests.patch(`/products/${id}`, body);
   },
   updateManyProducts: async (body) => {
-    return requests.patch("products/update/many", body);
+    return requests.patch("/products/update/many", body);
   },
   updateStatus: async (id, body) => {
     return requests.put(`/products/status/${id}`, body);

@@ -77,8 +77,8 @@ const Price = ({
               <span
                 className={
                   card
-                    ? "block text-green-600 text-xs font-bold"
-                    : "inline-block text-green-600 text-sm font-bold ml-2"
+                    ? "block text-neutral-600 text-xs font-bold"
+                    : "inline-block text-neutral-600 text-sm font-bold ml-2"
                 }
               >
                 {Math.round(discountPercentage)}% Off
@@ -113,8 +113,8 @@ const Price = ({
               <span
                 className={
                   card
-                    ? "block text-green-600 text-xs font-bold"
-                    : "inline-block text-green-600 text-sm font-bold ml-2"
+                    ? "block text-neutral-600 text-xs font-bold"
+                    : "inline-block text-neutral-600 text-sm font-bold ml-2"
                 }
               >
                 {Math.round(discountPercentage)}% Off
@@ -126,13 +126,13 @@ const Price = ({
       {hasTaxInfo && (
         <p className="text-[11px] sm:text-xs font-medium mt-1">
           {product?.isPriceInclusive ? (
-            <span className="inline-block text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold">
+            <span className="inline-block text-[#D4AF37] bg-[#D4AF37]/10 px-1.5 py-0.5 rounded-none font-bold uppercase tracking-wider text-[10px] border border-[#D4AF37]/20">
               (Incl. of GST)
             </span>
           ) : (
-            <span className="text-gray-500">
+            <span className="text-neutral-400">
               + GST Extra 
-              <span className="ml-1 inline-flex items-center rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-600">
+              <span className="ml-1 inline-flex items-center rounded-none bg-neutral-900 border border-neutral-800 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-300">
                 {taxRateValue}%
               </span>
             </span>

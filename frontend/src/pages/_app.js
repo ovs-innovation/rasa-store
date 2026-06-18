@@ -1,8 +1,6 @@
 import "@styles/custom.css";
-import "@lib/firebase";
 import "react-toastify/dist/ReactToastify.css";
 import { CartProvider } from "react-use-cart";
-import { PersistGate } from "redux-persist/integration/react";
 import { persistStore } from "redux-persist";
 import { Provider } from "react-redux";
 import ReactGA from "react-ga4";
@@ -19,9 +17,7 @@ import { UserProvider } from "@context/UserContext";
 import DefaultSeo from "@components/common/DefaultSeo";
 import { SidebarProvider } from "@context/SidebarContext";
 import SettingServices from "@services/SettingServices";
-import FcmTokenHandler from "@components/FcmTokenHandler";
 import { AnnouncementsProvider } from "@context/AnnouncementsContext";
-import { fetchWebsiteAnnouncements } from "@lib/fetchAnnouncements";
 
 let persistor = persistStore(store);
 
@@ -34,7 +30,7 @@ const queryClient = new QueryClient({
   },
 });
 
-function MyApp({ Component, pageProps, announcements = [] }) {
+function MyApp({ Component, pageProps }) {
   const router = useRouter();
   const [storeSetting, setStoreSetting] = useState(null);
 
@@ -77,7 +73,7 @@ function MyApp({ Component, pageProps, announcements = [] }) {
           handlePageView();
 
           const handleRouteChange = (url) => {
-            handlePageView(`/${router.pathname}`, "Farmacykart");
+            handlePageView(`/${router.pathname}`, "Rasa Store");
           };
 
           router.events.on("routeChangeComplete", handleRouteChange);
@@ -99,17 +95,14 @@ function MyApp({ Component, pageProps, announcements = [] }) {
         <SessionProvider>
           <UserProvider>
             <Provider store={store}>
-              <PersistGate loading={null} persistor={persistor}>
-                <SidebarProvider>
-                  <AnnouncementsProvider announcements={announcements}>
-                    <CartProvider>
-                      <DefaultSeo />
-                      <FcmTokenHandler />
-                      <Component {...pageProps} />
-                    </CartProvider>
-                  </AnnouncementsProvider>
-                </SidebarProvider>
-              </PersistGate>
+              <SidebarProvider>
+                <AnnouncementsProvider announcements={[]}>
+                  <CartProvider>
+                    <DefaultSeo />
+                    <Component {...pageProps} />
+                  </CartProvider>
+                </AnnouncementsProvider>
+              </SidebarProvider>
             </Provider>
           </UserProvider>
         </SessionProvider>
@@ -124,10 +117,5 @@ function MyApp({ Component, pageProps, announcements = [] }) {
     </>
   );
 }
-
-MyApp.getInitialProps = async () => {
-  const announcements = await fetchWebsiteAnnouncements(5);
-  return { announcements };
-};
 
 export default MyApp;

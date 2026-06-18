@@ -8,19 +8,15 @@ import Image from "next/image";
 import useAddToCart from "@hooks/useAddToCart";
 import useCartDB from "@hooks/useCartDB";
 import { SidebarContext } from "@context/SidebarContext";
-import { UserContext } from "@context/UserContext";
 import { notifyError } from "@utils/toast";
+import { PRODUCT_PLACEHOLDER } from "@utils/brandAssets";
 
 const CartItem = ({ item, currency = "₹" }) => {
   const { closeCartDrawer } = useContext(SidebarContext);
   const { handleIncreaseQuantity } = useAddToCart();
   const { updateQuantityWithDB, removeItemWithDB } = useCartDB();
-  const { state } = useContext(UserContext) || {};
-  const isWholesaler =
-    state?.userInfo?.role &&
-    state.userInfo.role.toString().toLowerCase() === "wholesaler";
 
-  // Calculate MRP and discount - Check multiple possible price fields (only for non-wholesalers)
+  // Calculate MRP and discount - Check multiple possible price fields
   const originalPrice =
     item.originalPrice ||
     item.mrp ||
@@ -33,14 +29,9 @@ const CartItem = ({ item, currency = "₹" }) => {
       ? ((discount / originalPrice) * 100).toFixed(0)
       : 0;
 
-  /**
-   * Handle decrease quantity — updates local cart + DB.
-   * Enforces minQuantity constraint.
-   */
   const handleDecrease = async () => {
-    const minQty = item?.minQuantity ? Number(item.minQuantity) : 1;
-    if (item.quantity - 1 < minQty) {
-      notifyError(`Minimum quantity is ${minQty}`);
+    if (item.quantity <= 1) {
+      notifyError("Minimum quantity is 1");
       return;
     }
     await updateQuantityWithDB(item.id, item.quantity - 1);
@@ -62,7 +53,7 @@ const CartItem = ({ item, currency = "₹" }) => {
           src={
             (Array.isArray(item.image) ? item.image[0] : item.image) ||
             (Array.isArray(item.images) ? item.images[0] : item.images) ||
-            "https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png"
+            PRODUCT_PLACEHOLDER
           }
           width={70}
           height={70}
@@ -82,8 +73,8 @@ const CartItem = ({ item, currency = "₹" }) => {
           {item.title}
         </Link>
 
-        {/* MRP and Discount Badge - Hidden for wholesalers */}
-        {!isWholesaler && originalPrice > currentPrice && (
+        {/* MRP and Discount Badge */}
+        {originalPrice > currentPrice && (
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs text-gray-500 line-through font-medium">
               MRP: {currency}{originalPrice.toFixed(2)}
@@ -94,15 +85,13 @@ const CartItem = ({ item, currency = "₹" }) => {
           </div>
         )}
 
-        {/* Item Price - Hidden for wholesalers */}
-        {!isWholesaler && (
-          <span className="text-xs text-gray-500 mb-2 font-medium">
+        {/* Item Price */}
+        <span className="text-xs text-gray-500 mb-2 font-medium">
             Unit Price:{" "}
             <span className="text-emerald-600 font-semibold">
-              {currency}{item.price.toFixed(2)}
-            </span>
+            {currency}{item.price.toFixed(2)}
           </span>
-        )}
+        </span>
 
         {/* Bottom Section: Price, Quantity, Delete */}
         <div className="flex items-center justify-between mt-auto pt-2">

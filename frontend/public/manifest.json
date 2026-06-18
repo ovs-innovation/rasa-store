@@ -6,9 +6,9 @@
   "scope": "/",
   "start_url": "/",
   "id": "/",
-  "short_name": " Farmacykart",
-  "name": " Farmacykart",
-  "description": "Farmacykart Store e-commerce ",
+  "short_name": "Rasa Store",
+  "name": "Rasa Store",
+  "description": "Rasa Store e-commerce",
   "icons": [
     {
       "src": "/favicon.png",

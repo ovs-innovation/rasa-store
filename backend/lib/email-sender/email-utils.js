@@ -10,11 +10,11 @@ const getBrandDomain = () => {
   if (fromEmail.includes("@")) {
     return fromEmail.split("@")[1];
   }
-  const store = (process.env.STORE_URL || "https://farmacykart.com").replace(
+  const store = (process.env.STORE_URL || "https://rasastore.com").replace(
     /^https?:\/\//,
     ""
   );
-  return store.split("/")[0].replace(/^www\./, "") || "farmacykart.com";
+  return store.split("/")[0].replace(/^www\./, "") || "rasastore.com";
 };
 
 /** Always same domain as RESEND_FROM — never Gmail in headers/body for Resend sends. */
@@ -72,7 +72,7 @@ const prepareMailOptions = (body = {}) => {
 
   if (useResend && !process.env.RESEND_FROM) {
     throw new Error(
-      "RESEND_FROM is required (e.g. Farmacykart <notify@farmacykart.com>)"
+      "RESEND_FROM is required (e.g. RASA <notify@rasastore.com>)"
     );
   }
 
@@ -82,7 +82,7 @@ const prepareMailOptions = (body = {}) => {
   if (useResend) {
     mail.from = process.env.RESEND_FROM;
   } else {
-    const fromName = process.env.EMAIL_FROM_NAME || "Farmacykart";
+    const fromName = process.env.EMAIL_FROM_NAME || "RASA";
     mail.from = `"${fromName}" <${process.env.EMAIL_USER}>`;
   }
 

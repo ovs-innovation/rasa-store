@@ -2,11 +2,107 @@ const Product = require("../models/Product");
 const mongoose = require("mongoose");
 const Category = require("../models/Category");
 const Brand = require("../models/Brand");
+const Setting = require("../models/Setting");
 const UserProductView = require("../models/UserProductView");
 const { languageCodes } = require("../utils/data");
 const { formatProductForCSV,
   formatCSVToProduct,
 } = require("../utils/productCsvFormatter");
+
+const normalizeProductStatus = (status) => {
+  const map = {
+    Published: "show",
+    published: "show",
+    show: "show",
+    Hidden: "hide",
+    hidden: "hide",
+    hide: "hide",
+    Draft: "draft",
+    draft: "draft",
+    "Out Of Stock": "out-of-stock",
+    "out-of-stock": "out-of-stock",
+  };
+  return map[status] || status || "show";
+};
+
+const normalizePricesPayload = (prices = {}) => {
+  const originalPrice = Math.max(0, Number(prices.originalPrice) || 0);
+  const discount = Math.max(0, Number(prices.discount) || 0);
+  const discountType = prices.discountType || "flat";
+  const explicitPrice = Number(prices.price);
+
+  let price;
+  if (Number.isFinite(explicitPrice) && explicitPrice >= 0) {
+    price = explicitPrice;
+  } else if (discountType === "percentage") {
+    price = Math.max(0, originalPrice - (originalPrice * discount) / 100);
+  } else {
+    price = Math.max(0, originalPrice - discount);
+  }
+
+  return {
+    ...prices,
+    originalPrice,
+    discount,
+    discountType,
+    price,
+    salePrice:
+      prices.salePrice !== undefined && prices.salePrice !== null
+        ? Math.max(0, Number(prices.salePrice) || 0)
+        : price,
+  };
+};
+
+const flattenVariants = (variants) => {
+  if (!Array.isArray(variants) || variants.length === 0) return [];
+  
+  const isNested = variants.some(v => v && typeof v === "object" && (Array.isArray(v.sizes) || v.sizes));
+  if (!isNested) return variants;
+  
+  const flat = [];
+  variants.forEach((colorVar) => {
+    if (!colorVar) return;
+    const color = colorVar.color || colorVar.colorName || "";
+    const images = colorVar.images || [];
+    const thumbnail = colorVar.thumbnail || "";
+    const basePrice = colorVar.price;
+    const baseOriginalPrice = colorVar.originalPrice;
+    const baseSku = colorVar.sku || "";
+    
+    const sizes = colorVar.sizes || [];
+    sizes.forEach((sizeVar) => {
+      if (!sizeVar) return;
+      const size = sizeVar.size || "";
+      const quantity = typeof sizeVar.quantity === "number" ? sizeVar.quantity : Number(sizeVar.stock || 0);
+      const sku = sizeVar.sku || (baseSku ? `${baseSku}-${size.replace(/\s+/g, "")}` : "");
+      const price = typeof sizeVar.price === "number" ? sizeVar.price : basePrice;
+      const originalPrice = typeof sizeVar.originalPrice === "number" ? sizeVar.originalPrice : baseOriginalPrice;
+      
+      flat.push({
+        _id: sizeVar._id || `v-${color.toLowerCase()}-${size.replace(/\s+/g, "").toLowerCase()}`,
+        color: color,
+        size: size,
+        price: price,
+        originalPrice: originalPrice,
+        quantity: quantity,
+        sku: sku,
+        images: images,
+        thumbnail: thumbnail,
+        combinationLabel: `${color} / ${size}`,
+      });
+    });
+  });
+  return flat;
+};
+
+const flattenProductVariants = (product) => {
+  if (!product) return product;
+  const productObj = typeof product.toObject === "function" ? product.toObject() : product;
+  if (Array.isArray(productObj.variants) && productObj.variants.length > 0) {
+    productObj.variants = flattenVariants(productObj.variants);
+  }
+  return productObj;
+};
 
 const normalizeTaxPayload = (payload = {}) => {
   const parsedRate =
@@ -312,13 +408,7 @@ const sanitizeFaqSection = (faqSection = {}) => {
 const addProduct = async (req, res) => {
   try {
     if (req.body.prices) {
-      const originalPrice = Math.max(0, Number(req.body.prices.originalPrice) || 0);
-      const discount = Math.max(0, Number(req.body.prices.discount) || 0);
-      const discountAmount = (originalPrice * discount) / 100;
-      
-      req.body.prices.originalPrice = originalPrice;
-      req.body.prices.discount = discount;
-      req.body.prices.price = Math.max(0, originalPrice - discountAmount);
+      req.body.prices = normalizePricesPayload(req.body.prices);
     }
 
     const taxFields = normalizeTaxPayload(req.body);
@@ -326,25 +416,13 @@ const addProduct = async (req, res) => {
     const payload = {
       ...req.body,
       ...taxFields,
-      isWholesaler: req.body.isWholesaler === true || req.body.isWholesaler === 'true',
-      wholePrice: Math.max(0, Number(req.body.wholePrice ?? req.body.wholesalerPrice) || 0),
-      minQuantity: Math.max(0, Number.isFinite(Number(req.body.minQuantity ?? req.body.wholesalerMinQuantity)) ? parseInt(req.body.minQuantity ?? req.body.wholesalerMinQuantity, 10) : 0),
+      status: normalizeProductStatus(req.body.status),
       dynamicSections: sanitizeDynamicSections(req.body.dynamicSections),
       mediaSections: sanitizeMediaSections(req.body.mediaSections),
       faqs: sanitizeFaqSection(req.body.faqs),
-      // Sanitize paragraph sections
       productDescription: sanitizeParagraphSection(req.body.productDescription, "Product Description"),
-      composition: sanitizeParagraphSection(req.body.composition, "Composition"),
       disclaimer: sanitizeParagraphSection(req.body.disclaimer, "Disclaimer"),
-      // Sanitize list sections
-      ingredients: sanitizeListSection(req.body.ingredients, "Ingredients"),
-      keyUses: sanitizeListSection(req.body.keyUses, "Key Uses"),
-      // Sanitize additional information section (with subsections)
       additionalInformation: sanitizeAdditionalInformationSection(req.body.additionalInformation, "Additional Information"),
-      // Sanitize highlight sections (simple string list)
-      howToUse: sanitizeHighlightSection(req.body.howToUse, "How to Use"),
-      safetyInformation: sanitizeHighlightSection(req.body.safetyInformation, "Safety Information"),
-      // Sanitize highlight sections
       productHighlights: sanitizeHighlightSection(req.body.productHighlights, "Product Highlights"),
       manufacturerDetails: sanitizeHighlightSection(req.body.manufacturerDetails, "Manufacturer Details"),
       productId: req.body.productId
@@ -385,8 +463,8 @@ const addAllProducts = async (req, res) => {
 const getShowingProducts = async (req, res) => {
   try {
     const products = await Product.find({ status: "show" }).sort({ createdAt: -1 });
-    res.send(products);
-    // console.log("products", products);
+    const flattened = products.map(p => flattenProductVariants(p));
+    res.send(flattened);
   } catch (err) {
     res.status(500).send({
       message: err.message,
@@ -478,10 +556,12 @@ const getAllProducts = async (req, res) => {
 };
 
 const getProductBySlug = async (req, res) => {
-  // console.log("slug", req.params.slug);
   try {
-    const product = await Product.findOne({ slug: req.params.slug });
-    res.send(product);
+    const product = await Product.findOne({ slug: req.params.slug, status: "show" });
+    if (!product) {
+      return res.status(404).send({ message: "Product not found" });
+    }
+    res.send(flattenProductVariants(product));
   } catch (err) {
     res.status(500).send({
       message: `Slug problem, ${err.message}`,
@@ -492,7 +572,7 @@ const getProductBySlug = async (req, res) => {
 const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate({ path: "category", select: "_id, name" })
+      .populate({ path: "category", select: "_id name" })
       .populate({ path: "categories", select: "_id name" })
       .populate({ path: "brand", select: "_id name slug logo" });
 
@@ -509,13 +589,7 @@ const updateProduct = async (req, res) => {
   // console.log('variant',req.body.variants)
   try {
     if (req.body.prices) {
-      const originalPrice = Math.max(0, Number(req.body.prices.originalPrice) || 0);
-      const discount = Math.max(0, Number(req.body.prices.discount) || 0);
-      const discountAmount = (originalPrice * discount) / 100;
-
-      req.body.prices.originalPrice = originalPrice;
-      req.body.prices.discount = discount;
-      req.body.prices.price = Math.max(0, originalPrice - discountAmount);
+      req.body.prices = normalizePricesPayload(req.body.prices);
     }
 
     const product = await Product.findById(req.params.id);
@@ -538,41 +612,26 @@ const updateProduct = async (req, res) => {
       product.productId = req.body.productId;
       product.sku = req.body.sku;
       product.barcode = req.body.barcode;
-      // Batch & manufacturing metadata
-      if (typeof req.body.batchNo === "string") {
-        product.batchNo = req.body.batchNo.trim();
-      }
-      if (req.body.expDate) {
-        product.expDate = new Date(req.body.expDate);
-      }
-      if (req.body.manufactureDate) {
-        product.manufactureDate = new Date(req.body.manufactureDate);
-      }
       product.slug = req.body.slug;
       product.categories = req.body.categories;
       product.category = req.body.category;
       product.brand = req.body.brand;
-      product.show = req.body.show;
+      product.status = normalizeProductStatus(req.body.status || product.status);
+      product.lowStockAlert = typeof req.body.lowStockAlert === "number" ? req.body.lowStockAlert : Number(req.body.lowStockAlert || 5);
       product.isCombination = req.body.isCombination;
       product.variants = req.body.variants;
       product.stock = req.body.stock;
       product.prices = req.body.prices;
       product.image = req.body.image;
       product.tag = req.body.tag;
-
-      // Wholesaler fields (accept different request field names)
-      if (Object.prototype.hasOwnProperty.call(req.body, "isWholesaler")) {
-        product.isWholesaler = req.body.isWholesaler === true || req.body.isWholesaler === 'true';
-      }
-      if (Object.prototype.hasOwnProperty.call(req.body, "wholePrice") || Object.prototype.hasOwnProperty.call(req.body, "wholesalerPrice")) {
-        const val = Math.max(0, Number(req.body.wholePrice ?? req.body.wholesalerPrice));
-        product.wholePrice = Number.isFinite(val) ? val : 0;
-      }
-      if (Object.prototype.hasOwnProperty.call(req.body, "minQuantity") || Object.prototype.hasOwnProperty.call(req.body, "wholesalerMinQuantity")) {
-        const raw = req.body.minQuantity ?? req.body.wholesalerMinQuantity;
-        const val = Number.isFinite(Number(raw)) ? parseInt(raw, 10) : 0;
-        product.minQuantity = val;
-      }
+      product.gender = req.body.gender;
+      product.productType = req.body.productType;
+      product.metaTitle = req.body.metaTitle;
+      product.metaDescription = req.body.metaDescription;
+      product.seoImage = req.body.seoImage;
+      product.featuredImage = req.body.featuredImage;
+      product.hoverImage = req.body.hoverImage;
+      product.badge = req.body.badge;
 
       const { hsnCode, taxRate, isPriceInclusive } = normalizeTaxPayload(
         req.body
@@ -599,23 +658,8 @@ const updateProduct = async (req, res) => {
       if (Object.prototype.hasOwnProperty.call(req.body, "productDescription")) {
         product.productDescription = sanitizeParagraphSection(req.body.productDescription, "Product Description");
       }
-      if (Object.prototype.hasOwnProperty.call(req.body, "ingredients")) {
-        product.ingredients = sanitizeListSection(req.body.ingredients, "Ingredients");
-      }
-      if (Object.prototype.hasOwnProperty.call(req.body, "keyUses")) {
-        product.keyUses = sanitizeListSection(req.body.keyUses, "Key Uses");
-      }
-      if (Object.prototype.hasOwnProperty.call(req.body, "howToUse")) {
-        product.howToUse = sanitizeHighlightSection(req.body.howToUse, "How to Use");
-      }
-      if (Object.prototype.hasOwnProperty.call(req.body, "safetyInformation")) {
-        product.safetyInformation = sanitizeHighlightSection(req.body.safetyInformation, "Safety Information");
-      }
       if (Object.prototype.hasOwnProperty.call(req.body, "additionalInformation")) {
         product.additionalInformation = sanitizeAdditionalInformationSection(req.body.additionalInformation, "Additional Information");
-      }
-      if (Object.prototype.hasOwnProperty.call(req.body, "composition")) {
-        product.composition = sanitizeParagraphSection(req.body.composition, "Composition");
       }
       if (Object.prototype.hasOwnProperty.call(req.body, "productHighlights")) {
         product.productHighlights = sanitizeHighlightSection(req.body.productHighlights, "Product Highlights");
@@ -635,8 +679,10 @@ const updateProduct = async (req, res) => {
       });
     }
   } catch (err) {
-    res.status(404).send(err.message);
-    // console.log('err',err)
+    console.error("updateProduct error:", err);
+    res.status(400).send({
+      message: err.message || "Failed to update product",
+    });
   }
 };
 
@@ -711,6 +757,29 @@ const deleteProduct = (req, res) => {
     }
   });
 };
+
+const PRODUCT_POPULATE = [
+  { path: "category", select: "name _id slug" },
+  { path: "brand", select: "_id name slug logo coverImage" },
+];
+
+const fetchProductsByIds = async (ids = []) => {
+  if (!Array.isArray(ids) || ids.length === 0) return [];
+  const validIds = ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+  if (validIds.length === 0) return [];
+
+  const docs = await Product.find({ _id: { $in: validIds }, status: "show" }).populate(
+    PRODUCT_POPULATE
+  );
+  const byId = new Map(docs.map((doc) => [String(doc._id), doc]));
+  return validIds.map((id) => byId.get(String(id))).filter(Boolean);
+};
+
+const fetchProductsByPlacementTag = async (flag, sort, limit = 20) =>
+  Product.find({ status: "show", tag: flag })
+    .populate(PRODUCT_POPULATE)
+    .sort(sort)
+    .limit(limit);
 
 const getShowingStoreProducts = async (req, res) => {
   // console.log("req.body", req);
@@ -816,17 +885,17 @@ const getShowingStoreProducts = async (req, res) => {
 
       queryObject.$or = orConditions;
     }
-    if (slug) {
-      queryObject.slug = { $regex: slug, $options: "i" };
-    }
 
     let products = [];
     let popularProducts = [];
     let bestSellingProducts = [];
     let discountedProducts = [];
     let relatedProducts = [];
+    let rasaHomepagePayload = null;
 
     if (slug) {
+      queryObject.slug = slug;
+      queryObject.status = "show";
       products = await Product.find(queryObject)
         .populate({ path: "category", select: "name _id" })
         .populate({ path: "brand", select: "_id name slug logo" })
@@ -834,6 +903,7 @@ const getShowingStoreProducts = async (req, res) => {
         .limit(500);
       relatedProducts = await Product.find({
         category: products[0]?.category,
+        status: "show",
       })
         .populate({ path: "category", select: "_id name" })
         .populate({ path: "brand", select: "_id name slug logo" });
@@ -851,19 +921,52 @@ const getShowingStoreProducts = async (req, res) => {
         .sort({ createdAt: -1 })
         .limit(500);
 
-      // Newest Products (Mapped to Popular Products in frontend currently)
-      popularProducts = await Product.find({ status: "show" })
-        .populate({ path: "category", select: "name _id" })
-        .populate({ path: "brand", select: "_id name slug logo" })
-        .sort({ createdAt: -1 })
-        .limit(20);
+      const settingDoc = await Setting.findOne({
+        name: "storeCustomizationSetting",
+      }).lean();
+      const rasaHomepage = settingDoc?.setting?.rasaHomepage || {};
 
-      // Best Selling Products
-      bestSellingProducts = await Product.find({ status: "show" })
-        .populate({ path: "category", select: "name _id" })
-        .populate({ path: "brand", select: "_id name slug logo" })
-        .sort({ sales: -1 })
-        .limit(20);
+      // New Arrivals — admin picks → tag fallback → newest
+      popularProducts = await fetchProductsByIds(rasaHomepage.newArrivalProductIds);
+      if (!popularProducts.length) {
+        popularProducts = await fetchProductsByPlacementTag(
+          "new-arrival",
+          { createdAt: -1 },
+          20
+        );
+      }
+      if (!popularProducts.length) {
+        popularProducts = await Product.find({ status: "show" })
+          .populate(PRODUCT_POPULATE)
+          .sort({ createdAt: -1 })
+          .limit(20);
+      }
+
+      // Trending — admin picks → tag fallback → best sellers
+      bestSellingProducts = await fetchProductsByIds(rasaHomepage.trendingProductIds);
+      if (!bestSellingProducts.length) {
+        bestSellingProducts = await fetchProductsByPlacementTag(
+          "trending",
+          { sales: -1 },
+          20
+        );
+      }
+      if (!bestSellingProducts.length) {
+        bestSellingProducts = await Product.find({ status: "show" })
+          .populate(PRODUCT_POPULATE)
+          .sort({ sales: -1 })
+          .limit(20);
+      }
+
+      rasaHomepagePayload = {
+        brandsSectionEnabled: rasaHomepage.brandsSectionEnabled !== false,
+        categoryBanners: rasaHomepage.categoryBanners || [],
+        instagramPosts: rasaHomepage.instagramPosts || [],
+        heroSlides: rasaHomepage.heroSlides || [],
+        sectionOrder: (rasaHomepage.sectionOrder || ["Hero", "Brands", "New Arrival", "Trending", "Categories", "Newsletter"]).filter(
+          (s) => s !== "Instagram"
+        ),
+      };
 
       discountedProducts = await Product.find({
         status: "show", // Ensure status "show" for discounted products
@@ -902,11 +1005,12 @@ const getShowingStoreProducts = async (req, res) => {
     }
 
     res.send({
-      products,
-      popularProducts,
-      relatedProducts,
-      discountedProducts,
-      bestSellingProducts,
+      products: products.map(p => flattenProductVariants(p)),
+      popularProducts: popularProducts.map(p => flattenProductVariants(p)),
+      relatedProducts: relatedProducts.map(p => flattenProductVariants(p)),
+      discountedProducts: discountedProducts.map(p => flattenProductVariants(p)),
+      bestSellingProducts: bestSellingProducts.map(p => flattenProductVariants(p)),
+      rasaHomepage: rasaHomepagePayload,
     });
   } catch (err) {
     res.status(500).send({

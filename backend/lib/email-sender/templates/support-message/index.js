@@ -105,7 +105,7 @@ const sendSupportMessage = (option) => {
                                           <img
                                             alt
                                             height='auto'
-                                            src='${option.logo || "https://res.cloudinary.com/dse9adftu/image/upload/v1780479335/farmacykart/brand/logo.png"}'
+                                            src='${option.logo || "https://res.cloudinary.com/dse9adftu/image/upload/v1780479335/rasa/brand/logo.png"}'
                                             style='border:0;display:block;outline:none;text-decoration:none;height:auto;width:80px;font-size:13px;padding-bottom:30px;'
                                             width='80'
                                             height='80'

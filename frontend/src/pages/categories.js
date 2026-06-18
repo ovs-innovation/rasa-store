@@ -3,7 +3,6 @@ import Layout from "@layout/Layout";
 import FeatureCategory from "@components/category/FeatureCategory";
 import SliderCarousel from "@components/carousel/SliderCarousel";
 import { SidebarContext } from "@context/SidebarContext";
-import { UserContext } from "@context/UserContext";
 import CategoryServices from "@services/CategoryServices";
 import ProductServices from "@services/ProductServices";
 import ProductCard from "@components/product/ProductCard";
@@ -20,8 +19,6 @@ import { useQuery } from "@tanstack/react-query";
 
 const Categories = () => {
   const { setIsLoading } = useContext(SidebarContext);
-  const { state } = useContext(UserContext) || {};
-  const isWholesaler = state?.userInfo?.role && state.userInfo.role.toString().toLowerCase() === "wholesaler";
   const [parentCategories, setParentCategories] = useState([]);
 
   const getCategoryName = (cat) => {
@@ -93,7 +90,7 @@ const Categories = () => {
             <p className="text-gray-500 text-center py-8">Loading categories...</p>
           ) : (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden p-0">
-              <FeatureCategory initialSelectedCategory={parentCategories[0]} />
+              <FeatureCategory categories={getLevel1Categories(data || [])} />
             </div>
           )}
 
@@ -131,7 +128,7 @@ const Categories = () => {
                         }}
                         className="mySwiper px-2 py-2"
                       >
-                        {(isWholesaler ? bestSellingProducts.filter(p => (p.wholePrice && Number(p.wholePrice) > 0) || p.isWholesaler) : bestSellingProducts)?.slice(0, 10).map((product) => (
+                        {bestSellingProducts?.slice(0, 10).map((product) => (
                           <SwiperSlide key={product._id}>
                             <ProductCard product={product} attributes={[]} />
                           </SwiperSlide>

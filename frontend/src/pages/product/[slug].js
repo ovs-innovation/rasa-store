@@ -79,9 +79,6 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   // also expose a userInfo object for other usages (cookies/context/session)
   const userInfo = session?.user || userState?.userInfo || cookieUserInfo || null;
 
-  // normalized wholesaler check (case-insensitive)
-  const isWholesaler = userRole && userRole.toString().toLowerCase() === 'wholesaler';
-
   const { lang, showingTranslateValue, getNumber, currency, getNumberTwo } =
     useUtilsFunction();
   const { isLoading, setIsLoading } = useContext(SidebarContext);
@@ -820,11 +817,38 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   }, [selectVa, variantTitle, product?.variants, productImages, showingTranslateValue, getNumber, product?.title, product?.description, selectVariant]);
 
   useEffect(() => {
-    const res = Object.keys(Object.assign({}, ...product?.variants));
-    const varTitle = attributes?.filter((att) => res.includes(att?._id));
+    if (!product?.variants || product.variants.length === 0) return;
 
-    setVariantTitle(varTitle?.sort());
-  }, [variants, attributes]);
+    // Get all keys present in the variants
+    const variantKeys = Object.keys(Object.assign({}, ...product.variants));
+    
+    // Filter out standard keys like _id, title, price, originalPrice, quantity, sku, barcode, images, image, etc.
+    const attributeKeys = variantKeys.filter(key => 
+      !["_id", "title", "price", "originalPrice", "quantity", "sku", "barcode", "image", "images", "dynamicSections", "mediaSections", "video", "discount"].includes(key)
+    );
+
+    // Map each attributeKey to an attribute object (virtual or DB matched)
+    const dynamicVarTitle = attributeKeys.map(key => {
+      // Find matching attribute in database attributes if exists
+      const dbAtt = attributes?.find(att => att._id === key || att.name?.en?.toLowerCase() === key.toLowerCase() || att.title?.en?.toLowerCase() === key.toLowerCase());
+      if (dbAtt) return dbAtt;
+
+      // Otherwise build a virtual one dynamically from the variant values
+      const values = [...new Set(product.variants.map(v => v[key]).filter(Boolean))];
+      return {
+        _id: key,
+        name: { en: key.charAt(0).toUpperCase() + key.slice(1) },
+        title: { en: key.charAt(0).toUpperCase() + key.slice(1) },
+        option: "BUTTON",
+        variants: values.map(val => ({
+          _id: val,
+          name: { en: val }
+        }))
+      };
+    });
+
+    setVariantTitle(dynamicVarTitle);
+  }, [product?.variants, attributes]);
 
   useEffect(() => {
     setIsLoading(false);
@@ -836,9 +860,6 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
       const sections = [
         "product-description",
         "specification",
-        "key-uses",
-        "how-to-use",
-        "safety-information",
         "additional-information",
         "faq"
       ];
@@ -912,23 +933,18 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
     const { variants, categories, description, ...updatedProduct } = product;
 
-    // Ensure we have a valid price (prefer wholesaler price when applicable)
-    const currentPrice = (isWholesaler && product?.wholePrice && Number(product.wholePrice) > 0)
-      ? Number(product.wholePrice)
-      : (price > 0
-          ? price
-          : getNumber(selectVariant?.price ?? product?.prices?.price ?? 0)
-        );
+    // Ensure we have a valid price
+    const currentPrice = price > 0
+      ? price
+      : getNumber(selectVariant?.price ?? product?.prices?.price ?? 0);
 
-    const currentOriginalPrice = (isWholesaler && product?.wholePrice && Number(product.wholePrice) > 0)
-      ? (product?.prices?.originalPrice ?? product?.prices?.price ?? 0)
-      : (originalPrice > 0
-          ? originalPrice
-          : getNumber(selectVariant?.originalPrice ?? product?.prices?.originalPrice ?? currentPrice)
-        );
+    const currentOriginalPrice = originalPrice > 0
+      ? originalPrice
+      : getNumber(selectVariant?.originalPrice ?? product?.prices?.originalPrice ?? currentPrice);
 
     const newItem = {
       ...updatedProduct,
+      isCombination: hasVariants,
       id: `${
         !hasVariants || p.variants.length === 0
           ? p._id
@@ -954,8 +970,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
       originalPrice: currentOriginalPrice,
     };
 
-    const minQty = isWholesaler && product?.minQuantity ? Number(product.minQuantity) : 1;
-    handleAddItem(newItem, minQty);
+    handleAddItem(newItem, 1);
   };
 
   const handleAddToWishlist = (p) => {
@@ -1031,21 +1046,15 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
       // Prepare product item for direct checkout
       const { variants, categories, description, ...updatedProduct } = product;
 
-      // Ensure we have a valid price (prefer wholesaler price when applicable)
-      const currentPrice = (isWholesaler && product?.wholePrice && Number(product.wholePrice) > 0)
-        ? Number(product.wholePrice)
-        : (price > 0
-            ? price
-            : getNumber(selectVariant?.price ?? product?.prices?.price ?? 0)
-          );
-      const currentOriginalPrice = (isWholesaler && product?.wholePrice && Number(product.wholePrice) > 0)
-        ? (product?.prices?.originalPrice ?? product?.prices?.price ?? 0)
-        : (originalPrice > 0
-            ? originalPrice
-            : getNumber(selectVariant?.originalPrice ?? product?.prices?.originalPrice ?? currentPrice)
-          );
+      // Ensure we have a valid price
+      const currentPrice = price > 0
+        ? price
+        : getNumber(selectVariant?.price ?? product?.prices?.price ?? 0);
+      const currentOriginalPrice = originalPrice > 0
+        ? originalPrice
+        : getNumber(selectVariant?.originalPrice ?? product?.prices?.originalPrice ?? currentPrice);
 
-      const minQtyBuy = isWholesaler && product?.minQuantity ? Number(product.minQuantity) : item;
+      const minQtyBuy = item;
       const newItem = {
         ...updatedProduct,
         id: `${
@@ -1094,7 +1103,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     const urlToShare =
       (typeof window !== "undefined" && window.location.href) ||
       shareUrl ||
-      `https://Farmacykart-store-nine.vercel.app/product/${router.query.slug}`;
+      `https://Rasa Store-store-nine.vercel.app/product/${router.query.slug}`;
 
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
@@ -1225,6 +1234,409 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
   return (
     <>
+      <style jsx global>{`
+        /* Breadcrumbs styling */
+        nav.text-sm.text-gray-500 {
+          color: #a3a3a3 !important;
+        }
+        nav.text-sm.text-gray-500 a {
+          color: #d4af37 !important;
+          background: #0f0f0f !important;
+          border: 1px solid #1f1f1f !important;
+          padding: 4px 12px !important;
+          border-radius: 9999px !important;
+          transition: all 0.2s !important;
+        }
+        nav.text-sm.text-gray-500 a:hover {
+          color: #ffffff !important;
+          border-color: #d4af37 !important;
+        }
+        nav.text-sm.text-gray-500 span.text-gray-900 {
+          color: #ffffff !important;
+        }
+
+        /* Main container background overrides */
+        .w-full.rounded-lg.bg-white {
+          background-color: #050505 !important;
+        }
+        
+        /* Gallery Action Buttons */
+        .absolute.left-4.top-4.z-20.flex.flex-col button {
+          background-color: #0f0f0f !important;
+          border-color: #1f1f1f !important;
+          color: #d4d4d4 !important;
+          transition: all 0.2s !important;
+        }
+        .absolute.left-4.top-4.z-20.flex.flex-col button:hover {
+          color: #d4af37 !important;
+          border-color: #d4af37 !important;
+        }
+        
+        /* Add to Cart Button */
+        button.border-store-500 {
+          border-color: #d4af37 !important;
+          color: #d4af37 !important;
+          background-color: transparent !important;
+        }
+        button.border-store-500:hover {
+          background-color: #d4af37 !important;
+          color: #000000 !important;
+        }
+        
+        /* Trust Features Box */
+        .bg-blue-50.border-blue-100 {
+          background-color: #0a0a0a !important;
+          border-color: #1a1a1a !important;
+        }
+        .bg-blue-50.border-blue-100 div.border-blue-200 {
+          border-color: #1a1a1a !important;
+        }
+        .bg-blue-50.border-blue-100 div.bg-white {
+          background-color: #141414 !important;
+          border-color: #262626 !important;
+        }
+        .bg-blue-50.border-blue-100 svg {
+          color: #d4af37 !important;
+        }
+        .bg-blue-50.border-blue-100 p {
+          color: #e5e5e5 !important;
+        }
+        
+        /* Product Details Right Side Header */
+        h1.leading-7.text-lg.md\:text-xl.lg\:text-2xl {
+          color: #ffffff !important;
+          font-weight: 900 !important;
+          letter-spacing: -0.025em !important;
+          text-transform: uppercase !important;
+        }
+        .text-sm.leading-6.text-gray-500 {
+          color: #a3a3a3 !important;
+        }
+        
+        /* Price Container */
+        .bg-gray-50\/50.rounded-2xl {
+          background-color: #0a0a0a !important;
+          border-color: #141414 !important;
+        }
+        .bg-gray-50\/50.rounded-2xl span {
+          color: #ffffff !important;
+        }
+        .bg-gray-50\/50.rounded-2xl .bg-green-100 {
+          background-color: #0f2e1a !important;
+          color: #4ade80 !important;
+          border: 1px solid #166534 !important;
+        }
+        
+        /* Expected Delivery */
+        .mt-4.rounded-md.flex.items-center.text-sm svg {
+          color: #d4af37 !important;
+        }
+        .mt-4.rounded-md.flex.items-center.text-sm span.text-gray-600 {
+          color: #737373 !important;
+        }
+        .mt-4.rounded-md.flex.items-center.text-sm span.text-store-700 {
+          color: #d4af37 !important;
+        }
+        .mt-4.flex.gap-4.items-center .text-gray-500 {
+          color: #a3a3a3 !important;
+        }
+        .mt-4.flex.gap-4.items-center select, 
+        .mt-4.flex.gap-4.items-center button {
+          background-color: #0a0a0a !important;
+          border-color: #1a1a1a !important;
+          color: #ffffff !important;
+        }
+        
+        /* Variant Title & Items */
+        h4.text-sm.font-semibold.text-gray-800 {
+          color: #ffffff !important;
+          text-transform: uppercase !important;
+          font-size: 0.75rem !important;
+          letter-spacing: 0.05em !important;
+        }
+        .text-xs.text-gray-500 {
+          color: #a3a3a3 !important;
+        }
+        
+        /* Variant Option Buttons */
+        .variant-button,
+        button[class*="variant"] {
+          background-color: #0f0f0f !important;
+          border-color: #1f1f1f !important;
+          color: #d4d4d4 !important;
+        }
+        .variant-button:hover,
+        button[class*="variant"]:hover {
+          border-color: #d4af37 !important;
+          color: #ffffff !important;
+        }
+        .variant-button.active,
+        button[class*="variant"][class*="active"],
+        button[class*="variant"][class*="border-store-500"],
+        button[class*="variant"][class*="text-store-600"] {
+          border-color: #d4af37 !important;
+          color: #d4af37 !important;
+          background-color: #d4af3710 !important;
+        }
+        
+        /* Category label */
+        .text-gray-800 {
+          color: #d4d4d4 !important;
+        }
+        button.text-gray-600.underline {
+          color: #d4af37 !important;
+        }
+        button.text-gray-600.underline:hover {
+          color: #ffffff !important;
+        }
+        
+        /* Product Highlights */
+        .border.border-gray-200.rounded-lg.bg-white {
+          background-color: #0a0a0a !important;
+          border-color: #141414 !important;
+        }
+        .border.border-gray-200.rounded-lg.bg-white h2 {
+          color: #ffffff !important;
+        }
+        .border.border-gray-200.rounded-lg.bg-white ul {
+          color: #a3a3a3 !important;
+        }
+        
+        /* Tab Navigation sticky background */
+        .sticky.bg-white\/80 {
+          background-color: #050505e6 !important;
+          border-bottom: 1px solid #141414 !important;
+        }
+        .sticky.bg-white\/80 button {
+          color: #737373 !important;
+        }
+        .sticky.bg-white\/80 button:hover {
+          color: #ffffff !important;
+        }
+        .sticky.bg-white\/80 button.text-store-600 {
+          color: #d4af37 !important;
+        }
+        .sticky.bg-white\/80 span.bg-store-500 {
+          background-color: #d4af37 !important;
+        }
+        
+        /* Description, Specification & Additional Info Boxes */
+        div[id="product-description"],
+        div[id="specification"],
+        div[id="additional-information"] {
+          background-color: #0a0a0a !important;
+          border-color: #141414 !important;
+        }
+        div[id="product-description"] h2,
+        div[id="specification"] h2,
+        div[id="additional-information"] h2 {
+          color: #ffffff !important;
+        }
+        div[id="product-description"] p,
+        div[id="specification"] ul,
+        div[id="additional-information"] ul {
+          color: #a3a3a3 !important;
+        }
+        div[id="additional-information"] .bg-gray-50 {
+          background-color: #0f0f0f !important;
+          border-color: #1a1a1a !important;
+        }
+        div[id="additional-information"] h3.text-store-600 {
+          color: #d4af37 !important;
+          background-color: #141414 !important;
+          border: 1px solid #262626 !important;
+        }
+        
+        /* FAQ Section */
+        div[id="faq"] {
+          background-color: #0a0a0a !important;
+          border-color: #141414 !important;
+        }
+        div[id="faq"] h3 {
+          color: #ffffff !important;
+        }
+        div[id="faq"] span.bg-store-500 {
+          background-color: #d4af37 !important;
+        }
+        div[id="faq"] .border-store-200.bg-store-50\/30 {
+          border-color: #d4af3750 !important;
+          background-color: #0f0f0f !important;
+        }
+        div[id="faq"] .border-gray-50.bg-gray-50\/50 {
+          border-color: #141414 !important;
+          background-color: #050505 !important;
+        }
+        div[id="faq"] .border-gray-50.bg-gray-50\/50:hover {
+          background-color: #0f0f0f !important;
+        }
+        div[id="faq"] button span.text-gray-800 {
+          color: #ffffff !important;
+        }
+        div[id="faq"] button span.text-store-600 {
+          color: #d4af37 !important;
+        }
+        div[id="faq"] .px-6.pb-6.text-gray-600 {
+          color: #a3a3a3 !important;
+          border-top-color: #141414 !important;
+        }
+        
+        /* Manufacturer details & Disclaimer */
+        .mt-8.p-6.bg-white,
+        .mt-2.p-6.bg-white {
+          background-color: #0a0a0a !important;
+          border: 1px solid #141414 !important;
+          border-radius: 0.5rem !important;
+        }
+        .mt-8.p-6.bg-white h3,
+        .mt-2.p-6.bg-white h3 {
+          color: #ffffff !important;
+        }
+        .mt-8.p-6.bg-white p,
+        .mt-8.p-6.bg-white div,
+        .mt-2.p-6.bg-white div {
+          color: #a3a3a3 !important;
+        }
+        
+        /* Sticky Bottom Bar (Mobile) */
+        .fixed.bottom-0.bg-white\/95 {
+          background-color: #0a0a0ae6 !important;
+          border-top: 1px solid #141414 !important;
+        }
+        .fixed.bottom-0.bg-white\/95 h3 {
+          color: #a3a3a3 !important;
+        }
+        .fixed.bottom-0.bg-white\/95 span.text-gray-900 {
+          color: #ffffff !important;
+        }
+        .fixed.bottom-0.bg-white\/95 button.bg-store-600 {
+          background-color: #d4af37 !important;
+          color: #000000 !important;
+        }
+        .fixed.bottom-0.bg-white\/95 button.bg-store-600:hover {
+          background-color: #c29e2e !important;
+        }
+        
+        /* Ratings & Reviews styling overrides */
+        #ratings-section {
+          background-color: #0a0a0a !important;
+          border: 1px solid #141414 !important;
+          border-radius: 1rem !important;
+          padding: 24px !important;
+        }
+        #ratings-section .bg-white {
+          background-color: #0f0f0f !important;
+          border-color: #1a1a1a !important;
+        }
+        #ratings-section .border-gray-100,
+        #ratings-section .border-b {
+          border-color: #1a1a1a !important;
+        }
+        #ratings-section .bg-gray-100 {
+          background-color: #141414 !important;
+        }
+        #ratings-section h2,
+        #ratings-section h3,
+        #ratings-section h4 {
+          color: #ffffff !important;
+        }
+        #ratings-section p,
+        #ratings-section span,
+        #ratings-section label {
+          color: #a3a3a3 !important;
+        }
+        /* Specific text visibility upgrades */
+        #ratings-section .text-gray-900,
+        #ratings-section .text-gray-800,
+        #ratings-section .text-gray-700,
+        #ratings-section span.text-gray-900,
+        #ratings-section span.text-gray-700,
+        #ratings-section p.text-gray-800 {
+          color: #ffffff !important;
+        }
+        #ratings-section span.text-gray-500,
+        #ratings-section span.text-gray-600 {
+          color: #d4d4d4 !important;
+        }
+        /* Hyperlink text visibility */
+        #ratings-section a,
+        #ratings-section a.text-store-600 {
+          color: #d4af37 !important;
+          text-decoration: underline !important;
+          font-weight: 700 !important;
+        }
+        #ratings-section a:hover,
+        #ratings-section a.text-store-600:hover {
+          color: #ffffff !important;
+        }
+        /* Filter buttons styling */
+        #ratings-section button.bg-white,
+        #ratings-section button[class*="bg-white"] {
+          background-color: #0f0f0f !important;
+          border-color: #1a1a1a !important;
+          color: #d4d4d4 !important;
+        }
+        #ratings-section button.bg-white:hover,
+        #ratings-section button[class*="bg-white"]:hover {
+          background-color: #141414 !important;
+          border-color: #d4af37 !important;
+          color: #ffffff !important;
+        }
+        #ratings-section button.bg-yellow-500,
+        #ratings-section button[class*="bg-yellow-500"] {
+          background-color: #d4af37 !important;
+          border-color: #d4af37 !important;
+          color: #000000 !important;
+        }
+        #ratings-section svg.text-store-500,
+        #ratings-section svg.text-yellow-400,
+        #ratings-section svg.text-yellow-500 {
+          color: #d4af37 !important;
+        }
+        #ratings-section .text-emerald-700.bg-emerald-50 {
+          color: #10b981 !important;
+          background-color: #10b98115 !important;
+          border: 1px solid #10b98130 !important;
+        }
+        #ratings-section textarea,
+        #ratings-section select,
+        #ratings-section input {
+          background-color: #050505 !important;
+          border: 1px solid #1a1a1a !important;
+          color: #ffffff !important;
+        }
+        #ratings-section textarea:focus,
+        #ratings-section select:focus,
+        #ratings-section input:focus {
+          border-color: #d4af37 !important;
+          outline: none !important;
+        }
+        #ratings-section button:not(.bg-white):not(.bg-gray-100) {
+          background-color: #d4af37 !important;
+          color: #000000 !important;
+          font-weight: 700 !important;
+        }
+        #ratings-section button:not(.bg-white):not(.bg-gray-100):hover {
+          background-color: #c29e2e !important;
+        }
+        #ratings-section button.bg-gray-100 {
+          background-color: #141414 !important;
+          color: #ffffff !important;
+        }
+        #ratings-section button.bg-gray-100:hover {
+          background-color: #1f1f1f !important;
+        }
+        
+        /* Call Us To Order block */
+        .mt-8.text-gray-700 {
+          color: #a3a3a3 !important;
+        }
+        .mt-8 a.text-store-500 {
+          color: #d4af37 !important;
+        }
+        .mt-8 a.text-store-500:hover {
+          color: #ffffff !important;
+        }
+      `}</style>
       {isLoading ? (
         <Loading loading={isLoading} />
       ) : (
@@ -1256,7 +1668,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                 <div className="flex flex-col lg:flex-row gap-10">
                   <div className="flex-shrink-0 w-full mx-auto md:w-5/12 lg:w-5/12 xl:w-5/12">
                     <div className="mt-1 lg:mt-2 lg:sticky lg:top-28 lg:space-y-4">
-                      {!isWholesaler && <Discount slug product={product} discount={discount} />} 
+                      <Discount slug product={product} discount={discount} />
 
                       {/* Flipkart-style Product Image Gallery with buttons inside */}
                       <ProductImageGallery
@@ -1265,11 +1677,11 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                           dynamicTitle || showingTranslateValue(product?.title)
                         }
                         buttons={
-                          <div className="absolute left-4 top-4 z-20 flex flex-col items-center gap-2">
+                          <div className="absolute left-4 top-4 z-20 flex flex-col items-start gap-2">
                             <button
                               type="button"
                               onClick={() => handleAddToWishlist(product)}
-                              className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-600 hover:text-red-600 border border-gray-200 hover:border-red-500 rounded-full px-3 py-1 bg-white shadow-sm transition-colors"
+                              className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-300 hover:text-red-500 border border-neutral-800/80 hover:border-red-500/30 rounded-full px-3.5 py-1.5 bg-black/60 backdrop-blur-md shadow-lg transition-all"
                               aria-label="Add to wishlist"
                             >
                               <FiHeart className="w-4 h-4" />
@@ -1278,7 +1690,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                             <button
                               type="button"
                               onClick={() => handleAddToCompare(product)}
-                              className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-600 hover:text-purple-600 border border-gray-200 hover:border-purple-500 rounded-full px-3 py-1 bg-white shadow-sm transition-colors"
+                              className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-300 hover:text-purple-400 border border-neutral-800/80 hover:border-purple-400/30 rounded-full px-3.5 py-1.5 bg-black/60 backdrop-blur-md shadow-lg transition-all"
                               aria-label="Add to compare"
                             >
                               <FiShuffle className="w-4 h-4" />
@@ -1287,7 +1699,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                             <button
                               type="button"
                               onClick={handleShareCurrentVariant}
-                              className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-600 hover:text-store-600 border border-gray-200 hover:border-store-500 rounded-full px-3 py-1 bg-white shadow-sm transition-colors"
+                              className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-300 hover:text-[#D4AF37] border border-neutral-800/80 hover:border-[#D4AF37]/30 rounded-full px-3.5 py-1.5 bg-black/60 backdrop-blur-md shadow-lg transition-all"
                               aria-label="Share this product"
                             >
                               <FiShare2 className="w-4 h-4" />
@@ -1303,9 +1715,9 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                           <button
                             onClick={() => handleAddToCart(product)}
                             type="button"
-                            className="flex-1 h-14 rounded-xl text-base font-bold flex items-center justify-center border-2 border-store-500 text-store-700 hover:bg-store-500 hover:text-white transform hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-sm"
+                            className="flex-1 h-14 rounded-xl text-base font-bold flex items-center justify-center border-2 border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black transform hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-sm"
                           >
-                            {t("AddToCart")}
+                            Add To Cart
                           </button>
                           <button
                             onClick={(e) => {
@@ -1337,7 +1749,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         </svg>
       </div>
       <p className="text-sm sm:text-base font-medium text-gray-700 text-left">
-        100% genuine <br /> medicines
+        100% Authentic <br /> Products
       </p>
     </div>
 
@@ -1453,16 +1865,13 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                         </div>
                         <div className="bg-gray-50/50 rounded-2xl p-6 mb-8 border border-gray-100">
                           <Price
-                            // If wholesaler and product has wholesale price, show that price
                             price={
-                              (isWholesaler && product?.wholePrice && Number(product.wholePrice) > 0)
-                                ? Number(product.wholePrice)
-                                : (price > 0
-                                    ? price
-                                    : getNumber(
-                                        (product?.variants?.[0]?.price ??
-                                          product?.prices?.price) || 0
-                                      ))
+                              price > 0
+                                ? price
+                                : getNumber(
+                                    (product?.variants?.[0]?.price ??
+                                      product?.prices?.price) || 0
+                                  )
                             }
                             product={product}
                             currency={currency}
@@ -1477,21 +1886,15 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                                       product?.prices?.price) || 0
                                   )
                             }
-                            hideDiscountAndMRP={isWholesaler}
                             showTaxLabel
                           />
                           
-                          {discount > 0 && !isWholesaler && (
+                          {discount > 0 && (
                             <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold ring-1 ring-green-200">
                               <span className="animate-bounce-short mr-1">🔥</span> Special Discount Applied
                             </div>
                           )}
 
-                          {isWholesaler && product?.minQuantity && Number(product.minQuantity) > 0 && (
-                            <p className="text-xs md:text-sm text-gray-500 mt-4 border-t pt-3 border-gray-200">
-                              Min order quantity: <span className="font-bold text-gray-800">{product.minQuantity} Units</span>
-                            </p>
-                          )}
                         </div>
 
                         {/* Flipkart-style Variant Selection */}
@@ -1576,8 +1979,8 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                             </div>
                           ) : (
                             <div className="mt-4 flex gap-4 items-center">
-                              <div className="text-sm text-gray-500 mb-1.5 font-medium">Check delivery time &amp; availability:</div>
-                              <LocationPickerDropdown className="w-30 !border !border-gray-300 rounded-md py-2 px-3 bg-gray-50 hover:bg-white hover:!border-store-500 transition-all justify-between !h-auto !border-r" />
+                              <div className="text-sm text-neutral-400 mb-1.5 font-medium">Check delivery time &amp; availability:</div>
+                              <LocationPickerDropdown className="w-30 !border !border-neutral-800 rounded-md py-2 px-3 bg-neutral-900/50 hover:bg-neutral-900 hover:!border-[#D4AF37] transition-all justify-between !h-auto !border-r" />
                             </div>
                           )}
                           {/* social share
@@ -1595,7 +1998,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                                     shareUrl ||
                                     (typeof window !== "undefined"
                                       ? window.location.href
-                                      : `https://Farmacykart-store-nine.vercel.app/product/${router.query.slug}`)
+                                      : `https://Rasa Store-store-nine.vercel.app/product/${router.query.slug}`)
                                   }
                                   quote=""
                                 >
@@ -1608,7 +2011,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                                     shareUrl ||
                                     (typeof window !== "undefined"
                                       ? window.location.href
-                                      : `https://Farmacykart-store-nine.vercel.app/product/${router.query.slug}`)
+                                      : `https://Rasa Store-store-nine.vercel.app/product/${router.query.slug}`)
                                   }
                                   quote=""
                                 >
@@ -1621,7 +2024,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                                     shareUrl ||
                                     (typeof window !== "undefined"
                                       ? window.location.href
-                                      : `https://Farmacykart-store-nine.vercel.app/product/${router.query.slug}`)
+                                      : `https://Rasa Store-store-nine.vercel.app/product/${router.query.slug}`)
                                   }`}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -1637,7 +2040,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                                     shareUrl ||
                                     (typeof window !== "undefined"
                                       ? window.location.href
-                                      : `https://Farmacykart-store-nine.vercel.app/product/${router.query.slug}`)
+                                      : `https://Rasa Store-store-nine.vercel.app/product/${router.query.slug}`)
                                   }
                                   quote=""
                                 >
@@ -1650,7 +2053,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                                     shareUrl ||
                                     (typeof window !== "undefined"
                                       ? window.location.href
-                                      : `https://Farmacykart-store-nine.vercel.app/product/${router.query.slug}`)
+                                      : `https://Rasa Store-store-nine.vercel.app/product/${router.query.slug}`)
                                   }
                                   quote=""
                                 >
@@ -1660,20 +2063,6 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                             </ul>
                           </div> */}
 
-
-                          {/* Composition Section */}
-                          {product?.composition?.enabled !== false && product?.composition?.description && (
-                            <div className="mt-8 border border-gray-200 rounded-lg p-6 bg-white">
-                              <div className="flex items-center gap-3 mb-4">
-                                <h2 className="text-xl font-semibold text-gray-800">
-                                  {product.composition.title || "Composition"}
-                                </h2>
-                              </div>
-                              <p className="text-sm text-gray-600 leading-relaxed text-justify">
-                                {product.composition.description}
-                              </p>
-                            </div>
-                          )}
 
                           {/* Product Highlights Section */}
                           {product?.productHighlights?.enabled !== false && product?.productHighlights?.items?.length > 0 && (
@@ -1698,30 +2087,6 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
                           {/* Premium Tab Navigation */}
                           <div className="sticky top-16 lg:top-[80px] z-40 bg-white/80 backdrop-blur-md mt-12 mb-8 py-1 border-b border-gray-100 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)]">
-                            <style jsx global>{`
-                              .tab-navigation-container {
-                                scrollbar-width: none !important;
-                                -ms-overflow-style: none !important;
-                              }
-                              .tab-navigation-container::-webkit-scrollbar {
-                                display: none !important;
-                              }
-                              @keyframes pulse-subtle {
-                                0% { opacity: 0.95; transform: scale(1); }
-                                50% { opacity: 1; transform: scale(1.02); }
-                                100% { opacity: 0.95; transform: scale(1); }
-                              }
-                              .lg\:animate-pulse-subtle:hover {
-                                animation: pulse-subtle 2s infinite ease-in-out;
-                              }
-                              .animate-bounce-short {
-                                animation: bounce-short 1s infinite;
-                              }
-                              @keyframes bounce-short {
-                                0%, 100% { transform: translateY(0); }
-                                50% { transform: translateY(-3px); }
-                              }
-                            `}</style>
                             <div className="max-w-screen-2xl mx-auto px-4 lg:px-12">
                               <div className="flex gap-6 overflow-x-auto tab-navigation-container">
                                 {product?.productDescription?.enabled !== false && (
@@ -1752,54 +2117,6 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                                   >
                                     Specification
                                     {activeTab === "specification" && (
-                                      <span className="absolute bottom-0 left-0 w-full h-1 bg-store-500 rounded-full" />
-                                    )}
-                                  </button>
-                                )}
-                                {product?.keyUses?.enabled !== false && product?.keyUses?.items?.length > 0 && (
-                                  <button
-                                    data-tab="key-uses"
-                                    onClick={() => handleTabClick("key-uses")}
-                                    className={`relative py-4 text-sm font-bold transition-all whitespace-nowrap ${
-                                      activeTab === "key-uses"
-                                        ? "text-store-600"
-                                        : "text-gray-400 hover:text-gray-600"
-                                    }`}
-                                  >
-                                    Key Uses
-                                    {activeTab === "key-uses" && (
-                                      <span className="absolute bottom-0 left-0 w-full h-1 bg-store-500 rounded-full" />
-                                    )}
-                                  </button>
-                                )}
-                                {product?.howToUse?.enabled !== false && product?.howToUse?.items?.length > 0 && (
-                                  <button
-                                    data-tab="how-to-use"
-                                    onClick={() => handleTabClick("how-to-use")}
-                                    className={`relative py-4 text-sm font-bold transition-all whitespace-nowrap ${
-                                      activeTab === "how-to-use"
-                                        ? "text-store-600"
-                                        : "text-gray-400 hover:text-gray-600"
-                                    }`}
-                                  >
-                                    Usage Guide
-                                    {activeTab === "how-to-use" && (
-                                      <span className="absolute bottom-0 left-0 w-full h-1 bg-store-500 rounded-full" />
-                                    )}
-                                  </button>
-                                )}
-                                {product?.safetyInformation?.enabled !== false && product?.safetyInformation?.items?.length > 0 && (
-                                  <button
-                                    data-tab="safety-information"
-                                    onClick={() => handleTabClick("safety-information")}
-                                    className={`relative py-4 text-sm font-bold transition-all whitespace-nowrap ${
-                                      activeTab === "safety-information"
-                                        ? "text-store-600"
-                                        : "text-gray-400 hover:text-gray-600"
-                                    }`}
-                                  >
-                                    Safety
-                                    {activeTab === "safety-information" && (
                                       <span className="absolute bottom-0 left-0 w-full h-1 bg-store-500 rounded-full" />
                                     )}
                                   </button>
@@ -1864,70 +2181,6 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                                     </ul>
                                   </div>
                                 ))}
-                            </div>
-                          )}
-
-                          {/* Key Uses Section */}
-                          {product?.keyUses?.enabled !== false && product?.keyUses?.items?.length > 0 && (
-                            <div id="key-uses" className="mt-8 border border-gray-200 rounded-lg p-6 bg-white">
-                              <div className="flex items-center gap-3 mb-4">
-                                {product.keyUses.icon && (
-                                  <img src={product.keyUses.icon} alt="" className="w-10 h-10" />
-                                )}
-                                <h2 className="text-xl font-semibold text-gray-800">
-                                  {product.keyUses.title || "Key Uses"} of {dynamicTitle || showingTranslateValue(product?.title)}
-                                </h2>
-                              </div>
-                              <ul className="list-disc list-inside space-y-4 text-sm text-gray-600 text-justify">
-                                {product.keyUses.items.map((item, idx) => (
-                                  <li key={idx} className="leading-relaxed">
-                                    <strong className="text-gray-900">{item.key || item.value}:</strong>{" "}
-                                    {item.value && item.key ? item.value : ""}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          {/* How To Use Section */}
-                          {product?.howToUse?.enabled !== false && product?.howToUse?.items?.length > 0 && (
-                            <div id="how-to-use" className="mt-8 border border-gray-200 rounded-lg p-6 bg-white">
-                              <div className="flex items-center gap-3 mb-4">
-                                {product.howToUse.icon && (
-                                  <img src={product.howToUse.icon} alt="" className="w-10 h-10" />
-                                )}
-                                <h2 className="text-xl font-semibold text-gray-800">
-                                  {product.howToUse.title || "How To Use"}
-                                </h2>
-                              </div>
-                              <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 text-justify">
-                                {product.howToUse.items.map((item, idx) => (
-                                  <li key={idx} className="leading-relaxed">
-                                    {item}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          {/* Safety Information Section */}
-                          {product?.safetyInformation?.enabled !== false && product?.safetyInformation?.items?.length > 0 && (
-                            <div id="safety-information" className="mt-8 border border-gray-200 rounded-lg p-6 bg-white">
-                              <div className="flex items-center gap-3 mb-4">
-                                {product.safetyInformation.icon && (
-                                  <img src={product.safetyInformation.icon} alt="" className="w-10 h-10" />
-                                )}
-                                <h2 className="text-xl font-semibold text-gray-800">
-                                  {product.safetyInformation.title || "Safety Information"}
-                                </h2>
-                              </div>
-                              <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 text-justify">
-                                {product.safetyInformation.items.map((item, idx) => (
-                                  <li key={idx} className="leading-relaxed">
-                                    {item}
-                                  </li>
-                                ))}
-                              </ul>
                             </div>
                           )}
 
@@ -2113,9 +2366,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                                       <span className="text-xl font-black text-gray-900 tracking-tight">
                                         {currency}
                                         {getNumberTwo(
-                                          (isWholesaler && product?.wholePrice && Number(product.wholePrice) > 0)
-                                            ? Number(product.wholePrice)
-                                            : (price > 0 ? price : getNumber((product?.variants?.[0]?.price ?? product?.prices?.price) || 0))
+                                          price > 0 ? price : getNumber((product?.variants?.[0]?.price ?? product?.prices?.price) || 0)
                                         )}
                                       </span>
                                       {discount > 0 && (
@@ -2232,7 +2483,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                   <div className="flex">
                     <div className="w-full">
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-6 gap-2 md:gap-3 lg:gap-3">
-                        {(isWholesaler ? relatedProducts?.filter(p => (p.wholePrice && Number(p.wholePrice) > 0) || p.isWholesaler) : relatedProducts)?.slice(1, 13).map((product, i) => (
+                        {relatedProducts?.slice(1, 13).map((product, i) => (
                           <ProductCard
                             key={product._id}
                             product={product}

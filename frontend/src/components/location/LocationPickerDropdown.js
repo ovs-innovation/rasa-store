@@ -193,26 +193,26 @@ const LocationPickerDropdown = ({ className = "", hideDivider = false }) => {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center justify-center gap-1 md:gap-2 h-full px-3 md:px-3 text-sm font-sans text-gray-700 hover:bg-gray-50 transition-colors ${hideDivider ? "" : "border-r border-gray-200"} ${className}`}
+        className={`flex items-center justify-center gap-1 md:gap-2 h-full px-3 md:px-3 text-sm font-sans text-neutral-300 hover:text-white hover:bg-neutral-900/50 transition-colors ${hideDivider ? "" : "border-r border-neutral-800"} ${className}`}
       >
-        <FiMapPin className="text-store-500 flex-shrink-0" size={18} />
+        <FiMapPin className="text-[#D4AF37] flex-shrink-0" size={18} />
         <span className="truncate max-w-[150px] font-medium hidden md:block">{truncatedText}</span>
-        <FiChevronDown size={14} className={`text-gray-400 transition-transform duration-200 hidden md:block ${isOpen ? "rotate-180" : ""}`} />
+        <FiChevronDown size={14} className={`text-neutral-400 transition-transform duration-200 hidden md:block ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-40 md:hidden" onClick={() => setIsOpen(false)}></div>
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 md:translate-x-0 md:translate-y-0 md:absolute md:top-full md:left-0 mt-1 z-50 w-72 md:w-80 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden animate-fade-in-down origin-top-left p-4">
-            <div className="font-semibold text-gray-800 mb-3 text-sm">Choose your location</div>
+          <div className="fixed inset-0 bg-black/60 z-40 md:hidden" onClick={() => setIsOpen(false)}></div>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 md:translate-x-0 md:translate-y-0 md:absolute md:top-full md:left-0 mt-2 z-50 w-72 md:w-80 bg-[#0d0d0d] rounded-lg shadow-[0_10px_30px_rgba(0,0,0,0.8)] border border-neutral-800/80 overflow-hidden animate-fade-in-down origin-top-left p-5">
+            <div className="font-semibold text-white mb-4 text-sm tracking-wide">Choose your location</div>
           
           <div className="relative mb-4">
-            <div className="absolute top-0 left-0 bottom-0 w-1 bg-store-500 rounded-l-md"></div>
-            <div className="flex items-center border border-gray-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-store-500">
+            <div className="absolute top-0 left-0 bottom-0 w-1 bg-[#D4AF37] rounded-l-md"></div>
+            <div className="flex items-center border border-neutral-800 bg-[#121212] rounded-md overflow-hidden focus-within:border-[#D4AF37] focus-within:ring-1 focus-within:ring-[#D4AF37]">
               <input
                 type="text"
                 placeholder="Enter 6 digit PIN"
-                className="w-full px-3 py-2 text-sm outline-none text-gray-700 placeholder-gray-400"
+                className="w-full px-3 py-2.5 text-sm bg-transparent outline-none text-white placeholder-neutral-500"
                 maxLength={6}
                 value={pinCode}
                 onChange={(e) => setPinCode(e.target.value.replace(/\D/g, ''))}
@@ -220,29 +220,29 @@ const LocationPickerDropdown = ({ className = "", hideDivider = false }) => {
               />
               <button 
                 onClick={handlePinSubmit}
-                className="bg-store-500 text-white p-2.5 hover:bg-store-600 transition"
+                className="bg-[#D4AF37] text-black p-3 hover:bg-[#bfa232] transition-colors"
               >
                 <FiMapPin size={16} />
               </button>
             </div>
           </div>
 
-          <div className="text-xs text-gray-500 mb-2 font-medium uppercase tracking-wide">OR</div>
+          <div className="text-[10px] text-neutral-500 mb-3 font-semibold uppercase tracking-wider text-center flex items-center gap-2 before:content-[''] before:flex-1 before:h-[1px] before:bg-neutral-800 after:content-[''] after:flex-1 after:h-[1px] after:bg-neutral-800">OR</div>
 
           <button
             onClick={getCurrentLocation}
             disabled={shouldGetLocation}
-            className="w-full flex items-center justify-between text-store-600 bg-store-50 hover:bg-store-100 border border-store-100 px-3 py-2.5 rounded-md transition-colors text-sm font-medium"
+            className="w-full flex items-center justify-between text-[#D4AF37] bg-[#D4AF37]/5 hover:bg-[#D4AF37]/10 border border-[#D4AF37]/20 hover:border-[#D4AF37]/40 px-3 py-2.5 rounded-md transition-all text-sm font-medium"
           >
             <div className="flex items-center gap-3">
               {shouldGetLocation ? (
-                 <FiLoader className="animate-spin" size={18} />
+                 <FiLoader className="animate-spin text-[#D4AF37]" size={18} />
               ) : (
-                 <IoLocationSharp size={20} />
+                 <IoLocationSharp className="text-[#D4AF37]" size={20} />
               )}
               <span>Use current location</span>
             </div>
-            <FiCrosshair size={18} />
+            <FiCrosshair className="text-[#D4AF37]" size={18} />
           </button>
         </div>
         </>

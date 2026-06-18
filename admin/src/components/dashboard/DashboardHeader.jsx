@@ -21,7 +21,7 @@ const DashboardHeader = () => {
           Welcome back, <span className="text-teal-200">Admin</span> 👋
         </h1>
         <p className="text-teal-100 font-medium max-w-md">
-          Here's what's happening with Farmcykart today. Check your statistics and recent orders.
+          Here's what's happening with RASA today. Check your statistics and recent orders.
         </p>
       </div>
 

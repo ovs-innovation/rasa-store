@@ -48,7 +48,7 @@ const wrap = ({ title, preheader, bodyHtml, bodyText }) => ({
 });
 
 const simpleOtpEmail = (option) => {
-  const shop = option.shop_name || "Farmacykart";
+  const shop = option.shop_name || "RASA";
   const support = getSupportEmail();
   const text = `Hello ${option.name || "there"},
 
@@ -71,7 +71,7 @@ If you did not request this, you can ignore this email.${footerText(shop)}`;
 };
 
 const simpleVerifyEmail = (option) => {
-  const shop = option.shop_name || "Farmacykart";
+  const shop = option.shop_name || "RASA";
   const link = `${storeBaseUrl()}/auth/email-verification/${option.token}`;
 
   const text = `Hello ${option.name || "there"},
@@ -99,7 +99,7 @@ If you did not create an account, ignore this email.${footerText(shop)}`;
 };
 
 const simpleResetPasswordEmail = (option) => {
-  const shop = option.shop_name || "Farmacykart";
+  const shop = option.shop_name || "RASA";
   const link = `${storeBaseUrl()}/auth/forget-password/${option.token}`;
 
   const text = `Hello,

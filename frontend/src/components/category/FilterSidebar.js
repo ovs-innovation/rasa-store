@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { IoClose, IoStar } from "react-icons/io5";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
-import CategoryServices from "@services/CategoryServices";
 import BrandServices from "@services/BrandServices";
+import CategoryServices from "@services/CategoryServices";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 
 const FilterSidebar = ({
@@ -32,14 +32,15 @@ const FilterSidebar = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [catData, brandData] = await Promise.all([
-          CategoryServices.getShowingCategory(),
+        const [brandData, categoryData] = await Promise.all([
           BrandServices.getShowingBrands(),
+          CategoryServices.getShowingCategory(),
         ]);
-        // Extract children from category data structure
-        const mainCategories = catData?.[0]?.children || catData || [];
-        setCategories(mainCategories);
         setBrands(brandData || []);
+        const root = (categoryData || []).find(
+          (c) => c.id === "Root" || c.name?.en?.toLowerCase() === "home"
+        );
+        setCategories(root?.children?.length ? root.children : categoryData || []);
       } catch (err) {
         console.error("Error fetching filter data", err);
       }
@@ -59,21 +60,15 @@ const FilterSidebar = ({
   };
 
   const handleBrandChange = (brandId) => {
-    // setSelectedBrands is now a wrapper function from parent that handles clearing search query
-    // It expects the brandId and handles the toggle logic internally
     setSelectedBrands(brandId);
   };
 
   const handleCategoryChange = (catId) => {
-    // setSelectedCategories is now a wrapper function from parent that handles clearing search query
-    // It expects the catId and handles the toggle logic internally
     setSelectedCategories(catId);
   };
 
   const handlePriceChange = (e, type) => {
     const value = parseInt(e.target.value) || 0;
-    // setPriceRange is now a wrapper function from parent that handles clearing search query
-    // It expects the full priceRange object
     const newPriceRange = { ...priceRange, [type]: value };
     setPriceRange(newPriceRange);
   };
@@ -82,14 +77,14 @@ const FilterSidebar = ({
   const discounts = [50, 40, 30, 20, 10];
 
   return (
-    <div className="bg-white border border-gray-200 rounded-sm shadow-sm overflow-hidden">
-      <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-        <h2 className="text-lg font-bold text-gray-800">Filters</h2>
+    <div className="bg-[#0D0D0D] border border-neutral-800 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.35)] overflow-hidden font-sans">
+      <div className="p-4 border-b border-neutral-800 flex justify-between items-center bg-[#050505]/40">
+        <h2 className="text-sm font-black uppercase tracking-widest text-white">Filters</h2>
         <button
           onClick={onClearAll}
-          className="text-store-600 text-xs font-bold uppercase hover:underline"
+          className="text-[#D4AF37] text-xs font-black uppercase hover:underline"
         >
-          CLEAR ALL
+          Clear All
         </button>
       </div>
 
@@ -100,18 +95,18 @@ const FilterSidebar = ({
         selectedDiscount > 0 ||
         priceRange.min > 0 ||
         priceRange.max < 100000) && (
-        <div className="p-4 flex flex-wrap gap-2 border-b border-gray-100">
+        <div className="p-4 flex flex-wrap gap-2 border-b border-neutral-850 bg-[#050505]/20">
           {selectedBrands.map((brandId) => {
             const brand = brands.find((b) => b._id === brandId);
             if (!brand) return null;
             return (
               <span
                 key={brandId}
-                className="inline-flex items-center px-2 py-1 bg-gray-100 text-xs rounded-sm"
+                className="inline-flex items-center px-2 py-1 bg-neutral-900 border border-neutral-800 text-xs rounded-lg text-neutral-300"
               >
                 {showingTranslateValue(brand.name)}
                 <IoClose
-                  className="ml-1 cursor-pointer"
+                  className="ml-1.5 cursor-pointer text-neutral-500 hover:text-white"
                   onClick={() => handleBrandChange(brandId)}
                 />
               </span>
@@ -122,7 +117,6 @@ const FilterSidebar = ({
               const tags = [];
               const consumed = new Set();
 
-              // If all children of a parent are selected, show parent tag once
               for (const parentCat of categories) {
                 if (parentCat.children && parentCat.children.length > 0) {
                   const childIds = parentCat.children.map((c) => c._id);
@@ -130,15 +124,13 @@ const FilterSidebar = ({
                   if (allSelected) {
                     tags.push({ id: parentCat._id, name: parentCat.name, isParent: true });
                     childIds.forEach((id) => consumed.add(id));
-                    consumed.add(parentCat._id); // Prevent duplicate parent tags
+                    consumed.add(parentCat._id);
                   }
                 }
               }
 
-              // Remaining selected categories not part of a complete parent
               for (const catId of selectedCategories) {
                 if (consumed.has(catId)) continue;
-                // find parent or child by id
                 let cat = categories.find((c) => c._id === catId);
                 if (!cat) {
                   for (const parentCat of categories) {
@@ -155,10 +147,10 @@ const FilterSidebar = ({
               }
 
               return tags.map((t) => (
-                <span key={t.id} className="inline-flex items-center px-2 py-1 bg-gray-100 text-xs rounded-sm">
+                <span key={t.id} className="inline-flex items-center px-2 py-1 bg-neutral-900 border border-neutral-800 text-xs rounded-lg text-neutral-300">
                   {showingTranslateValue(t.name)}
                   <IoClose
-                    className="ml-1 cursor-pointer hover:text-red-600"
+                    className="ml-1.5 cursor-pointer text-neutral-500 hover:text-white"
                     onClick={() => {
                       if (t.isParent) {
                         const parent = categories.find((c) => c._id === t.id);
@@ -174,19 +166,19 @@ const FilterSidebar = ({
             })()
           }
           {priceRange.min > 0 && (
-            <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-xs rounded-sm">
+            <span className="inline-flex items-center px-2 py-1 bg-neutral-900 border border-neutral-800 text-xs rounded-lg text-neutral-300">
               Min: {priceRange.min}
               <IoClose
-                className="ml-1 cursor-pointer"
+                className="ml-1.5 cursor-pointer text-neutral-500 hover:text-white"
                 onClick={() => setPriceRange((prev) => ({ ...prev, min: 0 }))}
               />
             </span>
           )}
           {priceRange.max < 100000 && (
-            <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-xs rounded-sm">
+            <span className="inline-flex items-center px-2 py-1 bg-neutral-900 border border-neutral-800 text-xs rounded-lg text-neutral-300">
               Max: {priceRange.max}
               <IoClose
-                className="ml-1 cursor-pointer"
+                className="ml-1.5 cursor-pointer text-neutral-500 hover:text-white"
                 onClick={() =>
                   setPriceRange((prev) => ({ ...prev, max: 100000 }))
                 }
@@ -194,19 +186,19 @@ const FilterSidebar = ({
             </span>
           )}
           {selectedRating > 0 && (
-            <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-xs rounded-sm">
+            <span className="inline-flex items-center px-2 py-1 bg-neutral-900 border border-neutral-800 text-xs rounded-lg text-neutral-300">
               {selectedRating}★ & above
               <IoClose
-                className="ml-1 cursor-pointer"
+                className="ml-1.5 cursor-pointer text-neutral-500 hover:text-white"
                 onClick={() => setSelectedRating(0)}
               />
             </span>
           )}
           {selectedDiscount > 0 && (
-            <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-xs rounded-sm">
+            <span className="inline-flex items-center px-2 py-1 bg-neutral-900 border border-neutral-800 text-xs rounded-lg text-neutral-300">
               {selectedDiscount}%+ Off
               <IoClose
-                className="ml-1 cursor-pointer"
+                className="ml-1.5 cursor-pointer text-neutral-500 hover:text-white"
                 onClick={() => setSelectedDiscount(0)}
               />
             </span>
@@ -215,13 +207,13 @@ const FilterSidebar = ({
       )}
 
       {/* Categories */}
-      <div className="border-b border-gray-100">
+      <div className="border-b border-neutral-850">
         <button
           onClick={() => toggleSection("category")}
-          className="w-full p-4 flex justify-between items-center text-sm font-bold uppercase text-gray-700 hover:bg-gray-50 transition-colors"
+          className="w-full p-4 flex justify-between items-center text-xs font-black uppercase text-neutral-200 hover:bg-neutral-900/60 transition-colors"
         >
           Categories
-          {openSections.category ? <FiChevronUp /> : <FiChevronDown />}
+          {openSections.category ? <FiChevronUp className="text-neutral-400" /> : <FiChevronDown className="text-neutral-400" />}
         </button>
         {openSections.category && (
           <div className="px-4 pb-4 max-h-96 overflow-y-auto">
@@ -231,27 +223,24 @@ const FilterSidebar = ({
               
               return (
                 <div key={cat._id} className="mb-2">
-                  {/* Parent Category */}
                   <div className="flex items-center justify-between group">
                     <div className="flex items-center flex-1">
                       <input
                         type="checkbox"
                         id={`cat-${cat._id}`}
-                        // Consider a parent checked if it or all its children are selected
                         checked={
                           selectedCategories.includes(cat._id) || 
                           (cat.children && cat.children.length > 0 && cat.children.every((c) => selectedCategories.includes(c._id)))
                         }
                         onChange={() => {
-                          // If parent has children, toggle all child ids together
                           const ids = (cat.children && cat.children.length > 0) ? [cat._id, ...cat.children.map(c => c._id)] : [cat._id];
                           handleCategoryChange(ids);
                         }}
-                        className="rounded border-gray-300 text-store-600 focus:ring-store-500"
+                        className="rounded border-neutral-800 text-[#D4AF37] bg-neutral-950 focus:ring-[#D4AF37] focus:ring-offset-0 focus:outline-none w-4 h-4"
                       />
                       <label
                         htmlFor={`cat-${cat._id}`}
-                        className="ml-2 text-sm font-medium text-gray-700 cursor-pointer flex-1 hover:text-store-600 transition-colors"
+                        className="ml-2 text-sm font-medium text-neutral-300 cursor-pointer flex-1 hover:text-[#D4AF37] transition-colors"
                       >
                         {showingTranslateValue(cat.name)}
                       </label>
@@ -262,7 +251,7 @@ const FilterSidebar = ({
                           e.stopPropagation();
                           toggleCategory(cat._id);
                         }}
-                        className="ml-2 p-1 text-gray-400 hover:text-store-600 transition-colors"
+                        className="ml-2 p-1 text-neutral-500 hover:text-[#D4AF37] transition-colors"
                         aria-label={isExpanded ? "Collapse" : "Expand"}
                       >
                         {isExpanded ? (
@@ -274,9 +263,8 @@ const FilterSidebar = ({
                     )}
                   </div>
                   
-                  {/* Subcategories */}
                   {hasChildren && isExpanded && (
-                    <div className="ml-6 mt-2 mb-3 border-l-2 border-gray-200 pl-4 space-y-2">
+                    <div className="ml-6 mt-2 mb-3 border-l-2 border-neutral-800 pl-4 space-y-2">
                       {cat.children.map((subCat) => (
                         <div key={subCat._id} className="flex items-center">
                           <input
@@ -284,11 +272,11 @@ const FilterSidebar = ({
                             id={`subcat-${subCat._id}`}
                             checked={selectedCategories.includes(subCat._id)}
                             onChange={() => handleCategoryChange(subCat._id)}
-                            className="rounded border-gray-300 text-store-600 focus:ring-store-500"
+                            className="rounded border-neutral-800 text-[#D4AF37] bg-neutral-950 focus:ring-[#D4AF37] focus:ring-offset-0 focus:outline-none w-4 h-4"
                           />
                           <label
                             htmlFor={`subcat-${subCat._id}`}
-                            className="ml-2 text-sm text-gray-600 cursor-pointer hover:text-store-600 transition-colors"
+                            className="ml-2 text-sm text-neutral-450 cursor-pointer hover:text-[#D4AF37] transition-colors"
                           >
                             {showingTranslateValue(subCat.name)}
                           </label>
@@ -304,13 +292,13 @@ const FilterSidebar = ({
       </div>
 
       {/* Price */}
-      <div className="border-b border-gray-100 p-4">
-        <h3 className="text-sm font-bold uppercase text-gray-700 mb-4">Price</h3>
+      <div className="border-b border-neutral-850 p-4">
+        <h3 className="text-xs font-black uppercase text-neutral-200 mb-4">Price</h3>
         <div className="flex items-center gap-2">
           <select
             value={priceRange.min}
             onChange={(e) => handlePriceChange(e, "min")}
-            className="w-full text-sm border-gray-300 rounded-sm focus:ring-store-500"
+            className="w-full text-xs bg-neutral-950 text-white border border-neutral-800 rounded-lg p-2 focus:ring-[#D4AF37] focus:border-[#D4AF37] focus:outline-none"
           >
             <option value="0">0 {currency}</option>
             <option value="500">500 {currency}</option>
@@ -319,13 +307,13 @@ const FilterSidebar = ({
             <option value="10000">10000 {currency}</option>
             <option value="50000">50000 {currency}</option>
           </select>
-          <span className="text-gray-400 text-xs">to</span>
+          <span className="text-neutral-500 text-xs">to</span>
           <select
             value={priceRange.max}
             onChange={(e) => handlePriceChange(e, "max")}
-            className="w-full text-sm border-gray-300 rounded-sm focus:ring-store-500"
+            className="w-full text-xs bg-neutral-950 text-white border border-neutral-800 rounded-lg p-2 focus:ring-[#D4AF37] focus:border-[#D4AF37] focus:outline-none"
           >
-           <option value={priceRange.max}>
+            <option value={priceRange.max}>
               {priceRange.max >= 100000 ? "Max" : `${priceRange.max} ${currency}`}
             </option>
             <option value="1000">1000 {currency}</option>
@@ -342,23 +330,23 @@ const FilterSidebar = ({
           step="500"
           value={priceRange.max}
           onChange={(e) => handlePriceChange(e, "max")}
-          className="w-full mt-4 h-1.5 rounded-lg appearance-none cursor-pointer accent-store-600"
+          className="w-full mt-4 h-1.5 rounded-lg appearance-none cursor-pointer accent-[#D4AF37]"
           style={{
-            background: `linear-gradient(to right, var(--store-color-600) 0%, var(--store-color-600) ${
+            background: `linear-gradient(to right, #D4AF37 0%, #D4AF37 ${
               (priceRange.max / 100000) * 100
-            }%, #e5e7eb ${(priceRange.max / 100000) * 100}%, #e5e7eb 100%)`,
+            }%, #262626 ${(priceRange.max / 100000) * 100}%, #262626 100%)`,
           }}
         />
       </div>
 
       {/* Brand */}
-      <div className="border-b border-gray-100">
+      <div className="border-b border-neutral-850">
         <button
           onClick={() => toggleSection("brand")}
-          className="w-full p-4 flex justify-between items-center text-sm font-bold uppercase text-gray-700"
+          className="w-full p-4 flex justify-between items-center text-xs font-black uppercase text-neutral-200 hover:bg-neutral-900/60 transition-colors"
         >
           Brand
-          {openSections.brand ? <FiChevronUp /> : <FiChevronDown />}
+          {openSections.brand ? <FiChevronUp className="text-neutral-400" /> : <FiChevronDown className="text-neutral-400" />}
         </button>
         {openSections.brand && (
           <div className="px-4 pb-4 max-h-60 overflow-y-auto">
@@ -369,11 +357,11 @@ const FilterSidebar = ({
                   id={`brand-${brand._id}`}
                   checked={selectedBrands.includes(brand._id)}
                   onChange={() => handleBrandChange(brand._id)}
-                  className="rounded border-gray-300 text-store-600 focus:ring-store-500"
+                  className="rounded border-neutral-800 text-[#D4AF37] bg-neutral-950 focus:ring-[#D4AF37] focus:ring-offset-0 focus:outline-none w-4 h-4"
                 />
                 <label
                   htmlFor={`brand-${brand._id}`}
-                  className="ml-2 text-sm text-gray-600 cursor-pointer"
+                  className="ml-2 text-sm text-neutral-350 cursor-pointer hover:text-[#D4AF37] transition-colors"
                 >
                   {showingTranslateValue(brand.name)}
                 </label>
@@ -384,20 +372,20 @@ const FilterSidebar = ({
       </div>
 
       {/* Customer Ratings */}
-      <div className="border-b border-gray-100">
+      <div className="border-b border-neutral-850">
         <button
           onClick={() => toggleSection("rating")}
-          className="w-full p-4 flex justify-between items-center text-sm font-bold uppercase text-gray-700"
+          className="w-full p-4 flex justify-between items-center text-xs font-black uppercase text-neutral-200 hover:bg-neutral-900/60 transition-colors"
         >
           Customer Ratings
-          {openSections.rating ? <FiChevronUp /> : <FiChevronDown />}
+          {openSections.rating ? <FiChevronUp className="text-neutral-400" /> : <FiChevronDown className="text-neutral-400" />}
         </button>
         {openSections.rating && (
           <div className="px-4 pb-4">
             {ratings.map((rating) => (
               <div
                 key={rating}
-                className="flex items-center mb-2 cursor-pointer"
+                className="flex items-center mb-2 cursor-pointer group"
                 onClick={() => setSelectedRating(rating)}
               >
                 <input
@@ -405,10 +393,10 @@ const FilterSidebar = ({
                   name="rating"
                   checked={selectedRating === rating}
                   onChange={() => setSelectedRating(rating)}
-                  className="text-store-600 focus:ring-store-500"
+                  className="text-[#D4AF37] bg-neutral-950 border-neutral-800 focus:ring-[#D4AF37] focus:ring-offset-0 focus:outline-none w-4 h-4"
                 />
-                <div className="ml-2 flex items-center text-sm text-gray-600">
-                  {rating} <IoStar className="text-yellow-400 ml-1 mr-1" /> & above
+                <div className="ml-2 flex items-center text-sm text-neutral-350 group-hover:text-[#D4AF37] transition-colors">
+                  {rating} <IoStar className="text-[#D4AF37] ml-1 mr-1" /> & above
                 </div>
               </div>
             ))}
@@ -417,20 +405,20 @@ const FilterSidebar = ({
       </div>
 
       {/* Discount */}
-      <div className="border-b border-gray-100">
+      <div className="border-b border-neutral-850">
         <button
           onClick={() => toggleSection("discount")}
-          className="w-full p-4 flex justify-between items-center text-sm font-bold uppercase text-gray-700"
+          className="w-full p-4 flex justify-between items-center text-xs font-black uppercase text-neutral-200 hover:bg-neutral-900/60 transition-colors"
         >
           Discount
-          {openSections.discount ? <FiChevronUp /> : <FiChevronDown />}
+          {openSections.discount ? <FiChevronUp className="text-neutral-400" /> : <FiChevronDown className="text-neutral-400" />}
         </button>
         {openSections.discount && (
           <div className="px-4 pb-4">
             {discounts.map((discount) => (
               <div
                 key={discount}
-                className="flex items-center mb-2 cursor-pointer"
+                className="flex items-center mb-2 cursor-pointer group"
                 onClick={() => setSelectedDiscount(discount)}
               >
                 <input
@@ -438,9 +426,9 @@ const FilterSidebar = ({
                   name="discount"
                   checked={selectedDiscount === discount}
                   onChange={() => setSelectedDiscount(discount)}
-                  className="text-store-600 focus:ring-store-500"
+                  className="text-[#D4AF37] bg-neutral-950 border-neutral-800 focus:ring-[#D4AF37] focus:ring-offset-0 focus:outline-none w-4 h-4"
                 />
-                <label className="ml-2 text-sm text-gray-600 cursor-pointer">
+                <label className="ml-2 text-sm text-neutral-350 cursor-pointer group-hover:text-[#D4AF37] transition-colors">
                   {discount}% or more
                 </label>
               </div>

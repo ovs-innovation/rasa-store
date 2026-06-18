@@ -97,6 +97,7 @@ const updateCategory = async (req, res) => {
       category.parentName = req.body.parentName;
       category.featured = req.body.featured !== undefined ? req.body.featured : category.featured;
       category.priority = req.body.priority || category.priority;
+      category.banner = req.body.banner;
 
       await category.save();
       res.send({ message: "Category Updated Successfully!" });
@@ -204,7 +205,12 @@ const readyToParentAndChildrenCategory = (categories, parentId = null) => {
   const categoryList = [];
   let cate;
   if (parentId == null) {
-    cate = categories.filter((cat) => cat.parentId == undefined);
+    // Build a set of all real category _id values so we can detect sentinel parentIds
+    // (e.g. "rasa-root") that don't refer to any actual category document.
+    const knownIds = new Set(categories.map((c) => String(c._id)));
+    cate = categories.filter(
+      (cat) => !cat.parentId || !knownIds.has(String(cat.parentId))
+    );
   } else {
     cate = categories.filter((cat) => cat.parentId == parentId);
   }
@@ -226,6 +232,7 @@ const readyToParentAndChildrenCategory = (categories, parentId = null) => {
 
   return categoryList;
 };
+
 
 module.exports = {
   addCategory,

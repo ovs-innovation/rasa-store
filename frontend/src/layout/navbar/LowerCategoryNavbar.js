@@ -6,10 +6,12 @@ import Link from "next/link";
 import { IoChevronDown } from "react-icons/io5";
 
 export default function LowerCategoryNavbar({
-  categories = [],
+  categories: originalCategories = [],
   showingTranslateValue,
   variant = "row",
 }) {
+  const categories =
+    originalCategories?.length > 0 ? originalCategories : [];
   const [activeCategoryId, setActiveCategoryId] = useState(null);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const [mounted, setMounted] = useState(false);
@@ -98,6 +100,22 @@ export default function LowerCategoryNavbar({
 
   if (!categories || categories.length === 0) return null;
 
+  const getUrl = (cat) => {
+    if (!cat) return "/";
+    const slug = String(cat.slug || createSlug(getName(cat)) || "").trim();
+    if (!slug || slug === "/") return "/";
+    if (slug === "new-arrivals") return "/new-arrivals";
+    if (slug.startsWith("search?")) return `/${slug}`;
+    if (slug.startsWith("footwear?brand=")) {
+      const brandName = slug.split("=")[1];
+      return `/search?category=footwear&brand=${brandName}`;
+    }
+    if (slug.startsWith("bags?type=")) {
+      const bagType = slug.split("=")[1];
+      return `/search?category=bags&type=${bagType}`;
+    }
+    return `/search?category=${slug}`;
+  };
   const activeCategory = categories.find((c) => getId(c) === activeCategoryId);
   const hasChildren = activeCategory?.children?.length > 0;
 
@@ -110,10 +128,10 @@ export default function LowerCategoryNavbar({
         onMouseEnter={clearCloseTimer}
         onMouseLeave={scheduleClose}
       >
-        <div className="bg-white shadow-[0_12px_48px_rgba(0,0,0,0.15)] rounded-xl border border-gray-200 py-2 overflow-hidden">
+        <div className="bg-[#0A0A0A] shadow-2xl shadow-black/60 rounded-none border border-neutral-800 py-2 overflow-hidden">
           <Link
-            href={`/search?category=${activeCategory.slug || createSlug(getName(activeCategory))}&_id=${activeCategory._id}`}
-            className="px-5 py-3 text-sm font-bold text-store-600 uppercase tracking-wide block border-b border-gray-100 hover:bg-store-50"
+            href={getUrl(activeCategory)}
+            className="px-5 py-3 text-xs font-black text-[#D4AF37] uppercase tracking-widest block border-b border-neutral-800 hover:bg-[#D4AF37] hover:text-black transition-colors"
             onClick={() => setActiveCategoryId(null)}
           >
             View All {getName(activeCategory)}
@@ -123,16 +141,16 @@ export default function LowerCategoryNavbar({
               {activeCategory.children.map((sub) => (
                 <Link
                   key={sub._id}
-                  href={`/search?category=${sub.slug || createSlug(getName(sub))}&_id=${sub._id}`}
+                  href={getUrl(sub)}
                   onClick={() => setActiveCategoryId(null)}
-                  className="block px-5 py-2.5 text-sm text-gray-700 hover:bg-store-50 hover:text-store-700"
+                  className="block px-5 py-2.5 text-xs uppercase tracking-wider font-bold text-neutral-300 hover:bg-[#D4AF37] hover:text-black transition-colors"
                 >
                   {getName(sub)}
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="px-5 py-2 text-xs text-gray-500">Browse all products in this category</p>
+            <p className="px-5 py-2 text-[10px] uppercase tracking-wider font-bold text-neutral-500">Browse all products</p>
           )}
         </div>
       </div>
@@ -140,12 +158,12 @@ export default function LowerCategoryNavbar({
 
   const wrapperClass = isInline
     ? "w-full min-w-0 relative"
-    : "w-full border-t border-gray-100 bg-white relative";
+    : "w-full border-t border-b border-neutral-900 bg-[#050505] relative";
 
   return (
     <div className={wrapperClass} ref={dropdownRef}>
       <div className={isInline ? "" : "max-w-screen-2xl mx-auto px-4 sm:px-8"}>
-        <nav className="flex items-center justify-center gap-1 md:gap-3 lg:gap-6 py-1 overflow-x-auto no-scrollbar">
+        <nav className="flex items-center justify-center gap-1 md:gap-3 lg:gap-4 py-0 overflow-x-auto no-scrollbar">
           {categories.map((category) => {
             const id = getId(category);
             const isActive = activeCategoryId === id;
@@ -177,16 +195,16 @@ export default function LowerCategoryNavbar({
                       if (isActive) setActiveCategoryId(null);
                       else openMenu(category, e.currentTarget);
                     } else {
-                      window.location.href = `/search?category=${category.slug || createSlug(getName(category))}&_id=${category._id}`;
+                      window.location.href = getUrl(category);
                     }
                   }}
-                  className={`flex items-center gap-1.5 font-semibold whitespace-nowrap rounded-lg transition-colors
-                    ${isInline ? "px-2.5 py-2 text-sm" : "px-4 py-2.5 text-sm"}
-                    ${isActive ? "text-gray-900 bg-gray-100" : "text-gray-800 hover:text-gray-900 hover:bg-gray-100"}`}
+                  className={`flex items-center gap-1.5 font-black uppercase tracking-widest text-[11px] whitespace-nowrap rounded-none transition-all duration-300 border-b-2
+                    ${isInline ? "px-2 py-1.5" : "px-3.5 py-3"}
+                    ${isActive ? "text-white border-[#D4AF37] bg-transparent" : "text-neutral-400 border-transparent hover:text-white hover:border-[#D4AF37] bg-transparent"}`}
                 >
                   {getName(category)}
                   <IoChevronDown
-                    className={`text-xs transition-transform ${isActive ? "rotate-180 text-gray-900" : "text-gray-600"}`}
+                    className={`text-[10px] transition-transform duration-300 ${isActive ? "rotate-180 text-white" : "text-neutral-500 group-hover:text-white"}`}
                   />
                 </button>
               </div>

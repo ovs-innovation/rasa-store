@@ -1,335 +1,384 @@
 import React from "react";
-import Image from "next/image";
+import Link from "next/link";
+import { FiShield, FiTrendingUp, FiTruck, FiRefreshCw, FiArrowRight, FiUsers, FiPackage, FiAward } from "react-icons/fi";
 
 //internal import
 import Layout from "@layout/Layout";
 import useGetSetting from "@hooks/useGetSetting";
-import SimpleHeader from "@components/header/SimpleHeader";
-import CMSkeleton from "@components/preloader/CMSkeleton";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 
 const AboutUs = () => {
-  const { storeCustomizationSetting, loading, error } = useGetSetting();
+  const { storeCustomizationSetting } = useGetSetting();
   const { showingTranslateValue } = useUtilsFunction();
 
   return (
-    <Layout title="About Us" description="This is about us page">
-      {/* <SimpleHeader
-        title={
-          showingTranslateValue(storeCustomizationSetting?.about_us?.title) ||
-          "About Us"
-        }
-      /> */}
-
-      <div className="bg-white pt-8 lg:pt-16">
-        <div className="max-w-screen-2xl mx-auto pb-10 px-4 sm:px-10">
-          <div className="grid grid-flow-row lg:grid-cols-2 gap-4 lg:gap-16 items-center">
-            <div className="">
-              <h3 className="text-xl lg:text-3xl mb-2 font-serif font-semibold text-justify">
-                {/* {t("common:about-section-title")} */}
-
-                <CMSkeleton
-                  count={1}
-                  height={50}
-                  loading={loading}
-                  data={storeCustomizationSetting?.about_us?.top_title || "About Farmacykart"}
-                />
-              </h3>
-              <div className="mt-3 text-base opacity-90 leading-7 text-justify">
-                <p>
-                  <CMSkeleton
-                    count={5}
-                    height={20}
-                    loading={loading}
-                    data={storeCustomizationSetting?.about_us?.top_description || "Founded in 2020 in the heart of Ghaziabad, Uttar Pradesh, Farmacykart was built on a simple idea: health and daily essentials should never be hard to reach. We are a proud Indian multi-vendor e-commerce platform that connects families with licensed medicine distributors, local pharmacies, and quality grocery vendors."}
-                  />
-                </p>
-              </div>
-              <div className="grid md:grid-cols-2 gap-6 lg:grid-cols-2 xl:gap-6 mt-8">
-                <div className="p-8 bg-indigo-50 shadow-sm rounded-lg">
-                  {loading ? (
-                    <CMSkeleton
-                      count={8}
-                      height={20}
-                      error={error}
-                      loading={loading}
-                    />
-                  ) : (
-                    <>
-                      <span className="text-3xl block font-extrabold font-serif mb-4 text-gray-800">
-                        {showingTranslateValue(
-                          storeCustomizationSetting?.about_us?.card_two_title
-                        ) || "Our Mission"}
-                      </span>
-                      <h4 className="text-lg font-serif font-bold mb-1">
-                        {showingTranslateValue(
-                          storeCustomizationSetting?.about_us?.card_two_sub
-                        ) || "Healthcare & Groceries"}
-                      </h4>
-                      <p className="mb-0 opacity-90 leading-7">
-                        {showingTranslateValue(
-                          storeCustomizationSetting?.about_us
-                            ?.card_two_description
-                        ) || "To simplify healthcare and daily shopping for Indian households by offering a reliable, transparent, and user-friendly home delivery platform."}
-                      </p>
-                    </>
-                  )}
-                </div>
-                <div className="p-8 bg-indigo-50 shadow-sm rounded-lg">
-                  {loading ? (
-                    <CMSkeleton
-                      count={8}
-                      height={20}
-                      error={error}
-                      loading={loading}
-                    />
-                  ) : (
-                    <>
-                      <span className="text-3xl block font-extrabold font-serif mb-4 text-gray-800">
-                        {showingTranslateValue(
-                          storeCustomizationSetting?.about_us?.card_one_title
-                        ) || "What We Do"}
-                      </span>
-                      <h4 className="text-lg font-serif font-bold mb-1">
-                        {showingTranslateValue(
-                          storeCustomizationSetting?.about_us?.card_one_sub
-                        ) || "Unified online platform"}
-                      </h4>
-                      <p className="mb-0 opacity-90 leading-7">
-                        {showingTranslateValue(
-                          storeCustomizationSetting?.about_us
-                            ?.card_one_description
-                        ) || "We provide a unified online platform where you can buy prescription drugs, over-the-counter medicines, personal care items, and daily groceries."}
-                      </p>
-                    </>
-                  )}
-                </div>
+    <Layout title="About Us" description="More than fashion. It's a culture - Rasa Streetwear">
+      
+      {/* 1. HERO SECTION: Light Grey Background */}
+      <div className="bg-[#F3F3F3] text-black pt-16 pb-20 lg:pt-24 lg:pb-28">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
+            
+            {/* Left Column: Copy */}
+            <div className="lg:col-span-5 space-y-6 text-left">
+              <span className="text-[#D4AF37] text-xs font-black uppercase tracking-[0.25em] block font-sans">
+                ABOUT RASA
+              </span>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-sans font-black uppercase tracking-tight leading-[1.05] text-black">
+                MORE THAN<br />
+                FASHION.<br />
+                IT'S A CULTURE.
+              </h1>
+              <p className="text-neutral-700 text-base md:text-lg font-sans leading-relaxed">
+                At RASA, we bring together the best of sneakers, bags, slides and accessories for those who live and breathe style.
+              </p>
+              <p className="text-neutral-500 text-sm font-sans tracking-wide">
+                Curated. Authentic. On trend. That's the RASA way.
+              </p>
+              <div className="pt-2">
+                <a 
+                  href="#story"
+                  className="bg-black text-white hover:bg-neutral-800 transition-all font-sans font-black tracking-widest text-xs uppercase px-8 py-4 rounded-full inline-flex items-center gap-3 group shadow-md"
+                >
+                  OUR STORY 
+                  <FiArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </a>
               </div>
             </div>
 
-            <div className="mt-10 lg:mt-0">
-              <img
-                width={900}
-                height={720}
-                src={
-                  storeCustomizationSetting?.about_us?.content_right_img ||
-                  "/about-us.jpg"
-                }
-                alt="logo"
-                className="w-full h-full object-cover"
-              />
+            {/* Right Column: Hero Mockup Image */}
+            <div className="lg:col-span-7 flex justify-center">
+              <div className="w-full relative overflow-hidden rounded-2xl">
+                <img 
+                  src="/about_hero_mockup.png" 
+                  alt="RASA Streetwear Collection"
+                  className="w-full h-auto object-cover"
+                />
+              </div>
             </div>
-          </div>
-          <div className="mt-10 lg:mt-16 text-base opacity-90 leading-7 text-justify">
-            <p>
-              <CMSkeleton
-                count={5}
-                height={20}
-                loading={loading}
-                data={
-                  storeCustomizationSetting?.about_us?.middle_description_one || "At Farmacykart, our mission is to make healthcare and daily essentials accessible, affordable, and highly convenient for every household in Ghaziabad and beyond."
-                }
-              />
-            </p>
 
-            <p>
-              <CMSkeleton
-                count={8}
-                height={20}
-                error={error}
-                loading={loading}
-                data={
-                  storeCustomizationSetting?.about_us?.middle_description_two || "We proudly support and connect local Ghaziabad businesses with the community they serve. By bringing local vendors online, we ensure that you get lightning-fast delivery of 100% genuine products."
-                }
-              />
-            </p>
-          </div>
-          {/* <div className="mt-10 lg:mt-12 flex flex-col sm:grid gap-4">
-            <Image
-              width={1020}
-              height={570}
-              src={
-                storeCustomizationSetting?.about_us?.content_middle_Img ||
-                "/about-banner.jpg"
-              }
-              alt="logo"
-              className="block rounded-lg"
-            />
-          </div> */}
-        </div>
-        <div className="bg-gray-50 ">
-          <div className="max-w-screen-2xl mx-auto px-3 sm:px-10">
-            {/* <div className="relative flex flex-col sm:flex-row sm:items-end justify-between mb-8">
-              <div className="max-w-2xl">
-                <h3 className="text-xl lg:text-3xl mb-2 font-serif font-semibold text-justify">
-                  <CMSkeleton
-                    count={1}
-                    height={50}
-                    loading={loading}
-                    data={storeCustomizationSetting?.about_us?.founder_title}
-                  />
-                </h3>
-                <p className="mt-2 md:mt-3 font-normal block text-base">
-                  <CMSkeleton
-                    count={3}
-                    height={20}
-                    loading={loading}
-                    data={
-                      storeCustomizationSetting?.about_us?.founder_description
-                    }
-                  />
-                </p>
-              </div>
-            </div> */}
-            {/* <div className="grid sm:grid-cols-2 gap-x-5 gap-y-8 lg:grid-cols-6 xl:gap-x-8">
-              <div className="max-w-sm">
-                <Image
-                  width={420}
-                  height={420}
-                  src={
-                    storeCustomizationSetting?.about_us?.founder_one_img ||
-                    "/team/team-1.jpg"
-                  }
-                  alt="team-1"
-                  className="block rounded-lg"
-                />
-                <div className="py-4">
-                  <h5 className="text-lg font-semibold font-serif">
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.about_us?.founder_one_name
-                    )}
-                  </h5>
-                  <span className="opacity-75 text-sm">
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.about_us?.founder_one_sub
-                    )}
-                  </span>
-                </div>
-              </div>
-              <div className="max-w-sm">
-                <Image
-                  width={420}
-                  height={420}
-                  src={
-                    storeCustomizationSetting?.about_us?.founder_two_img ||
-                    "/team/team-2.jpg"
-                  }
-                  alt="team-2"
-                  className="block rounded-lg"
-                />
-                <div className="py-4">
-                  <h5 className="text-lg font-semibold font-serif">
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.about_us?.founder_two_name
-                    )}
-                  </h5>
-                  <span className="opacity-75 text-sm">
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.about_us?.founder_two_sub
-                    )}
-                  </span>
-                </div>
-              </div>
-              <div className="max-w-sm">
-                <Image
-                  width={420}
-                  height={420}
-                  src={
-                    storeCustomizationSetting?.about_us?.founder_three_img ||
-                    "/team/team-3.jpg"
-                  }
-                  alt="team-3"
-                  className="block rounded-lg"
-                />
-                <div className="py-4">
-                  <h5 className="text-lg font-semibold font-serif">
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.about_us?.founder_three_name
-                    )}
-                  </h5>
-                  <span className="opacity-75 text-sm">
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.about_us?.founder_three_sub
-                    )}
-                  </span>
-                </div>
-              </div>
-              <div className="max-w-sm">
-                <Image
-                  width={420}
-                  height={420}
-                  src={
-                    storeCustomizationSetting?.about_us?.founder_four_img ||
-                    "/team/team-4.jpg"
-                  }
-                  alt="team-4"
-                  className="block rounded-lg"
-                />
-                <div className="py-4">
-                  <h5 className="text-lg font-semibold font-serif">
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.about_us?.founder_four_name
-                    )}
-                  </h5>
-                  <span className="opacity-75 text-sm">
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.about_us?.founder_four_sub
-                    )}
-                  </span>
-                </div>
-              </div>
-              <div className="max-w-sm">
-                <Image
-                  width={420}
-                  height={420}
-                  src={
-                    storeCustomizationSetting?.about_us?.founder_five_img ||
-                    "/team/team-5.jpg"
-                  }
-                  alt="team-5"
-                  className="block rounded-lg"
-                />
-                <div className="py-4">
-                  <h5 className="text-lg font-semibold font-serif">
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.about_us?.founder_five_name
-                    )}
-                  </h5>
-                  <span className="opacity-75 text-sm">
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.about_us?.founder_five_sub
-                    )}
-                  </span>
-                </div>
-              </div>
-              <div className="max-w-sm">
-                <Image
-                  width={420}
-                  height={420}
-                  src={
-                    storeCustomizationSetting?.about_us?.founder_six_img ||
-                    "/team/team-6.jpg"
-                  }
-                  alt="team-6"
-                  className="block rounded-lg"
-                />
-                <div className="py-4">
-                  <h5 className="text-lg font-semibold font-serif">
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.about_us?.founder_six_name
-                    )}
-                  </h5>
-                  <span className="opacity-75 text-sm">
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.about_us?.founder_six_sub
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div> */}
           </div>
         </div>
       </div>
+
+      {/* 2. OUR STORY SECTION: Deep Black Background */}
+      <div id="story" className="bg-black text-white py-20 lg:py-28 border-t border-neutral-900">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+            
+            {/* Left Side Copy */}
+            <div className="lg:col-span-5 space-y-6 text-left">
+              <span className="text-[#D4AF37] text-xs font-black uppercase tracking-[0.25em] block font-sans">
+                OUR STORY
+              </span>
+              <h2 className="text-3xl md:text-4xl font-sans font-black uppercase tracking-tight leading-tight text-white">
+                FROM KICKS BY RASAA<br />
+                TO RASA STREETWEAR
+              </h2>
+              <div className="space-y-4 text-neutral-400 font-sans text-sm md:text-base leading-relaxed text-justify">
+                <p>
+                  What started as Kicks by Rasaa - a passion project for sneakers, has now grown into RASA Streetwear.
+                </p>
+                <p>
+                  Today, we offer a carefully curated collection of sneakers, bags, slides and accessories from top brands around the world.
+                </p>
+                <p>
+                  Our mission is simple - deliver authentic products, latest trends and the best shopping experience for everyone who lives streetwear and lifestyle fashion.
+                </p>
+              </div>
+            </div>
+
+            {/* Right Side Lookbook Column Cards */}
+            <div className="lg:col-span-7 grid grid-cols-3 gap-3 md:gap-4">
+              <div className="rounded-xl overflow-hidden aspect-[3/5] relative bg-neutral-950 border border-neutral-900">
+                <img 
+                  src="https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&w=400&h=660&q=80" 
+                  alt="Streetwear Walk" 
+                  className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                />
+              </div>
+              <div className="rounded-xl overflow-hidden aspect-[3/5] relative bg-neutral-950 border border-neutral-900 mt-6 lg:mt-8">
+                <img 
+                  src="https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&h=660&q=80" 
+                  alt="Streetwear Backpack Detail" 
+                  className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                />
+              </div>
+              <div className="rounded-xl overflow-hidden aspect-[3/5] relative bg-neutral-950 border border-neutral-900">
+                <img 
+                  src="https://images.unsplash.com/photo-1605733513597-a8f8341084e6?auto=format&fit=crop&w=400&h=660&q=80" 
+                  alt="Streetwear Tote Look" 
+                  className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                />
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* 3. WHAT WE OFFER: Off-White Background */}
+      <div className="bg-[#F8F8F8] text-black py-20 lg:py-24">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-10">
+          
+          {/* Header Row */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
+            <div className="text-left space-y-2">
+              <span className="text-[#D4AF37] text-xs font-black uppercase tracking-[0.25em] block font-sans">
+                WHAT WE OFFER
+              </span>
+              <h2 className="text-3xl lg:text-4xl font-sans font-black uppercase tracking-tight text-black">
+                EVERYTHING YOU NEED,<br />
+                ALL IN ONE PLACE.
+              </h2>
+            </div>
+            {/* Arrows UI */}
+            <div className="flex items-center gap-3 mt-4 md:mt-0">
+              <button className="w-10 h-10 rounded-full border border-neutral-250 flex items-center justify-center text-neutral-400 hover:text-black hover:border-black transition-all">
+                &larr;
+              </button>
+              <button className="w-10 h-10 rounded-full border border-neutral-250 flex items-center justify-center text-neutral-400 hover:text-black hover:border-black transition-all">
+                &rarr;
+              </button>
+            </div>
+          </div>
+
+          {/* Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-sans">
+            
+            {/* Sneakers Card */}
+            <div className="bg-white rounded-2xl overflow-hidden border border-neutral-200/60 shadow-sm hover:shadow-md transition-all group text-left">
+              <div className="aspect-[4/3] w-full overflow-hidden bg-neutral-100 border-b border-neutral-100">
+                <img 
+                  src="https://images.unsplash.com/photo-1597045566677-8cf032ed6634?auto=format&fit=crop&w=600&h=450&q=80" 
+                  alt="Sneakers Category" 
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
+              <div className="p-6 flex justify-between items-center">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-black uppercase tracking-wider text-black">SNEAKERS</span>
+                  </div>
+                  <p className="text-neutral-500 text-xs leading-relaxed">Top brands. Latest drops. Unmatched style.</p>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-xs group-hover:bg-[#D4AF37] group-hover:text-black transition-all">
+                  &rarr;
+                </div>
+              </div>
+            </div>
+
+            {/* Bags Card */}
+            <div className="bg-white rounded-2xl overflow-hidden border border-neutral-200/60 shadow-sm hover:shadow-md transition-all group text-left">
+              <div className="aspect-[4/3] w-full overflow-hidden bg-neutral-100 border-b border-neutral-100">
+                <img 
+                  src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&h=450&q=80" 
+                  alt="Bags Category" 
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
+              <div className="p-6 flex justify-between items-center">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-black uppercase tracking-wider text-black">BAGS</span>
+                  </div>
+                  <p className="text-neutral-500 text-xs leading-relaxed">Backpacks, sling bags, totes & more.</p>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-xs group-hover:bg-[#D4AF37] group-hover:text-black transition-all">
+                  &rarr;
+                </div>
+              </div>
+            </div>
+
+            {/* Slides Card */}
+            <div className="bg-white rounded-2xl overflow-hidden border border-neutral-200/60 shadow-sm hover:shadow-md transition-all group text-left">
+              <div className="aspect-[4/3] w-full overflow-hidden bg-neutral-100 border-b border-neutral-100">
+                <img 
+                  src="https://images.unsplash.com/photo-1603808033192-082d6919d3e1?auto=format&fit=crop&w=600&h=450&q=80" 
+                  alt="Slides Category" 
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
+              <div className="p-6 flex justify-between items-center">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-black uppercase tracking-wider text-black">SLIDES</span>
+                  </div>
+                  <p className="text-neutral-500 text-xs leading-relaxed">Comfort that goes everywhere.</p>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-xs group-hover:bg-[#D4AF37] group-hover:text-black transition-all">
+                  &rarr;
+                </div>
+              </div>
+            </div>
+
+            {/* Accessories Card */}
+            <div className="bg-white rounded-2xl overflow-hidden border border-neutral-200/60 shadow-sm hover:shadow-md transition-all group text-left">
+              <div className="aspect-[4/3] w-full overflow-hidden bg-neutral-100 border-b border-neutral-100">
+                <img 
+                  src="https://images.unsplash.com/photo-1534215754734-18e55d13ce35?auto=format&fit=crop&w=600&h=450&q=80" 
+                  alt="Accessories Category" 
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
+              <div className="p-6 flex justify-between items-center">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-black uppercase tracking-wider text-black">ACCESSORIES</span>
+                  </div>
+                  <p className="text-neutral-500 text-xs leading-relaxed">Caps, socks, wallets & essentials.</p>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-xs group-hover:bg-[#D4AF37] group-hover:text-black transition-all">
+                  &rarr;
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* 4. WHY SHOP WITH US: Black Banner */}
+      <div className="bg-black text-white py-14 border-t border-b border-neutral-900">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 font-sans">
+            
+            {/* Feature 1 */}
+            <div className="flex items-start gap-4 text-left">
+              <div className="w-10 h-10 rounded-full border border-neutral-800 flex items-center justify-center flex-shrink-0 text-[#D4AF37]">
+                <FiShield className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black uppercase tracking-wider text-white">AUTHENTIC PRODUCTS</h4>
+                <p className="text-xs text-neutral-450 leading-relaxed mt-1">100% genuine products from trusted brands.</p>
+              </div>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="flex items-start gap-4 text-left">
+              <div className="w-10 h-10 rounded-full border border-neutral-800 flex items-center justify-center flex-shrink-0 text-[#D4AF37]">
+                <FiTrendingUp className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black uppercase tracking-wider text-white">TREND-DRIVEN</h4>
+                <p className="text-xs text-neutral-450 leading-relaxed mt-1">Handpicked styles that keep you ahead.</p>
+              </div>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="flex items-start gap-4 text-left">
+              <div className="w-10 h-10 rounded-full border border-neutral-800 flex items-center justify-center flex-shrink-0 text-[#D4AF37]">
+                <FiTruck className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black uppercase tracking-wider text-white">FAST SHIPPING</h4>
+                <p className="text-xs text-neutral-450 leading-relaxed mt-1">Quick delivery across India.</p>
+              </div>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="flex items-start gap-4 text-left">
+              <div className="w-10 h-10 rounded-full border border-neutral-800 flex items-center justify-center flex-shrink-0 text-[#D4AF37]">
+                <FiRefreshCw className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black uppercase tracking-wider text-white">EASY EXCHANGE</h4>
+                <p className="text-xs text-neutral-450 leading-relaxed mt-1">Hassle-free returns & exchanges.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      {/* 5. RASA LIFESTYLE: Light Grey Lifestyle Grid */}
+      <div className="bg-[#F8F8F8] py-16">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-10 text-left">
+          <span className="text-[#D4AF37] text-xs font-black uppercase tracking-[0.25em] block mb-6 font-sans">
+            RASA LIFESTYLE
+          </span>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="rounded-xl overflow-hidden aspect-square bg-neutral-200">
+              <img src="https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&w=300&h=300&q=80" alt="Dunks Detail" className="w-full h-full object-cover hover:scale-105 transition-all duration-300" />
+            </div>
+            <div className="rounded-xl overflow-hidden aspect-square bg-neutral-200">
+              <img src="https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=300&h=300&q=80" alt="Backpack Detail" className="w-full h-full object-cover hover:scale-105 transition-all duration-300" />
+            </div>
+            <div className="rounded-xl overflow-hidden aspect-square bg-neutral-200">
+              <img src="https://images.unsplash.com/photo-1619521440807-ba72fee6b7b4?auto=format&fit=crop&w=300&h=300&q=80" alt="Slides socks Detail" className="w-full h-full object-cover hover:scale-105 transition-all duration-300" />
+            </div>
+            <div className="rounded-xl overflow-hidden aspect-square bg-neutral-200">
+              <img src="https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?auto=format&fit=crop&w=300&h=300&q=80" alt="Backpack Wearer" className="w-full h-full object-cover hover:scale-105 transition-all duration-300" />
+            </div>
+            <div className="rounded-xl overflow-hidden aspect-square bg-neutral-200">
+              <img src="https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?auto=format&fit=crop&w=300&h=300&q=80" alt="Sneakers Profile" className="w-full h-full object-cover hover:scale-105 transition-all duration-300" />
+            </div>
+            <div className="rounded-xl overflow-hidden aspect-square bg-neutral-200">
+              <img src="https://images.unsplash.com/photo-1605733513597-a8f8341084e6?auto=format&fit=crop&w=300&h=300&q=80" alt="Tote Bag Walk" className="w-full h-full object-cover hover:scale-105 transition-all duration-300" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. BOTTOM STATISTICS BAR & CALL-TO-ACTIONS */}
+      <div className="bg-[#F8F8F8] pb-20">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-10">
+          <div className="bg-black text-white rounded-3xl p-8 md:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 shadow-2xl font-sans">
+            
+            {/* Stats Area */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-16 w-full lg:w-auto text-left lg:border-r lg:border-neutral-800 pr-0 lg:pr-12">
+              
+              {/* Stat 1 */}
+              <div className="flex items-center gap-4">
+                <div className="text-3xl text-[#D4AF37]"><FiUsers /></div>
+                <div>
+                  <div className="text-2xl font-black text-white leading-tight">5,000+</div>
+                  <div className="text-xs text-neutral-450 uppercase tracking-wider">Happy Customers</div>
+                </div>
+              </div>
+
+              {/* Stat 2 */}
+              <div className="flex items-center gap-4">
+                <div className="text-3xl text-[#D4AF37]"><FiPackage /></div>
+                <div>
+                  <div className="text-2xl font-black text-white leading-tight">10,000+</div>
+                  <div className="text-xs text-neutral-450 uppercase tracking-wider">Orders Delivered</div>
+                </div>
+              </div>
+
+              {/* Stat 3 */}
+              <div className="flex items-center gap-4">
+                <div className="text-3xl text-[#D4AF37]"><FiAward /></div>
+                <div>
+                  <div className="text-2xl font-black text-white leading-tight">200+</div>
+                  <div className="text-xs text-neutral-450 uppercase tracking-wider">Top Brands</div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto sm:justify-end">
+              <Link 
+                href="/search?category=sneakers"
+                className="border border-neutral-800 text-white hover:bg-neutral-900 transition-all font-black text-xs uppercase tracking-widest px-8 py-4 rounded-xl flex items-center justify-center gap-2"
+              >
+                SHOP SNEAKERS
+                <FiArrowRight className="w-4 h-4" />
+              </Link>
+              <Link 
+                href="/search?category=bags"
+                className="bg-white text-black hover:bg-neutral-200 transition-all font-black text-xs uppercase tracking-widest px-8 py-4 rounded-xl flex items-center justify-center gap-2"
+              >
+                SHOP BAGS
+                <FiArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
     </Layout>
   );
 };

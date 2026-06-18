@@ -136,7 +136,7 @@ const PushNotificationDrawer = ({ id }) => {
               <Label className="text-base font-bold text-gray-700 dark:text-gray-200">Click Action URL (Optional)</Label>
               <Input
                 {...register("clickAction")}
-                placeholder="https://farmacykart.com/products/example"
+                placeholder="https://rasastore.com/products/example"
                 className="w-full border-gray-100 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-900/30 focus:bg-white dark:focus:bg-gray-800 focus:border-teal-500 focus:ring-0 h-12 rounded-xl transition-all"
               />
             </div>

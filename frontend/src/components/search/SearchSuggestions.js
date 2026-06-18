@@ -84,14 +84,8 @@ const SearchSuggestions = ({ searchText, onSelect, showSuggestions, onClose }) =
           const title = showingTranslateValue(product?.title)?.toLowerCase() || "";
           return title.includes(query);
         })
-        .slice(0, 20) // get more then trim to 5 after filtering wholesaler condition
+        .slice(0, 20)
         .reduce((acc, product) => {
-          // If wholesaler, skip products that are not wholesale-eligible
-          if (currentUser?.role && currentUser.role.toString().toLowerCase() === "wholesaler") {
-            const eligible = (product.wholePrice && Number(product.wholePrice) > 0) || product.isWholesaler;
-            if (!eligible) return acc;
-          }
-
           // Extract category ID properly
           let categoryId = null;
           if (product.category) {

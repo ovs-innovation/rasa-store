@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import Layout from "@layout/Layout";
 import AuthPageShell from "@components/auth/AuthPageShell";
-import PhoneLoginForm from "@components/auth/PhoneLoginForm";
+import EmailLoginForm from "@components/auth/EmailLoginForm";
 
 const Login = () => {
   const router = useRouter();
@@ -14,12 +14,12 @@ const Login = () => {
         title="Welcome back"
         subtitle={
           isCheckoutReturn
-            ? "Sign in with your registered mobile number to complete checkout."
-            : "Enter your registered mobile number. We will send a one-time password."
+            ? "Sign in with your registered email to complete checkout."
+            : "Enter your registered email. We will send a one-time password."
         }
         badge={isCheckoutReturn ? "Checkout" : null}
         alternateLink={{
-          text: "New to Farmacykart?",
+          text: "New to Rasa Store?",
           label: "Create an account",
           href: { pathname: "/auth/signup", query: { ...router.query } },
         }}
@@ -29,7 +29,7 @@ const Login = () => {
           </p>
         }
       >
-        <PhoneLoginForm variant="login" />
+        <EmailLoginForm variant="login" />
       </AuthPageShell>
     </Layout>
   );

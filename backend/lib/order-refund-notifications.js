@@ -35,7 +35,7 @@ const sendRefundCompletedNotifications = async (order) => {
 
   const globalSetting = await Setting.findOne({ name: "globalSetting" });
   const settings = globalSetting?.setting || {};
-  const shopName = settings.shop_name || "Farmacykart";
+  const shopName = settings.shop_name || "RASA";
   const currency =
     order.company_info?.currency || settings.default_currency || "₹";
   const contactEmail = settings.email || undefined;
@@ -60,7 +60,7 @@ const sendRefundCompletedNotifications = async (order) => {
   const emailBody = {
     to: email,
     replyTo: contactEmail,
-    subject: `Farmacykart – Refund processed for order #${order.invoice}`,
+    subject: `${shopName} – Refund processed for order #${order.invoice}`,
     html: template.html,
     text: template.text,
     emailType: "refund-completed",

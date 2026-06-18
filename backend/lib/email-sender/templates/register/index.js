@@ -105,7 +105,7 @@ const customerRegisterBody = (option) => {
                                           <img
                                             alt
                                             height="auto"
-                                            src="${option.logo || "https://res.cloudinary.com/dse9adftu/image/upload/v1780479335/farmacykart/brand/logo.png"}"
+                                            src="${option.logo || "https://res.cloudinary.com/dse9adftu/image/upload/v1780479335/rasa/brand/logo.png"}"
                                             style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:80px;font-size:13px;padding-bottom:30px;"
                                             width="80"
                                             height="80"
@@ -211,7 +211,7 @@ const customerRegisterBody = (option) => {
 
         <p style="margin-bottom:20px;">Click this link for active your account</p></p>
 
-                             <a href="${process.env.STORE_URL || process.env.FRONTEND_URL || "https://farmacykart.com"}/auth/email-verification/${option.token}" style="background:#22c55e;color:white;border:1px solid #22c55e; padding: 10px 15px; border-radius: 4px; text-decoration:none;">Verify Account</a>
+                             <a href="${process.env.STORE_URL || process.env.FRONTEND_URL || "https://rasastore.com"}/auth/email-verification/${option.token}" style="background:#22c55e;color:white;border:1px solid #22c55e; padding: 10px 15px; border-radius: 4px; text-decoration:none;">Verify Account</a>
 
                             <p style="margin-top: 35px;">If you did not initiate
                               this request, please contact us immediately at

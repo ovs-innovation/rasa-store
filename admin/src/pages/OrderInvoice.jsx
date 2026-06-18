@@ -113,14 +113,6 @@ const OrderInvoice = () => {
                   globalSetting={globalSetting}
                   getNumberTwo={getNumberTwo}
                   logo={globalSetting?.logo}
-                  isWholesaler={
-                    data?.user_info?.role?.toString().toLowerCase().trim() === "wholesaler" ||
-                    data?.user?.role?.toString().toLowerCase().trim() === "wholesaler" ||
-                    data?.role?.toString().toLowerCase().trim() === "wholesaler" ||
-                    data?.user_info?.userType?.toString().toLowerCase().trim() === "wholesaler" ||
-                    data?.userType?.toString().toLowerCase().trim() === "wholesaler" ||
-                    data?.cart?.[0]?.wholePrice > 0
-                  }
                 />
               }
               fileName="Invoice"

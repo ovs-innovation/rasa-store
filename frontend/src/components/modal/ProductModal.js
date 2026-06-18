@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useContext, useEffect, useState } from "react";
-import { UserContext } from "@context/UserContext"; 
 import { FiMinus, FiPlus } from "react-icons/fi";
 
 //internal import
@@ -35,17 +34,6 @@ const ProductModal = ({
   const { lang, showingTranslateValue, getNumber, getNumberTwo } =
     useUtilsFunction();
   const { storeCustomizationSetting, globalSetting } = useGetSetting();
-
-  const { state } = useContext(UserContext) || {};
-  const isWholesaler = state?.userInfo?.role && state.userInfo.role.toString().toLowerCase() === 'wholesaler';
-  // Minimum quantity to enforce when user is a wholesaler (defaults to 1)
-  const minQty = isWholesaler && product?.minQuantity ? Number(product.minQuantity) : 1;
-
-  // Ensure modal defaults quantity to wholesaler min when applicable
-  useEffect(() => {
-    // Only set when product changes or minQty changes
-    setItem(minQty);
-  }, [minQty, setItem]);
 
   // Get dynamic contact number
   const contactNumber = 
@@ -114,11 +102,9 @@ const ProductModal = ({
       setStock(result2?.quantity);
       const variantPrice = getNumber(result2?.price);
       const variantOriginalPrice = getNumber(result2?.originalPrice);
-      // Prefer wholesaler price for wholesaler users when available
-      const effectivePrice = isWholesaler && product?.wholePrice && Number(product.wholePrice) > 0 ? Number(product.wholePrice) : variantPrice;
-      const discountPercentage = getNumber(((variantOriginalPrice - effectivePrice) / (variantOriginalPrice || effectivePrice)) * 100);
+      const discountPercentage = getNumber(((variantOriginalPrice - variantPrice) / (variantOriginalPrice || variantPrice)) * 100);
       setDiscount(getNumber(discountPercentage));
-      setPrice(effectivePrice);
+      setPrice(variantPrice);
       setOriginalPrice(variantOriginalPrice);
     } else if (product?.variants?.length > 0) {
       const result = product?.variants?.filter((variant) =>
@@ -132,20 +118,18 @@ const ProductModal = ({
       setImg(product.variants[0]?.image);
       const variantPrice0 = getNumber(product.variants[0]?.price);
       const variantOriginalPrice0 = getNumber(product.variants[0]?.originalPrice);
-      const effectiveVariantPrice0 = isWholesaler && product?.wholePrice && Number(product.wholePrice) > 0 ? Number(product.wholePrice) : variantPrice0;
-      const discountPercentage0 = getNumber(((variantOriginalPrice0 - effectiveVariantPrice0) / (variantOriginalPrice0 || effectiveVariantPrice0)) * 100);
+      const discountPercentage0 = getNumber(((variantOriginalPrice0 - variantPrice0) / (variantOriginalPrice0 || variantPrice0)) * 100);
       setDiscount(getNumber(discountPercentage0));
-      setPrice(effectiveVariantPrice0);
+      setPrice(variantPrice0);
       setOriginalPrice(variantOriginalPrice0);
     } else {
       setStock(product?.stock);
       setImg(product?.image?.[0] || product?.images?.[0]);
       const retailPrice = getNumber(product?.prices?.price);
       const retailOriginalPrice = getNumber(product?.prices?.originalPrice);
-      const effectiveRetailPrice = isWholesaler && product?.wholePrice && Number(product.wholePrice) > 0 ? Number(product.wholePrice) : retailPrice;
-      const discountPercentage = getNumber(((retailOriginalPrice - effectiveRetailPrice) / (retailOriginalPrice || effectiveRetailPrice)) * 100);
+      const discountPercentage = getNumber(((retailOriginalPrice - retailPrice) / (retailOriginalPrice || retailPrice)) * 100);
       setDiscount(getNumber(discountPercentage));
-      setPrice(effectiveRetailPrice);
+      setPrice(retailPrice);
       setOriginalPrice(retailOriginalPrice);
     }
   }, [
@@ -182,13 +166,8 @@ const ProductModal = ({
       )
     ) {
       const { variants, categories, description, ...updatedProduct } = product;
-      const priceToUse = (isWholesaler && product?.wholePrice && Number(product.wholePrice) > 0)
-        ? Number(product.wholePrice)
-        : (p.variants.length === 0 ? getNumber(p.prices.price) : getNumber(price));
-
-      const originalToUse = (isWholesaler && product?.wholePrice && Number(product.wholePrice) > 0)
-        ? (getNumber(product.prices?.originalPrice) || priceToUse)
-        : (p.variants.length === 0 ? getNumber(p.prices.originalPrice) : getNumber(originalPrice));
+      const priceToUse = p.variants.length === 0 ? getNumber(p.prices.price) : getNumber(price);
+      const originalToUse = p.variants.length === 0 ? getNumber(p.prices.originalPrice) : getNumber(originalPrice);
 
       const newItem = {
         ...updatedProduct,
@@ -218,8 +197,7 @@ const ProductModal = ({
 
       // console.log("newItem", newItem);
 
-      const minQty = isWholesaler && p?.minQuantity ? Number(p.minQuantity) : 1;
-      handleAddItem(newItem, minQty);
+      handleAddItem(newItem, 1);
     } else {
       return notifyError("Please select all variant first!");
     }
@@ -249,7 +227,7 @@ const ProductModal = ({
                 onClick={() => setModalOpen(false)}
                 className="flex-shrink-0 flex items-center justify-center h-auto cursor-pointer"
               >
-                {!isWholesaler && <Discount product={product} discount={discount} modal />}
+                <Discount product={product} discount={discount} modal />
                 {product.image[0] ? (
                   <Image
                     src={img || product.image[0]}
@@ -295,14 +273,9 @@ const ProductModal = ({
                   price={price}
                   currency={currency}
                   originalPrice={originalPrice}
-                  hideDiscountAndMRP={isWholesaler}
                 />
               </div>
  
-
-              {isWholesaler && product?.minQuantity && Number(product.minQuantity) > 0 && (
-                <p className="text-xs text-gray-500 mt-1">Min order quantity: <span className="font-semibold">{product.minQuantity}</span></p>
-              )}
 
               <div className="mb-6 space-y-4">
                 {variantTitle?.map((a, i) => (
@@ -331,8 +304,8 @@ const ProductModal = ({
                 <div className="flex items-center justify-between space-s-3 sm:space-s-4 w-full">
                   <div className="group flex items-center justify-between rounded-md overflow-hidden flex-shrink-0 border h-11 md:h-12 border-gray-300">
                     <button
-                      onClick={() => setItem(Math.max(item - 1, minQty))}
-                      disabled={item <= minQty}
+                      onClick={() => setItem(Math.max(item - 1, 1))}
+                      disabled={item <= 1}
                       className="flex items-center justify-center flex-shrink-0 h-full transition ease-in-out duration-300 focus:outline-none w-8 md:w-12 text-heading border-e border-gray-300 hover:text-gray-500"
                     >
                       <span className="text-dark text-base">

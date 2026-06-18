@@ -56,11 +56,11 @@ const TermAndConditions = () => {
                     error={error}
                     loading={loading}
                     data={storeCustomizationSetting?.term_and_condition?.description || `<h2>1. Acceptance of Terms</h2>
-<p>By accessing Farmacykart, you agree to these Terms and Conditions. These terms govern your use of our platform for ordering medicines, groceries, and daily essentials.</p>
+<p>By accessing Rasa Store, you agree to these Terms and Conditions. These terms govern your use of our platform for ordering medicines, groceries, and daily essentials.</p>
 <h2>2. User Eligibility</h2>
-<p>You must be at least 18 years old to use our services. By using Farmacykart, you confirm that all information provided is accurate and truthful.</p>
+<p>You must be at least 18 years old to use our services. By using Rasa Store, you confirm that all information provided is accurate and truthful.</p>
 <h2>3. Prescription Medicines (Schedule H & X)</h2>
-<p>For prescription medicines, a valid prescription from a registered medical practitioner must be uploaded. Our licensed pharmacists will verify the prescription before processing the order. Farmacykart reserves the right to cancel orders with invalid prescriptions.</p>
+<p>For prescription medicines, a valid prescription from a registered medical practitioner must be uploaded. Our licensed pharmacists will verify the prescription before processing the order. Rasa Store reserves the right to cancel orders with invalid prescriptions.</p>
 <h2>4. Pricing & Availability</h2>
 <p>While we strive for accuracy, product prices and availability are subject to change without prior notice. MRP includes all applicable taxes (GST).</p>
 <h2>5. Delivery & Cancellations</h2>
@@ -69,7 +69,7 @@ const TermAndConditions = () => {
   <li>Delivery times are estimates and may vary based on your location in Ghaziabad and NCR.</li>
 </ul>
 <h2>6. Liability Disclaimer</h2>
-<p>Farmacykart acts as an intermediary connecting buyers with sellers/distributors. We are not liable for the manufacturing quality of the products.</p>`}
+<p>Rasa Store acts as an intermediary connecting buyers with sellers/distributors. We are not liable for the manufacturing quality of the products.</p>`}
                   />
                 </div>
               </div>

@@ -1,5 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
-import { UserContext } from "@context/UserContext";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -23,8 +22,6 @@ const Wishlist = ({ attributes }) => {
   const { addItem } = useCart();
   const { storeCustomizationSetting } = useGetSetting();
   const { showingTranslateValue } = useUtilsFunction();
-  const { state } = useContext(UserContext) || {};
-  const isWholesaler = state?.userInfo?.role && state.userInfo.role.toString().toLowerCase() === "wholesaler";
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,8 +65,7 @@ const Wishlist = ({ attributes }) => {
 
     const { slug, variants, categories, description, ...updatedProduct } =
       product;
-    const wholesalePriceValue = product?.wholePrice && Number(product.wholePrice) > 0 ? Number(product.wholePrice) : null;
-    const priceToUse = isWholesaler && wholesalePriceValue ? wholesalePriceValue : (product.prices?.price || 0);
+    const priceToUse = product.prices?.price || 0;
 
     const newItem = {
       ...updatedProduct,
@@ -80,8 +76,7 @@ const Wishlist = ({ attributes }) => {
       originalPrice: product.prices?.originalPrice,
     };
 
-    const minQty = isWholesaler && product?.minQuantity ? Number(product.minQuantity) : 1;
-    addItem(newItem, minQty);
+    addItem(newItem, 1);
     notifySuccess("Product added to cart");
   };
 
@@ -124,7 +119,7 @@ const Wishlist = ({ attributes }) => {
               </h1>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 gap-2 md:gap-3 lg:gap-3">
-              {(isWholesaler ? wishlistItems.filter(p => (p.wholePrice && Number(p.wholePrice) > 0) || p.isWholesaler) : wishlistItems).map((product, i) => (
+              {wishlistItems.map((product, i) => (
                 <div key={i} className="relative group">
                   <ProductCard product={product} attributes={attributes} />
                   <button

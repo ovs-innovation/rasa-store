@@ -1,6 +1,5 @@
-import { useState, useContext } from "react";
+import { useState } from "react";
 import { useCart } from "react-use-cart";
-import { UserContext } from "@context/UserContext";
 import { notifyError, notifySuccess } from "@utils/toast";
 import useCartDB from "@hooks/useCartDB";
 
@@ -9,15 +8,9 @@ const useAddToCart = () => {
   const { items } = useCart();
   const { addItemWithDB, updateQuantityWithDB } = useCartDB();
 
-  const { state: { userInfo } } = useContext(UserContext) || {};
-  const isWholesalerUser =
-    userInfo?.role &&
-    String(userInfo.role).toLowerCase() === "wholesaler";
-
   // Helper: return available stock number
   const getAvailableStock = (product) => {
     if (!product) return Number.MAX_SAFE_INTEGER;
-    if (isWholesalerUser) return Number.MAX_SAFE_INTEGER;
     if (product?.variants?.length > 0) {
       if (
         product?.variant &&
@@ -44,23 +37,12 @@ const useAddToCart = () => {
 
     const { variants, categories, description, ...updatedProduct } = product;
 
-    const minQuantity = isWholesalerUser
-      ? product?.minQuantity
-        ? Number(product.minQuantity)
-        : 1
-      : 1;
-
     const effectivePrice =
-      isWholesalerUser &&
-        product?.wholePrice &&
-        Number(product.wholePrice) > 0
-        ? Number(product.wholePrice)
-        : product.prices?.price ||
-        product.prices?.originalPrice ||
-        product.price ||
-        0;
+      product.prices?.price ||
+      product.prices?.originalPrice ||
+      product.price ||
+      0;
 
-    updatedProduct.minQuantity = minQuantity;
     updatedProduct.price = effectivePrice;
     updatedProduct.stock =
       product?.stock !== undefined
@@ -68,7 +50,6 @@ const useAddToCart = () => {
         : product?.variants && product.variants[0]
           ? product.variants[0].quantity
           : undefined;
-    updatedProduct.wholePrice = product?.wholePrice;
 
     const available = getAvailableStock(product);
 

@@ -1,7 +1,6 @@
 /** Route keys used by admin sidebar (first path segment). */
 const FULL_ADMIN_ACCESS_LIST = [
   "dashboard",
-  "prescriptions",
   "new-sale",
   "orders",
   "categories",
@@ -10,7 +9,6 @@ const FULL_ADMIN_ACCESS_LIST = [
   "products",
   "brands",
   "customers",
-  "wholesalers",
   "faqs",
   "coupons",
   "push-notification",

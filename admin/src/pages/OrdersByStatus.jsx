@@ -268,7 +268,6 @@ const OrdersByStatus = () => {
                       {[
                         { label: 'All', value: '' },
                         { label: 'Customer', value: 'customer' },
-                        { label: 'Retailer', value: 'wholesaler' }
                       ].map((tab) => (
                         <button
                           key={tab.value}
