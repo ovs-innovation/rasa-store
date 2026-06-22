@@ -17,39 +17,16 @@ export const heroSlides = [
   },
   {
     id: "02",
-    brand: "Soleste",
-    name: "Vortex Noir",
-    desc: "Unmatched performance meets modern streetwear aesthetics. Engineered mesh upper combined with responsive cushioning for all-day comfort.",
-    image: "/shoes2.png",
-    bgText: "SOLESTE",
-    glowColor: "rgba(59, 130, 246, 0.25)",
-    accentColor: "#3B82F6",
-    textGradient: "linear-gradient(180deg, #BFDBFE 0%, #60A5FA 35%, #3B82F6 60%, #1E40AF 100%)",
-    shopLink: "/search?category=footwear",
-  },
-  {
-    id: "03",
-    brand: "Pinnacle",
-    name: "Apex Court",
-    desc: "A sleek reimagining of retro basketball heritage. Designed with multi-layered suede panels, breathable lining, and a durable traction grip.",
-    image: "/shoes3.png",
-    bgText: "PINNACLE",
-    glowColor: "rgba(239, 68, 68, 0.25)",
-    accentColor: "#EF4444",
-    textGradient: "linear-gradient(180deg, #FECACA 0%, #F87171 35%, #EF4444 60%, #991B1B 100%)",
-    shopLink: "/search?category=footwear",
-  },
-  {
-    id: "04",
-    brand: "Equinox",
-    name: "Zenith Trail",
-    desc: "Ready for any urban adventure. Weather-resistant premium overlays, high-traction lugs, and a lock-in lacing system for supreme support.",
-    image: "/shoes4.png",
-    bgText: "EQUINOX",
-    glowColor: "rgba(168, 85, 247, 0.25)",
-    accentColor: "#A855F7",
-    textGradient: "linear-gradient(180deg, #E9D5FF 0%, #C084FC 35%, #A855F7 60%, #6B21A8 100%)",
-    shopLink: "/search?category=footwear",
+    brand: "Rasa",
+    name: "Apex Duffle",
+    desc: "Ultimate urban utility. Built from ultra-durable ballistic nylon, featuring heavy-duty zippers, waterproof lining, and versatile carrying straps.",
+    image: "/bag1.png",
+    bgText: "RASA",
+    glowColor: "rgba(176, 122, 79, 0.25)",
+    accentColor: "#B07A4F",
+    textGradient: "linear-gradient(180deg, #E2C2A4 0%, #CFA57E 30%, #B07A4F 60%, #7E512E 100%)",
+    shopLink: "/search?category=bags",
+    isBag: true,
   },
 ];
 
@@ -284,7 +261,12 @@ const HeroBanner = () => {
                   <img
                     src={slide.image}
                     alt={`${slide.brand} ${slide.name}`}
-                    className="w-full h-full object-contain drop-shadow-[0_45px_70px_rgba(0,0,0,0.85)] pointer-events-none transform -rotate-12 select-none"
+                    className="object-contain drop-shadow-[0_45px_70px_rgba(0,0,0,0.85)] pointer-events-none select-none"
+                    style={{
+                      width: slide.isBag ? '60%' : '100%',
+                      height: slide.isBag ? '60%' : '100%',
+                      transform: 'rotate(-12deg) translateY(-5%)',
+                    }}
                   />
                 </div>
               ))}
@@ -379,9 +361,41 @@ const HeroBanner = () => {
         
         {/* Ambient background blur behind the shoe */}
         <div 
-          className="absolute top-[25%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vw] h-[70vw] rounded-full blur-[80px] transition-all duration-500 pointer-events-none opacity-20 z-0"
+          className="absolute top-[22%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85vw] h-[85vw] rounded-full blur-[90px] transition-all duration-500 pointer-events-none opacity-30 z-0"
           style={{ backgroundColor: heroSlides[activeMobileIndex].glowColor }}
         />
+
+        {/* Giant Background Word for Mobile */}
+        {heroSlides.map((slide, index) => (
+          <div
+            key={`mobile-bg-text-${slide.id}`}
+            className={`absolute inset-x-0 top-[6%] flex items-center justify-center pointer-events-none z-0 select-none transition-opacity duration-500 ${
+              index === activeMobileIndex ? "opacity-30" : "opacity-0"
+            }`}
+          >
+            <h2
+              className="text-[38vw] font-black uppercase tracking-[-0.04em] text-center leading-none whitespace-nowrap select-none font-sans"
+              style={{
+                backgroundImage: slide.textGradient,
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                color: "transparent",
+                WebkitTextStroke: "1px rgba(212, 175, 55, 0.12)",
+                filter: `drop-shadow(0 10px 40px ${slide.accentColor}33)`,
+              }}
+            >
+              {slide.bgText}
+            </h2>
+          </div>
+        ))}
+
+        {/* Mobile Particles */}
+        <div className="absolute inset-0 pointer-events-none z-0 opacity-40">
+          <div className="absolute w-1.5 h-1.5 bg-[#D4AF37] rounded-full blur-[0.5px] top-[15%] left-[25%] animate-[pulse_3s_infinite]" />
+          <div className="absolute w-2 h-2 bg-[#D4AF37] rounded-full blur-[1px] top-[28%] right-[20%] animate-[pulse_4s_infinite]" />
+          <div className="absolute w-1 h-1 bg-white rounded-full top-[32%] left-[65%] animate-[pulse_5s_infinite]" />
+        </div>
 
         {/* Ambient light lines/streaks */}
         <div className="absolute top-[28%] left-0 right-0 h-40 bg-gradient-to-r from-transparent via-[#D4AF37]/5 to-transparent skew-y-[-15deg] pointer-events-none z-0" />
@@ -406,14 +420,22 @@ const HeroBanner = () => {
                   <div className="absolute bottom-[4%] w-[75%] h-[8%] bg-black/60 rounded-[50%] blur-2xl" />
                   
                   {/* Sneaker Image with Gentle Levitation */}
-                  <img
-                    src={slide.image}
-                    alt={slide.name}
-                    className="w-full h-full object-contain drop-shadow-[0_20px_45px_rgba(0,0,0,0.8)] select-none pointer-events-none"
+                  <div 
+                    className="w-full h-full flex items-center justify-center pointer-events-none"
                     style={{
                       animation: isCurrent ? 'mobileFloat 4s ease-in-out infinite' : 'none'
                     }}
-                  />
+                  >
+                    <img
+                      src={slide.image}
+                      alt={slide.name}
+                      className="object-contain drop-shadow-[0_20px_45px_rgba(0,0,0,0.8)] select-none pointer-events-none"
+                      style={{
+                        width: slide.isBag ? '50%' : '85%',
+                        height: slide.isBag ? '50%' : '85%',
+                      }}
+                    />
+                  </div>
                 </div>
               );
             })}
