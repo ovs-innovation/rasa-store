@@ -1,14 +1,22 @@
 import { isUsableImageUrl } from "@utils/brandAssets";
 
-/** Local brand marks — fast, no external CDN dependency */
+/** Local brand marks — updated slugs after copyright-safe rename */
 export const BRAND_LOGO_BY_SLUG = {
-  nike: "/brands/nike.svg",
-  adidas: "/brands/adidas.svg",
-  puma: "/brands/puma.svg",
-  converse: "/brands/converse.svg",
-  "new-balance": "/brands/new-balance.svg",
-  vans: "/brands/vans.svg",
-  "onitsuka-tiger": "/brands/onitsuka-tiger.svg",
+  "nikke": "/brands/nikke.svg",
+  "adidass": "/brands/adidass.svg",
+  "jourdann": "/brands/jourdann.svg",
+  "balanse": "/brands/balanse.svg",
+  "konverse": "/brands/konverse.svg",
+  "pumma": "/brands/pumma.svg",
+  "rebok": "/brands/rebok.svg",
+  // legacy slugs kept as fallback
+  "aero": "/brands/aero.svg",
+  "soleste": "/brands/soleste.svg",
+  "pinnacle": "/brands/pinnacle.svg",
+  "vanguard": "/brands/vanguard.svg",
+  "heritage": "/brands/heritage.svg",
+  "equinox": "/brands/equinox.svg",
+  "kurashiki": "/brands/kurashiki.svg",
 };
 
 export const getBrandName = (brand) => {

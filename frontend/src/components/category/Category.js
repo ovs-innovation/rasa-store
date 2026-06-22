@@ -58,12 +58,52 @@ const Category = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const { data, error, isLoading, isFetched } = useQuery({
+  const { data: flatCategories, error, isLoading } = useQuery({
     queryKey: ["category"],
     queryFn: async () => await CategoryServices.getShowingCategory(),
   });
 
-  // console.log("data", data, "error", error, "isFetched", isFetched);
+  const buildCategoryTree = (flatList) => {
+    if (!flatList || !Array.isArray(flatList)) return [];
+    
+    const footwearId = flatList.find(c => c.name?.en === 'Footwear' || c._id === '6a33872af6601848fc56574b')?._id;
+    const bagsId = flatList.find(c => c.name?.en === 'Bags' || c._id === '6a33872af6601848fc56574c')?._id;
+    const homeId = flatList.find(c => c.name?.en === 'Home' || c._id === '6a33872af6601848fc56574a')?._id;
+
+    const normalizedList = flatList.map(cat => {
+      let parentId = cat.parentId;
+      if (parentId === 'rasa-footwear') {
+        parentId = footwearId;
+      } else if (parentId === 'rasa-bags') {
+        parentId = bagsId;
+      } else if (parentId === 'rasa-root') {
+        parentId = homeId;
+      }
+      return { ...cat, parentId };
+    });
+
+    const map = {};
+    const roots = [];
+    
+    normalizedList.forEach((cat) => {
+      map[cat._id] = { ...cat, children: [] };
+    });
+    
+    normalizedList.forEach((cat) => {
+      const mapped = map[cat._id];
+      const parentId = cat.parentId;
+      
+      if (parentId && map[parentId]) {
+        map[parentId].children.push(mapped);
+      } else {
+        roots.push(mapped);
+      }
+    });
+    
+    return roots;
+  };
+
+  const data = buildCategoryTree(flatCategories);
 
   const mainLinks = [
     { title: "Home", href: "/", icon: FiHome },

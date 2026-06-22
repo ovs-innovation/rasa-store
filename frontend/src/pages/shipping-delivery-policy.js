@@ -40,19 +40,18 @@ const ShippingDeliveryPolicy = () => {
                     error={error}
                     loading={loading}
                     data={storeCustomizationSetting?.shipping_delivery_policy?.description || `<h2>1. Delivery Areas</h2>
-<p>We currently deliver across Ghaziabad and select areas in the National Capital Region (NCR).</p>
+<p>We currently deliver across all major cities and states throughout India.</p>
 <h2>2. Delivery Charges</h2>
 <ul>
-  <li>Free delivery on all orders above ₹499.</li>
-  <li>A nominal delivery fee of ₹40 applies to orders below ₹499.</li>
+  <li>Free shipping on all orders.</li>
 </ul>
 <h2>3. Estimated Delivery Time</h2>
 <ul>
-  <li><strong>Medicines & Prescriptions:</strong> Standard delivery within 24-48 hours. Express delivery within 4-6 hours (subject to availability).</li>
-  <li><strong>Groceries & Daily Needs:</strong> Same-day delivery for orders placed before 4:00 PM.</li>
+  <li><strong>Metro Cities:</strong> 2-4 business days.</li>
+  <li><strong>Other Regions:</strong> 3-7 business days.</li>
 </ul>
 <h2>4. Order Tracking</h2>
-<p>Once your order is dispatched, you will receive a tracking link via SMS/WhatsApp and email.</p>`}
+<p>Once your order is shipped, you will receive a tracking link via SMS/WhatsApp and email.</p>`}
                   />
                 </div>
               </div>
@@ -80,7 +79,7 @@ const ShippingDeliveryPolicy = () => {
                   <div>
                     <h3 className="text-base font-semibold text-gray-800 mb-2">Shipping Coverage</h3>
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      Rasa Store delivers medicines across India where permitted by law.
+                      Rasa Store delivers high-heat drops and streetwear secure packaging across India.
                     </p>
                   </div>
                 </div>

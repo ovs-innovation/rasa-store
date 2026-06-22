@@ -95,7 +95,7 @@ const useFilter = (data, allCategories = []) => {
           if (selId === "accessories" && catSlug === "accessories") return true;
 
           // Match subcategory brand for Sneakers
-          if (catSlug === "footwear" && ["nike", "adidas", "jordan"].includes(selId)) {
+          if (catSlug === "footwear" && ["premium-sports", "urban-sports", "p-brand", "canvas-series", "balance-series", "street-series", "tiger-series"].includes(selId)) {
             return brandName.includes(selId) || titleLower.includes(selId);
           }
 

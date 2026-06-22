@@ -107,7 +107,7 @@ const ProductPreviewCard = ({
                 {brandName || "RASA Streetwear"}
               </span>
               <h4 className="text-sm font-black text-gray-800 dark:text-white truncate">
-                {title || "Adidas Samba OG"}
+                {title || "Urban Sports Samba OG"}
               </h4>
               <div className="flex items-center space-x-2 pt-1">
                 <span className="text-sm font-black text-gray-950 dark:text-white">

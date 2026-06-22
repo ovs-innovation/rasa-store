@@ -41,12 +41,6 @@ const MobileBottomNavigation = () => {
   return (
     <div className="lg:hidden fixed bottom-0 w-full bg-[#050505]/95 backdrop-blur-md z-50 shadow-[0_-8px_30px_rgba(0,0,0,0.8)] border-t border-neutral-900/80">
       <div className="flex justify-between items-center px-4 py-2 pt-3">
-        {/* Home */}
-        <Link href="/" className={`flex flex-col items-center justify-center w-full ${isActive("/") ? "text-[#D4AF37]" : "text-neutral-400 hover:text-white"}`}>
-          <FiHome className="w-6 h-6 mb-1" />
-          <span className="text-[10px] font-medium">Home</span>
-        </Link>
-
         {/* Notifications */}
         <Link
           href={isLoggedIn ? "/user/notifications" : "/auth/login"}

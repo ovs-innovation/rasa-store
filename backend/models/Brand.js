@@ -20,6 +20,10 @@ const brandSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    image: {
+      type: String,
+      default: "",
+    },
     coverImage: {
       type: String,
       default: "",

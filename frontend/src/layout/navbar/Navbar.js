@@ -59,7 +59,14 @@ const Navbar = () => {
     return finalCategories;
   };
 
-  const categories = getLevel1Categories(categoriesData);
+  const NAVBAR_ALLOWED = ["footwear", "bags"];
+  const allCategories = getLevel1Categories(categoriesData);
+  // Only show top-level categories whose slug exactly matches footwear or bags
+  const categories = allCategories.filter((cat) => {
+    const slug = (cat?.slug || "").toLowerCase();
+    const name = (showingTranslateValue ? showingTranslateValue(cat?.name) : (cat?.name?.en || cat?.name || "")).toLowerCase();
+    return NAVBAR_ALLOWED.some((allowed) => slug === allowed || name === allowed || slug.startsWith(allowed) && !slug.includes("-"));
+  }).slice(0, 2);
 
   const { toggleCartDrawer } = useContext(SidebarContext);
   const { totalUniqueItems } = useCart();

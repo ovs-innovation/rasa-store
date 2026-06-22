@@ -4,7 +4,7 @@ class MyDocument extends Document {
   render() {
     const metaTitle = "RASA — Premium Sneakers & Streetwear";
     const metaDescription =
-      "Authenticated sneakers, bags, and streetwear essentials. Premium drops from Nike, Adidas, Jordan and more.";
+      "Authenticated sneakers, bags, and streetwear essentials. Premium drops from curated global collections.";
     const favicon = "/rasaLogo.png";
 
     return (

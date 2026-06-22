@@ -5,11 +5,11 @@ import { IoChevronForward } from "react-icons/io5";
 export const heroSlides = [
   {
     id: "01",
-    brand: "Rasa",
-    name: "Phantom Low",
+    brand: "Aero",
+    name: "Phantom Lux",
     desc: "Elevate your daily rotation. Crafted from ultra-premium full-grain leather, featuring handmade stitching details and a custom-molded comfort sole.",
     image: "/shoes1.png",
-    bgText: "PHANTOM",
+    bgText: "AERO",
     glowColor: "rgba(212, 175, 55, 0.25)",
     accentColor: "#D4AF37",
     textGradient: "linear-gradient(180deg, #F8E9A6 0%, #E7C765 28%, #D4AF37 55%, #9A7B22 80%, #6E5512 100%)",
@@ -17,11 +17,11 @@ export const heroSlides = [
   },
   {
     id: "02",
-    brand: "Rasa",
-    name: "Vortex Runner",
+    brand: "Soleste",
+    name: "Vortex Noir",
     desc: "Unmatched performance meets modern streetwear aesthetics. Engineered mesh upper combined with responsive cushioning for all-day comfort.",
     image: "/shoes2.png",
-    bgText: "VORTEX",
+    bgText: "SOLESTE",
     glowColor: "rgba(59, 130, 246, 0.25)",
     accentColor: "#3B82F6",
     textGradient: "linear-gradient(180deg, #BFDBFE 0%, #60A5FA 35%, #3B82F6 60%, #1E40AF 100%)",
@@ -29,11 +29,11 @@ export const heroSlides = [
   },
   {
     id: "03",
-    brand: "Rasa",
+    brand: "Pinnacle",
     name: "Apex Court",
     desc: "A sleek reimagining of retro basketball heritage. Designed with multi-layered suede panels, breathable lining, and a durable traction grip.",
     image: "/shoes3.png",
-    bgText: "APEX COURT",
+    bgText: "PINNACLE",
     glowColor: "rgba(239, 68, 68, 0.25)",
     accentColor: "#EF4444",
     textGradient: "linear-gradient(180deg, #FECACA 0%, #F87171 35%, #EF4444 60%, #991B1B 100%)",
@@ -41,11 +41,11 @@ export const heroSlides = [
   },
   {
     id: "04",
-    brand: "Rasa",
+    brand: "Equinox",
     name: "Zenith Trail",
     desc: "Ready for any urban adventure. Weather-resistant premium overlays, high-traction lugs, and a lock-in lacing system for supreme support.",
     image: "/shoes4.png",
-    bgText: "ZENITH",
+    bgText: "EQUINOX",
     glowColor: "rgba(168, 85, 247, 0.25)",
     accentColor: "#A855F7",
     textGradient: "linear-gradient(180deg, #E9D5FF 0%, #C084FC 35%, #A855F7 60%, #6B21A8 100%)",
@@ -307,7 +307,7 @@ const HeroBanner = () => {
                     </div>
 
                     <h1 className="text-5xl sm:text-[80px] font-black text-white leading-[0.82] uppercase tracking-tighter font-sans drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
-                      Rasa <br />
+                      {slide.brand} <br />
                       <span style={{ color: slide.accentColor }}>{slide.name}</span>
                     </h1>
 
@@ -373,49 +373,43 @@ const HeroBanner = () => {
 
       {/* ─────────────────────────────────────────────────────────────────────────
           2. MOBILE HERO OPTIMIZATION (block md:hidden)
-          - Max height 85vh to 90vh to fit completely in the first fold
-          - Main focus on a large centered floating shoe
-          - Compact details layout and full-width CTA visible instantly
+          - Designed to match the exact mockup layout
           ───────────────────────────────────────────────────────────────────────── */}
-      <div className="block md:hidden relative w-full h-[calc(100vh-64px)] min-h-[540px] bg-[#050505] overflow-hidden font-sans select-none border-b border-neutral-900/40">
+      <div className="block md:hidden relative w-full h-auto bg-[#050505] overflow-hidden font-sans select-none border-b border-neutral-900/40 pb-8">
         
         {/* Ambient background blur behind the shoe */}
         <div 
-          className="absolute top-[35%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vw] h-[70vw] rounded-full blur-[90px] transition-all duration-500 pointer-events-none opacity-30 z-0"
+          className="absolute top-[25%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vw] h-[70vw] rounded-full blur-[80px] transition-all duration-500 pointer-events-none opacity-20 z-0"
           style={{ backgroundColor: heroSlides[activeMobileIndex].glowColor }}
         />
 
-        {/* Giant low-opacity background watermark (hidden on very small screens, max 5-8% opacity) */}
-        <div className="absolute inset-x-0 top-[20%] hidden sm:flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden opacity-[0.05]">
-          <h2 className="text-[24vw] font-black uppercase tracking-tighter leading-none whitespace-nowrap">
-            {heroSlides[activeMobileIndex].bgText}
-          </h2>
-        </div>
+        {/* Ambient light lines/streaks */}
+        <div className="absolute top-[28%] left-0 right-0 h-40 bg-gradient-to-r from-transparent via-[#D4AF37]/5 to-transparent skew-y-[-15deg] pointer-events-none z-0" />
 
         {/* Slides Content Container */}
-        <div className="relative w-full h-full flex flex-col justify-between pt-8 pb-5 px-6 z-10">
+        <div className="relative w-full flex flex-col justify-start px-6 z-10 pt-4">
           
-          {/* 1. SHOE IMAGE - Hero focus, occupies most of first screen, auto height maintain, centered */}
-          <div className="relative flex-1 w-full flex items-center justify-center min-h-[220px] max-h-[45vh] pointer-events-none">
+          {/* 1. SHOE IMAGE - Centered, rotated -28deg */}
+          <div className="relative w-full flex items-center justify-center h-[280px] pointer-events-none">
             {heroSlides.map((slide, idx) => {
               const isCurrent = idx === activeMobileIndex;
               return (
                 <div
                   key={`mobile-img-${slide.id}`}
-                  className={`absolute w-[145vw] max-w-[600px] aspect-[4/3] flex items-center justify-center transition-all duration-450 ease-out ${
+                  className={`absolute w-[125vw] max-w-[500px] aspect-[4/3] flex items-center justify-center transition-all duration-450 ease-out ${
                     isCurrent 
                       ? "opacity-100 scale-100 rotate-0 translate-y-0" 
                       : "opacity-0 scale-75 rotate-[15deg] translate-y-4"
                   }`}
                 >
                   {/* Subtle soft shadow beneath the shoe */}
-                  <div className="absolute bottom-[2%] w-[80%] h-[10%] bg-black/60 rounded-[50%] blur-2xl" />
+                  <div className="absolute bottom-[4%] w-[75%] h-[8%] bg-black/60 rounded-[50%] blur-2xl" />
                   
                   {/* Sneaker Image with Gentle Levitation */}
                   <img
                     src={slide.image}
                     alt={slide.name}
-                    className="w-full h-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.7)] select-none pointer-events-none"
+                    className="w-full h-full object-contain drop-shadow-[0_20px_45px_rgba(0,0,0,0.8)] select-none pointer-events-none"
                     style={{
                       animation: isCurrent ? 'mobileFloat 4s ease-in-out infinite' : 'none'
                     }}
@@ -425,58 +419,89 @@ const HeroBanner = () => {
             })}
           </div>
 
-          {/* 2-6. DETAILS, CTA AND SLIDER DOTS */}
-          <div className="w-full flex flex-col items-center text-center space-y-4 pt-2">
+          {/* 2. Slider Dots - Centered directly under the shoe */}
+          <div className="flex items-center justify-center gap-1.5 pb-6">
+            {heroSlides.map((slide, idx) => {
+              const isCurrent = idx === activeMobileIndex;
+              return (
+                <button
+                  key={`mobile-dot-${slide.id}`}
+                  onClick={() => setActiveMobileIndex(idx)}
+                  className="h-1 rounded-full transition-all duration-300 pointer-events-auto"
+                  style={{
+                    width: isCurrent ? "20px" : "14px",
+                    backgroundColor: isCurrent ? heroSlides[activeMobileIndex].accentColor : "#2c2c2c",
+                  }}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              );
+            })}
+          </div>
+
+          {/* 3. DETAILS & CTA - Left Aligned */}
+          <div className="w-full flex flex-col items-start text-left space-y-4">
             
-            {/* 2. Drop badge */}
-            <div className="inline-flex items-center px-3 py-1 bg-[#0F0F0F] border border-neutral-900 text-[#D4AF37] text-[8px] font-black uppercase tracking-[0.2em] rounded-full">
+            {/* Drop badge */}
+            <div className="inline-flex items-center px-3 py-1 bg-transparent border border-[#D4AF37] text-[#D4AF37] text-[9px] font-black uppercase tracking-[0.25em] rounded-md">
               Drop {heroSlides[activeMobileIndex].id}
             </div>
 
-            {/* 3. Product Name (Max 2 lines) */}
-            <h1 className="text-3xl font-black text-white leading-none uppercase tracking-tight max-w-[90%] line-clamp-2">
-              RASA{" "}
+            {/* Product Name */}
+            <h1 className="text-4xl font-black text-white leading-[0.95] uppercase tracking-tight font-sans">
+              RASA <br />
               <span style={{ color: heroSlides[activeMobileIndex].accentColor }}>
                 {heroSlides[activeMobileIndex].name}
               </span>
             </h1>
 
-            {/* 4. Short Description (Max 2 lines) */}
-            <p className="text-neutral-400 text-[11px] leading-relaxed max-w-sm px-2 line-clamp-2">
+            {/* Description */}
+            <p className="text-neutral-400 text-xs leading-relaxed max-w-md">
               {heroSlides[activeMobileIndex].desc}
             </p>
 
-            {/* 5. CTA Button - Large, 90% width, thumb-friendly, dynamic color, visible without scrolling */}
+            {/* CTA Button - Left aligned, compact width */}
             <Link
               href={heroSlides[activeMobileIndex].shopLink}
-              className="w-[90vw] max-w-[360px] py-3.5 text-black font-extrabold text-[11px] uppercase tracking-[0.2em] text-center rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 pointer-events-auto duration-300"
+              className="px-4 py-2.5 text-white font-extrabold text-[9px] uppercase tracking-[0.2em] rounded-lg transition-all active:scale-95 flex items-center gap-2 pointer-events-auto duration-300"
               style={{
                 backgroundColor: heroSlides[activeMobileIndex].accentColor,
-                boxShadow: `0 8px 30px ${heroSlides[activeMobileIndex].accentColor}33`,
+                boxShadow: `0 8px 24px ${heroSlides[activeMobileIndex].accentColor}33`,
               }}
             >
               <span>Shop Collection</span>
               <IoChevronForward className="text-xs stroke-[3px]" />
             </Link>
 
-            {/* 6. Slider Dots */}
-            <div className="flex items-center gap-2 pt-1">
-              {heroSlides.map((slide, idx) => {
-                const isCurrent = idx === activeMobileIndex;
-                return (
-                  <button
-                    key={`mobile-dot-${slide.id}`}
-                    onClick={() => setActiveMobileIndex(idx)}
-                    className="h-1 rounded-full transition-all duration-300 pointer-events-auto"
-                    style={{
-                      width: isCurrent ? "18px" : "6px",
-                      backgroundColor: isCurrent ? heroSlides[activeMobileIndex].accentColor : "#333",
-                    }}
-                    aria-label={`Go to slide ${idx + 1}`}
-                  />
-                );
-              })}
+            {/* 4. Stats Trust Banner */}
+            <div className="w-full mt-6 py-4 px-4 bg-[#0A0A0A] border border-neutral-900 rounded-2xl grid grid-cols-3 gap-2">
+              {/* Feature 1 */}
+              <div className="flex flex-col items-center text-center space-y-1.5 border-r border-neutral-900/60 pr-1">
+                <svg className="w-5 h-5 text-[#D4AF37]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <path d="M9 11l2 2 4-4" />
+                </svg>
+                <span className="text-[7px] text-neutral-450 uppercase tracking-widest font-black leading-tight">Premium Quality</span>
+              </div>
+              {/* Feature 2 */}
+              <div className="flex flex-col items-center text-center space-y-1.5 border-r border-neutral-900/60 px-1">
+                <svg className="w-5 h-5 text-[#D4AF37]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="1" y="3" width="15" height="13" />
+                  <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                  <circle cx="5.5" cy="18.5" r="2.5" />
+                  <circle cx="18.5" cy="18.5" r="2.5" />
+                </svg>
+                <span className="text-[7px] text-neutral-450 uppercase tracking-widest font-black leading-tight">Fast & Safe Delivery</span>
+              </div>
+              {/* Feature 3 */}
+              <div className="flex flex-col items-center text-center space-y-1.5 pl-1">
+                <svg className="w-5 h-5 text-[#D4AF37]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="8" r="7" />
+                  <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+                </svg>
+                <span className="text-[7px] text-neutral-450 uppercase tracking-widest font-black leading-tight">100% Authentic Products</span>
+              </div>
             </div>
+
           </div>
         </div>
 
@@ -484,10 +509,10 @@ const HeroBanner = () => {
         <style jsx global>{`
           @keyframes mobileFloat {
             0%, 100% {
-              transform: translateY(0px) rotate(-12deg);
+              transform: translateY(0px) rotate(-28deg) scale(1.1);
             }
             50% {
-              transform: translateY(-8px) rotate(-10deg);
+              transform: translateY(-8px) rotate(-26deg) scale(1.1);
             }
           }
         `}</style>

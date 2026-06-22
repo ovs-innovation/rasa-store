@@ -106,33 +106,7 @@ const Order = ({ params }) => {
           </div>
           <div className="bg-white rounded-lg shadow-sm p-4 sm:p-8">
             <div className="flex flex-wrap gap-3 mb-8">
-               <PDFDownloadLink
-                 document={
-                   <InvoiceForDownload
-                     data={data}
-                     currency={currency}
-                     globalSetting={globalSetting}
-                     getNumberTwo={getNumberTwo}
-                     logo={storeCustomizationSetting?.navbar?.logo}
-                   />
-                 }
-                 fileName={`Invoice-${data.invoice}`}
-               >
-                 {({ blob, url, loading, error }) =>
-                   loading ? (
-                     "Loading..."
-                   ) : (
-                     <button className="flex items-center justify-center bg-store-500 text-white transition-all font-serif text-sm font-semibold h-10 py-2 px-5 rounded-md hover:bg-store-600 shadow-sm">
-                       {showingTranslateValue(
-                         storeCustomizationSetting?.dashboard?.download_button
-                       )}{" "}
-                       <span className="ml-2 text-base">
-                         <IoCloudDownloadOutline />
-                       </span>
-                     </button>
-                   )
-                 }
-               </PDFDownloadLink>
+
 
                {data.trackingNumber && (
                  <>

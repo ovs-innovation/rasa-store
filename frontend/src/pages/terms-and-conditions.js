@@ -56,20 +56,18 @@ const TermAndConditions = () => {
                     error={error}
                     loading={loading}
                     data={storeCustomizationSetting?.term_and_condition?.description || `<h2>1. Acceptance of Terms</h2>
-<p>By accessing Rasa Store, you agree to these Terms and Conditions. These terms govern your use of our platform for ordering medicines, groceries, and daily essentials.</p>
+<p>By accessing Rasa Store, you agree to these Terms and Conditions. These terms govern your use of our platform for ordering premium sneakers, streetwear, bags, and fashion accessories.</p>
 <h2>2. User Eligibility</h2>
-<p>You must be at least 18 years old to use our services. By using Rasa Store, you confirm that all information provided is accurate and truthful.</p>
-<h2>3. Prescription Medicines (Schedule H & X)</h2>
-<p>For prescription medicines, a valid prescription from a registered medical practitioner must be uploaded. Our licensed pharmacists will verify the prescription before processing the order. Rasa Store reserves the right to cancel orders with invalid prescriptions.</p>
-<h2>4. Pricing & Availability</h2>
-<p>While we strive for accuracy, product prices and availability are subject to change without prior notice. MRP includes all applicable taxes (GST).</p>
-<h2>5. Delivery & Cancellations</h2>
+<p>You confirm that all registration and shipping information provided is accurate and truthful.</p>
+<h2>3. Pricing & Availability</h2>
+<p>While we strive for accuracy, product prices, stock, and availability are subject to change without prior notice. All prices include applicable taxes.</p>
+<h2>4. Delivery & Cancellations</h2>
 <ul>
-  <li>Orders can be cancelled before they are dispatched.</li>
-  <li>Delivery times are estimates and may vary based on your location in Ghaziabad and NCR.</li>
+  <li>Orders can be cancelled before they are shipped from our warehouse.</li>
+  <li>Delivery times are estimates and may vary based on your location.</li>
 </ul>
-<h2>6. Liability Disclaimer</h2>
-<p>Rasa Store acts as an intermediary connecting buyers with sellers/distributors. We are not liable for the manufacturing quality of the products.</p>`}
+<h2>5. Product Authenticity</h2>
+<p>Rasa Store guarantees 100% authenticity for all items curated on our platform. Each drop undergoes a multi-point verification process by our specialists before shipment.</p>`}
                   />
                 </div>
               </div>
@@ -176,7 +174,7 @@ const TermAndConditions = () => {
                         </p>
                         <div className="flex items-center gap-2 text-sm text-store-600 bg-white/60 w-fit px-3 py-1.5 rounded-lg">
                           <FiCheckCircle className="w-4 h-4" />
-                          <span>We're here to help clarify any questions</span>
+                          <span>We&apos;re here to help clarify any questions</span>
                         </div>
                       </div>
                     </div>

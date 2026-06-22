@@ -92,7 +92,7 @@ const Faq = () => {
             Frequently Asked Questions
           </h1>
           <p className="text-neutral-400 text-lg md:text-xl max-w-3xl mx-auto">
-            Find answers to common questions about ordering, delivery, prescriptions, and more. We're here to help you.
+            Find answers to common questions about ordering, delivery, authenticity, and more. We're here to help you.
           </p>
         </div>
       </div>

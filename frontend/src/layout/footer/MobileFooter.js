@@ -105,14 +105,7 @@ const MobileFooter = () => {
               />
             </div>
           </Link>
-          <Link
-            href="/"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-900 hover:text-[#D4AF37] shrink-0 transition-all duration-200 ml-2"
-            aria-label="Home"
-            title="Home"
-          >
-            <FiHome className="w-5 h-5" />
-          </Link>
+
         </div>
         <div className="flex items-center gap-3">
           <CustomerNotificationBell />

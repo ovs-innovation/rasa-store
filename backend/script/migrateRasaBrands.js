@@ -8,21 +8,21 @@ const { connectDB } = require("../config/db");
 const Brand = require("../models/Brand");
 
 const RASA_BRANDS = [
-  { name: { en: "Nike" }, slug: "nike", logo: "/brands/nike.svg" },
-  { name: { en: "Adidas" }, slug: "adidas", logo: "/brands/adidas.svg" },
+  { name: { en: "Premium Sports" }, slug: "premium-sports", logo: "/brands/nike.svg" },
+  { name: { en: "Urban Sports" }, slug: "urban-sports", logo: "/brands/adidas.svg" },
   {
-    name: { en: "Onitsuka Tiger" },
-    slug: "onitsuka-tiger",
+    name: { en: "Tiger Series" },
+    slug: "tiger-series",
     logo: "/brands/onitsuka-tiger.svg",
   },
-  { name: { en: "Puma" }, slug: "puma", logo: "/brands/puma.svg" },
-  { name: { en: "Converse" }, slug: "converse", logo: "/brands/converse.svg" },
+  { name: { en: "P Brand" }, slug: "p-brand", logo: "/brands/puma.svg" },
+  { name: { en: "Canvas Series" }, slug: "canvas-series", logo: "/brands/converse.svg" },
   {
-    name: { en: "New Balance" },
-    slug: "new-balance",
+    name: { en: "Balance Series" },
+    slug: "balance-series",
     logo: "/brands/new-balance.svg",
   },
-  { name: { en: "Vans" }, slug: "vans", logo: "/brands/vans.svg" },
+  { name: { en: "Street Series" }, slug: "street-series", logo: "/brands/vans.svg" },
 ];
 
 const run = async () => {

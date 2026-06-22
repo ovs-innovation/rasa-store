@@ -25,15 +25,15 @@ const AboutUs = () => {
                 ABOUT RASA
               </span>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-sans font-black uppercase tracking-tight leading-[1.05] text-black">
-                MORE THAN<br />
-                FASHION.<br />
-                IT'S A CULTURE.
+                WE’RE JUST HERE<br />
+                TO MAKE YOUR WISHLIST<br />
+                A REALITY.
               </h1>
               <p className="text-neutral-700 text-base md:text-lg font-sans leading-relaxed">
-                At RASA, we bring together the best of sneakers, bags, slides and accessories for those who live and breathe style.
+                At The Rasa Store, you’ll find the bags and sneakers everyone’s searching for, saving, and adding to their mood boards. From everyday staples to standout picks, we bring together styles that help you level up your collection without the endless hunt.
               </p>
               <p className="text-neutral-500 text-sm font-sans tracking-wide">
-                Curated. Authentic. On trend. That's the RASA way.
+                With 5,000+ happy customers across India, we’re all about helping you build a collection you’ll keep reaching for—one great find at a time.
               </p>
               <div className="pt-2">
                 <a 
@@ -72,12 +72,12 @@ const AboutUs = () => {
                 OUR STORY
               </span>
               <h2 className="text-3xl md:text-4xl font-sans font-black uppercase tracking-tight leading-tight text-white">
-                FROM KICKS BY RASAA<br />
-                TO RASA STREETWEAR
+                OUR ORIGIN STORY<br />
+                AND THE EVOLUTION OF RASA
               </h2>
               <div className="space-y-4 text-neutral-400 font-sans text-sm md:text-base leading-relaxed text-justify">
                 <p>
-                  What started as Kicks by Rasaa - a passion project for sneakers, has now grown into RASA Streetwear.
+                  What started as a passion project for premium sneakers has now grown into RASA.
                 </p>
                 <p>
                   Today, we offer a carefully curated collection of sneakers, bags, slides and accessories from top brands around the world.
@@ -144,7 +144,7 @@ const AboutUs = () => {
           </div>
 
           {/* Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 font-sans">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 font-sans max-w-4xl mx-auto">
             
             {/* Sneakers Card */}
             <div className="bg-white rounded-2xl overflow-hidden border border-neutral-200/60 shadow-sm hover:shadow-md transition-all group text-left">
@@ -183,50 +183,6 @@ const AboutUs = () => {
                     <span className="text-xs font-black uppercase tracking-wider text-black">BAGS</span>
                   </div>
                   <p className="text-neutral-500 text-xs leading-relaxed">Backpacks, sling bags, totes & more.</p>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-xs group-hover:bg-[#D4AF37] group-hover:text-black transition-all">
-                  &rarr;
-                </div>
-              </div>
-            </div>
-
-            {/* Slides Card */}
-            <div className="bg-white rounded-2xl overflow-hidden border border-neutral-200/60 shadow-sm hover:shadow-md transition-all group text-left">
-              <div className="aspect-[4/3] w-full overflow-hidden bg-neutral-100 border-b border-neutral-100">
-                <img 
-                  src="https://images.unsplash.com/photo-1603808033192-082d6919d3e1?auto=format&fit=crop&w=600&h=450&q=80" 
-                  alt="Slides Category" 
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              </div>
-              <div className="p-6 flex justify-between items-center">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-black uppercase tracking-wider text-black">SLIDES</span>
-                  </div>
-                  <p className="text-neutral-500 text-xs leading-relaxed">Comfort that goes everywhere.</p>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-xs group-hover:bg-[#D4AF37] group-hover:text-black transition-all">
-                  &rarr;
-                </div>
-              </div>
-            </div>
-
-            {/* Accessories Card */}
-            <div className="bg-white rounded-2xl overflow-hidden border border-neutral-200/60 shadow-sm hover:shadow-md transition-all group text-left">
-              <div className="aspect-[4/3] w-full overflow-hidden bg-neutral-100 border-b border-neutral-100">
-                <img 
-                  src="https://images.unsplash.com/photo-1534215754734-18e55d13ce35?auto=format&fit=crop&w=600&h=450&q=80" 
-                  alt="Accessories Category" 
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              </div>
-              <div className="p-6 flex justify-between items-center">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-black uppercase tracking-wider text-black">ACCESSORIES</span>
-                  </div>
-                  <p className="text-neutral-500 text-xs leading-relaxed">Caps, socks, wallets & essentials.</p>
                 </div>
                 <div className="w-8 h-8 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-xs group-hover:bg-[#D4AF37] group-hover:text-black transition-all">
                   &rarr;
@@ -305,7 +261,7 @@ const AboutUs = () => {
               <img src="https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=300&h=300&q=80" alt="Backpack Detail" className="w-full h-full object-cover hover:scale-105 transition-all duration-300" />
             </div>
             <div className="rounded-xl overflow-hidden aspect-square bg-neutral-200">
-              <img src="https://images.unsplash.com/photo-1619521440807-ba72fee6b7b4?auto=format&fit=crop&w=300&h=300&q=80" alt="Slides socks Detail" className="w-full h-full object-cover hover:scale-105 transition-all duration-300" />
+              <img src="https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=300&h=300&q=80" alt="Premium Sneaker Detail" className="w-full h-full object-cover hover:scale-105 transition-all duration-300" />
             </div>
             <div className="rounded-xl overflow-hidden aspect-square bg-neutral-200">
               <img src="https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?auto=format&fit=crop&w=300&h=300&q=80" alt="Backpack Wearer" className="w-full h-full object-cover hover:scale-105 transition-all duration-300" />

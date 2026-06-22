@@ -42,13 +42,14 @@ const ProductCard = ({
     if (product?.brandName) return product.brandName;
     const titleStr = showingTranslateValue(product?.title) || "";
     const knownBrands = [
-      "Nike",
-      "Adidas",
-      "New Balance",
-      "Puma",
-      "Converse",
-      "Jordan",
-      "Yeezy",
+      "Premium Sports",
+      "Urban Sports",
+      "Balance Series",
+      "P Brand",
+      "Canvas Series",
+      "Street Series",
+      "Tiger Series",
+      "J Series",
     ];
     const matched = knownBrands.find((b) =>
       titleStr.toLowerCase().includes(b.toLowerCase())

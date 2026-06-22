@@ -67,7 +67,7 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
       <div className="  px-4 pb-1 pt-4 rounded-t-xl">
         <div className=" flex gap-x-5  pb-4 border-b border-gray-50 items-start">
           {/* Logo + Invoice on same line */}
-          <div className="text-left flex flex-col items-start gap-0 hidden lg:block">
+          <div className="hidden">
             <h2 className="text-lg font-serif font-semibold">
               <Link href="/">
                 <Image
@@ -345,7 +345,7 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
                 
               </div>
             </div>
-            <div className="hidden lg:block pb-6 flex justify-start">
+            <div className="hidden">
             <div className="w-full md:w-64 flex flex-col items-start md:items-start text-xs md:text-sm space-y-0.5">
               <div className="w-24 md:ml-auto" />
               <p className="font-semibold text-gray-700 leading-snug">
