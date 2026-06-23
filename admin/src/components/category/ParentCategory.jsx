@@ -10,6 +10,7 @@ const ParentCategory = ({
   selectedCategory,
   setSelectedCategory,
   setDefaultCategory,
+  defaultCategory,
 }) => {
   const { data, loading } = useAsync(CategoryServices?.getAllCategory);
   const { showingTranslateValue } = useUtilsFunction();
@@ -18,6 +19,33 @@ const ParentCategory = ({
   const [selectedParentId, setSelectedParentId] = useState("");
   // Local state: which sub-category is picked in the second dropdown
   const [selectedSubId, setSelectedSubId] = useState("");
+
+  // Sync selected dropdown values with defaultCategory on load
+  useEffect(() => {
+    if (!data || !Array.isArray(data) || data.length === 0) return;
+    
+    // Get the first item of defaultCategory as the main category
+    const mainCategory = defaultCategory?.[0];
+    if (!mainCategory || !mainCategory._id) return;
+
+    const mainId = mainCategory._id;
+
+    // Check if the mainId is a parent category
+    const isParent = data.some((cat) => cat._id === mainId);
+    if (isParent) {
+      setSelectedParentId(mainId);
+      setSelectedSubId("");
+    } else {
+      // Find the parent of this sub-category
+      const parent = data.find((cat) => 
+        cat.children?.some((child) => child._id === mainId)
+      );
+      if (parent) {
+        setSelectedParentId(parent._id);
+        setSelectedSubId(mainId);
+      }
+    }
+  }, [data, defaultCategory]);
 
   // Top-level (parent) categories — those with no parent or at root level
   const parentCategories = Array.isArray(data) ? data : [];

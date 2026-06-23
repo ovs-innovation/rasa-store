@@ -29,7 +29,12 @@ const normalizePricesPayload = (prices = {}) => {
   const originalPrice = Math.max(0, Number(prices.originalPrice) || 0);
   const discount = Math.max(0, Number(prices.discount) || 0);
   const discountType = prices.discountType || "flat";
-  const explicitPrice = Number(prices.price);
+  
+  // If salePrice is explicitly provided and valid, prioritize it as the final customer-facing price
+  const salePriceVal = Number(prices.salePrice);
+  const explicitPrice = (Number.isFinite(salePriceVal) && salePriceVal > 0)
+    ? salePriceVal
+    : Number(prices.price);
 
   let price;
   if (Number.isFinite(explicitPrice) && explicitPrice >= 0) {

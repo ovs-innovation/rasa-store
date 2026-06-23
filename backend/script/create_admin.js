@@ -11,8 +11,8 @@ const createAdmin = async () => {
     });
     console.log("Connected to MongoDB...");
 
-    const email = "info@ovsinnovation.com";
-    const password = "Admin@123";
+    const email = "admin@rasastore.com";
+    const password = "RasaStore@123";
 
     let admin = await Admin.findOne({ email });
     if (admin) {
@@ -46,7 +46,7 @@ const createAdmin = async () => {
         "customer-order",
       ];
       await admin.save();
-      console.log("Admin user info@ovsinnovation.com updated with password Ovsinnovation@123");
+      console.log("Admin user admin@rasastore.com updated with password RasaStore@123");
     } else {
       admin = new Admin({
         name: { en: "Super Admin" },
@@ -84,7 +84,7 @@ const createAdmin = async () => {
         ]
       });
       await admin.save();
-      console.log("Admin user info@ovsinnovation.com created with password Ovsinnovation@123");
+      console.log("Admin user admin@rasastore.com created with password RasaStore@123");
     }
     process.exit(0);
   } catch (error) {

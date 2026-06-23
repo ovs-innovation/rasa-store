@@ -2061,6 +2061,7 @@ const ProductDrawer = ({ id }) => {
                       selectedCategory={selectedCategory}
                       setSelectedCategory={setSelectedCategory}
                       setDefaultCategory={setDefaultCategory}
+                      defaultCategory={defaultCategory}
                     />
                   </div>
                 </div>

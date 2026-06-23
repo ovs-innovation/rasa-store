@@ -431,7 +431,7 @@ const useProductSubmit = (id) => {
         lowStockAlert: typeof data.lowStockAlert === "number" ? data.lowStockAlert : Number(data.lowStockAlert || 5),
 
         prices: {
-          price: getNumberTwo(data.price) || getNumberTwo(data.originalPrice),
+          price: getNumberTwo(data.salePrice) || getNumberTwo(data.price) || getNumberTwo(data.originalPrice),
           originalPrice: getNumberTwo(data.originalPrice),
           salePrice: data.salePrice ? getNumberTwo(data.salePrice) : 0,
           discount: Math.max(0, getNumberTwo(data.originalPrice) - (getNumberTwo(data.salePrice) || getNumberTwo(data.price) || getNumberTwo(data.originalPrice))),

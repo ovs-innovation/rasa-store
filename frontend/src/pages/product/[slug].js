@@ -356,14 +356,18 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         }
       }
       
-      // Set active image to first variant image, or fallback to product image
-      const variantImage = variantImages.length > 0 
-        ? variantImages[0]
+      // Combine variant images with other product-level images
+      const combinedImages = [...variantImages];
+      productImages.forEach(img => {
+        if (img && typeof img === "string" && !combinedImages.includes(img)) {
+          combinedImages.push(img);
+        }
+      });
+      const variantImage = combinedImages.length > 0 
+        ? combinedImages[0]
         : (productImages[0] || "");
       setActiveImage(variantImage);
-      setCurrentImages(
-        variantImages.length > 0 ? variantImages : productImages
-      );
+      setCurrentImages(combinedImages);
       
       setStock(result2?.quantity);
       const price = getNumber(result2?.price);
@@ -772,13 +776,18 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         }
       }
       
-      const variantImage = variantImages.length > 0 
-        ? variantImages[0]
+      // Combine variant images with other product-level images
+      const combinedImages = [...variantImages];
+      productImages.forEach(img => {
+        if (img && typeof img === "string" && !combinedImages.includes(img)) {
+          combinedImages.push(img);
+        }
+      });
+      const variantImage = combinedImages.length > 0 
+        ? combinedImages[0]
         : (productImages[0] || "");
       setActiveImage(variantImage);
-      setCurrentImages(
-        variantImages.length > 0 ? variantImages : productImages
-      );
+      setCurrentImages(combinedImages);
       
       // Update price, stock, etc. immediately
       setStock(matchingVariant?.quantity || 0);

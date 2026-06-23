@@ -239,6 +239,12 @@ const productSchema = new mongoose.Schema(
         required: true,
         min: [0, "Sale price cannot be negative"],
       },
+      salePrice: {
+        type: Number,
+        required: false,
+        default: 0,
+        min: [0, "Sale price cannot be negative"],
+      },
       discount: {
         type: Number,
         required: false,
