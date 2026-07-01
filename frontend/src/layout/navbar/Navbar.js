@@ -73,6 +73,8 @@ const Navbar = () => {
   const { count: wishlistCount } = useWishlist();
   const userInfo = getUserSession();
   const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -146,17 +148,92 @@ const Navbar = () => {
     }
   };
 
+  const menu = {
+    sneakers: ["Running Shoes", "Casual Sneakers", "High Tops", "Sports Shoes"],
+    bags: ["Backpacks", "Handbags", "Travel Bags", "Laptop Bags"],
+  };
+
+
   return (
     <>
       <CartDrawer />
       <header className="hidden lg:block bg-[#050505] text-white border-b border-neutral-900">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-8">
           <div
-            className={`flex items-center gap-4 transition-all duration-300 ${
-              showNavbarSearch ? "py-2.5" : "py-2"
-            }`}
+            className={`flex items-center gap-4 transition-all duration-300 ${showNavbarSearch ? "py-2.5" : "py-2"
+              }`}
           >
-            <NavbarLogo />
+            <div className="flex items-center justify-between w-full">
+
+              {/* LEFT - Logo */}
+              <NavbarLogo />
+
+              {/* CENTER - Sneakers + Bags */}
+              <div className="flex-1 flex justify-center">
+                <div className="flex gap-12 items-center font-serif">
+
+                  {/* Sneakers */}
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setOpen("sneakers")}
+                    onMouseLeave={() => setOpen(null)}
+                  >
+                    <Link
+                      href="/search?category=footwear"
+                      className="cursor-pointer font-serif text-white uppercase hover:text-[#D4AF37] font-bold"
+                    >
+                      Sneakers
+                    </Link>
+
+                    {open === "sneakers" && (
+                      <div className="absolute top-6 left-0 text-white shadow-lg rounded-md w-52 p-3 z-50">
+                        {menu.sneakers.map((item) => (
+                          <Link
+                            key={item}
+                            href={`/sneakers/${item.toLowerCase().replaceAll(" ", "-")}`}
+                            className="block px-2 py-1 hover:underline rounded"
+                          >
+                            {item}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bags */}
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setOpen("bags")}
+                    onMouseLeave={() => setOpen(null)}
+                  >
+                    <Link
+                      href="/search?category=bags"
+                      className="cursor-pointer font-serif text-white uppercase hover:text-[#D4AF37] font-bold"
+                    >
+                      Bags
+                    </Link>
+
+                    {open === "bags" && (
+                      <div className="absolute top-6 left-0 text-white shadow-lg border-grey rounded-md w-52 p-3 z-50">
+                        {menu.bags.map((item) => (
+                          <Link
+                            key={item}
+                            href={`/bags/${item.toLowerCase().replaceAll(" ", "-")}`}
+                            className="block px-2 py-1 hover:underline rounded"
+                          >
+                            {item}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              </div>
+
+
+
+            </div>
 
             <div className="flex-1 min-w-0 flex items-center justify-center gap-2">
               {showNavbarSearch ? (
@@ -276,7 +353,7 @@ const Navbar = () => {
             showingTranslateValue={showingTranslateValue}
           />
         )}
-      </header>
+      </header >
       <style jsx global>{`
         .navbar-search-form .navbar-search-input {
           border: none !important;

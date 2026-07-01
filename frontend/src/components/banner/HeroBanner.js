@@ -283,11 +283,6 @@ const HeroBanner = () => {
                       index === 0 ? "opacity-100" : "opacity-0 pointer-events-none"
                     }`}
                   >
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0F0F0F]/80 border border-neutral-800 text-[#D4AF37] text-[9px] font-black uppercase tracking-widest rounded-full backdrop-blur-sm">
-                      <span>Drop {slide.id}</span>
-                      <span className="text-[6px] text-[#D4AF37]">●</span>
-                    </div>
-
                     <h1 className="text-5xl sm:text-[80px] font-black text-white leading-[0.82] uppercase tracking-tighter font-sans drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
                       {slide.brand} <br />
                       <span style={{ color: slide.accentColor }}>{slide.name}</span>
@@ -462,12 +457,7 @@ const HeroBanner = () => {
 
           {/* 3. DETAILS & CTA - Left Aligned */}
           <div className="w-full flex flex-col items-start text-left space-y-4">
-            
-            {/* Drop badge */}
-            <div className="inline-flex items-center px-3 py-1 bg-transparent border border-[#D4AF37] text-[#D4AF37] text-[9px] font-black uppercase tracking-[0.25em] rounded-md">
-              Drop {heroSlides[activeMobileIndex].id}
-            </div>
-
+          
             {/* Product Name */}
             <h1 className="text-4xl font-black text-white leading-[0.95] uppercase tracking-tight font-sans">
               RASA <br />

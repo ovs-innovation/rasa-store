@@ -31,7 +31,7 @@ import useUtilsFunction from "@hooks/useUtilsFunction";
 
 const Category = () => {
   const router = useRouter();
-  const { categoryDrawerOpen, closeCategoryDrawer } = 
+  const { categoryDrawerOpen, closeCategoryDrawer } =
     useContext(SidebarContext);
   const { showingTranslateValue } = useUtilsFunction();
   const { storeCustomizationSetting } = useGetSetting();
@@ -65,7 +65,7 @@ const Category = () => {
 
   const buildCategoryTree = (flatList) => {
     if (!flatList || !Array.isArray(flatList)) return [];
-    
+
     const footwearId = flatList.find(c => c.name?.en === 'Footwear' || c._id === '6a33872af6601848fc56574b')?._id;
     const bagsId = flatList.find(c => c.name?.en === 'Bags' || c._id === '6a33872af6601848fc56574c')?._id;
     const homeId = flatList.find(c => c.name?.en === 'Home' || c._id === '6a33872af6601848fc56574a')?._id;
@@ -84,26 +84,31 @@ const Category = () => {
 
     const map = {};
     const roots = [];
-    
+
     normalizedList.forEach((cat) => {
       map[cat._id] = { ...cat, children: [] };
     });
-    
+
     normalizedList.forEach((cat) => {
       const mapped = map[cat._id];
       const parentId = cat.parentId;
-      
+
       if (parentId && map[parentId]) {
         map[parentId].children.push(mapped);
       } else {
         roots.push(mapped);
       }
     });
-    
+
     return roots;
   };
 
   const data = buildCategoryTree(flatCategories);
+
+  const categories = [
+    { title: "Sneakers", href: "/search?category=footwear" },
+    { title: "Bags", href: "/search?category=bags" }
+  ];
 
   const mainLinks = [
     { title: "Home", href: "/", icon: FiHome },
@@ -152,25 +157,45 @@ const Category = () => {
         <div className="flex border-b border-neutral-900 bg-[#0A0A0A]">
           <button
             onClick={() => setActiveTab("category")}
-            className={`flex-1 py-4 text-center font-bold text-xs uppercase tracking-widest transition-colors duration-300 ${
-              activeTab === "category"
-                ? `text-[#D4AF37] border-b-2 border-[#D4AF37]`
-                : "text-neutral-500 hover:text-neutral-300"
-            }`}
+            className={`flex-1 py-4 text-center font-bold text-xs uppercase tracking-widest transition-colors duration-300 ${activeTab === "category"
+              ? `text-[#D4AF37] border-b-2 border-[#D4AF37]`
+              : "text-neutral-500 hover:text-neutral-300"
+              }`}
           >
             Category
           </button>
+
           <button
             onClick={() => setActiveTab("pages")}
-            className={`flex-1 py-4 text-center font-bold text-xs uppercase tracking-widest transition-colors duration-300 ${
-              activeTab === "pages"
-                ? `text-[#D4AF37] border-b-2 border-[#D4AF37]`
-                : "text-neutral-500 hover:text-neutral-300"
-            }`}
+            className={`flex-1 py-4 text-center font-bold text-xs uppercase tracking-widest transition-colors duration-300 ${activeTab === "pages"
+              ? `text-[#D4AF37] border-b-2 border-[#D4AF37]`
+              : "text-neutral-500 hover:text-neutral-300"
+              }`}
           >
             Pages
           </button>
         </div>
+
+
+        {activeTab === "category" ? (
+          <nav className="px-6 py-3">
+            <ul className="space-y-1">
+              {categories.map((item) => (
+                <li key={item.title} className="flex items-center gap-3">
+                  <Link
+                    href={item.href}
+                    onClick={closeCategoryDrawer}
+                    className="flex items-center rounded-md px-2 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-300 hover:bg-neutral-900 hover:text-[#D4AF37] transition-all duration-150"
+                  >
+                    <span>{item.title}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : (
+          <div></div>
+        )}
 
         {activeTab === "pages" ? (
           <nav className="px-6 py-3">
@@ -206,7 +231,7 @@ const Category = () => {
                       <div className="border-b border-neutral-900/60 last:border-b-0">
                         {mainCategory.children.map((subcategory1) => (
                           <div key={subcategory1._id}>
-                            <div 
+                            <div
                               className="flex items-center gap-3 px-3 py-3 text-xs font-black uppercase tracking-widest text-neutral-200 hover:bg-neutral-900 hover:text-[#D4AF37] border-b border-neutral-900/30 transition-colors cursor-pointer"
                               onClick={() => toggleCategoryExpansion(subcategory1._id)}
                             >
@@ -234,7 +259,7 @@ const Category = () => {
                                 </div>
                               )}
                             </div>
-                            
+
                             {/* Subcategories Level 2 - Collapsible */}
                             {subcategory1?.children?.length > 0 && expandedCategories[subcategory1._id] && (
                               <div className="bg-[#0A0A0A] rounded-md overflow-hidden my-1">

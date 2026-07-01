@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import useTranslation from "next-translate/useTranslation";
-import { FiMail, FiMapPin, FiBell } from "react-icons/fi";
+import { FiMail, FiBell } from "react-icons/fi";
 
 //internal import
 import Layout from "@layout/Layout";
@@ -45,7 +45,7 @@ const ContactUs = () => {
       <div className="bg-black text-white">
         <div className="max-w-screen-2xl mx-auto py-10 px-4 sm:px-10">
           {/* contact promo */}
-          <div className="grid md:grid-cols-2 gap-6 lg:grid-cols-3 xl:gap-8 font-sans">
+          <div className="grid md:grid-cols-2 gap-6 lg:grid-cols-2 xl:gap-8 font-sans">
             {loading ? (
               <CMSkeleton
                 count={10}
@@ -108,44 +108,6 @@ const ContactUs = () => {
                   {showingTranslateValue(
                     storeCustomizationSetting?.contact_us?.call_box_text
                   )}
-                </p>
-              </div>
-            )}
-
-            {loading ? (
-              <CMSkeleton
-                count={10}
-                height={20}
-                error={error}
-                loading={loading}
-              />
-            ) : (
-              <div className="border border-neutral-900 bg-[#0A0A0A] p-10 rounded-2xl text-center">
-                <span className="flex justify-center text-4xl text-[#D4AF37] mb-4">
-                  <FiMapPin />
-                </span>
-                <h5 className="text-xl mb-2 font-black uppercase tracking-wide">
-                  {showingTranslateValue(
-                    storeCustomizationSetting?.contact_us?.address_box_title
-                  ) || "HQ Office"}
-                </h5>
-                <p className="mb-0 text-sm text-neutral-400 leading-7">
-                  <span>
-                    {showingTranslateValue(
-                      storeCustomizationSetting?.contact_us
-                        ?.address_box_address_one
-                    ) || "102 Luxury Retail District"}
-                  </span>{" "}
-                  <br />
-                  {showingTranslateValue(
-                    storeCustomizationSetting?.contact_us
-                      ?.address_box_address_two
-                  ) || "Avenue des Champs-Élysées"}{" "}
-                  <br />
-                  {showingTranslateValue(
-                    storeCustomizationSetting?.contact_us
-                      ?.address_box_address_three
-                  ) || "Paris, France"}
                 </p>
               </div>
             )}

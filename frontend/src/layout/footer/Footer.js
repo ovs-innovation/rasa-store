@@ -15,8 +15,6 @@ const Footer = () => {
   const block1Links = [
     { title: "New Arrivals", href: "/new-arrivals" },
     { title: "Trending Drops", href: "/trending" },
-    { title: "Men's Collection", href: "/men" },
-    { title: "Women's Collection", href: "/women" },
   ];
 
   const block2Links = [
@@ -53,7 +51,7 @@ const Footer = () => {
               </span>
             </Link>
             <p className="text-xs text-neutral-500 leading-relaxed max-w-sm">
-              Defining modern premium streetwear. Minimalist silhouettes, heavyweight fabrics, and clean aesthetics designed for the digital generation.
+              Step into a world where sneakers and bags define everyday confidence. Designed with clean aesthetics, refined details, and modern functionality—our pieces are made to move with you, wherever life takes you.
             </p>
             {/* Social Links */}
             <div className="flex items-center gap-3 pt-2">

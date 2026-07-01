@@ -13,7 +13,7 @@ import {
   FiShuffle,
   FiTruck,
 } from "react-icons/fi";
-import { AiFillStar } from "react-icons/ai";
+
 import {
   FacebookIcon,
   FacebookShareButton,
@@ -47,11 +47,7 @@ import useGetSetting from "@hooks/useGetSetting";
 import ProductImageGallery from "@components/product/ProductImageGallery";
 import ProductDetailsSection from "@components/product/ProductDetailsSection";
 import LocationPickerDropdown from "@components/location/LocationPickerDropdown";
-import RatingSummary from "@components/reviews/RatingSummary";
-import ReviewFilters from "@components/reviews/ReviewFilters";
-import ReviewList from "@components/reviews/ReviewList";
-import WriteReviewForm from "@components/reviews/WriteReviewForm";
-import ReviewServices from "@services/ReviewServices";
+
 import { notifyError, notifySuccess } from "@utils/toast";
 import { useSession } from "next-auth/react";
 import { addToWishlist } from "@lib/wishlist";
@@ -141,14 +137,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   const isUpdatingUrlRef = useRef(false);
   const [activeFaqIndex, setActiveFaqIndex] = useState(null);
   const [currentImages, setCurrentImages] = useState([]);
-  const [reviews, setReviews] = useState([]);
-  const [ratingSummary, setRatingSummary] = useState(null);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [reviewsPage, setReviewsPage] = useState(1);
-  const [reviewsHasMore, setReviewsHasMore] = useState(false);
-  const [reviewsSort, setReviewsSort] = useState("newest");
-  const [reviewsRatingFilter, setReviewsRatingFilter] = useState(null);
-  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+
   const [shareUrl, setShareUrl] = useState("");
   const [activeTab, setActiveTab] = useState("product-description");
   const [showStickyBottomBar, setShowStickyBottomBar] = useState(false);
@@ -607,127 +596,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     };
   }, [globalSetting, shippingAddressData]);
 
-  // Fetch reviews when product or filters change
-  useEffect(() => {
-    const fetchReviews = async () => {
-      if (!product?._id) return;
-      try {
-        setReviewsLoading(true);
-        const res = await ReviewServices.getProductReviews({
-          productId: product._id,
-          sort: reviewsSort,
-          rating: reviewsRatingFilter,
-          page: 1,
-          limit: 6,
-        });
-        setReviews(res.reviews || []);
-        setRatingSummary(res.ratingSummary || null);
-        setReviewsPage(1);
-        setReviewsHasMore(
-          res.pagination && res.pagination.page < res.pagination.pages
-        );
-      } catch (err) {
-        notifyError(
-          err?.response?.data?.message || "Failed to load reviews."
-        );
-      } finally {
-        setReviewsLoading(false);
-      }
-    };
 
-    fetchReviews();
-  }, [product?._id, reviewsSort, reviewsRatingFilter]);
-
-  const handleLoadMoreReviews = async () => {
-    if (!product?._id || !reviewsHasMore || reviewsLoading) return;
-    try {
-      const nextPage = reviewsPage + 1;
-      setReviewsLoading(true);
-      const res = await ReviewServices.getProductReviews({
-        productId: product._id,
-        sort: reviewsSort,
-        rating: reviewsRatingFilter,
-        page: nextPage,
-        limit: 6,
-      });
-      setReviews((prev) => [...prev, ...(res.reviews || [])]);
-      setReviewsPage(nextPage);
-      setReviewsHasMore(
-        res.pagination && res.pagination.page < res.pagination.pages
-      );
-    } catch (err) {
-      notifyError(
-        err?.response?.data?.message || "Failed to load more reviews."
-      );
-    } finally {
-      setReviewsLoading(false);
-    }
-  };
-
-  const handleSubmitReview = async ({ productId, rating, reviewText }) => {
-    if (!productId) return;
-    try {
-      setReviewSubmitting(true);
-      const res = await ReviewServices.addOrUpdateReview({
-        productId,
-        rating,
-        reviewText,
-      });
-
-      if (res.review) {
-        setReviews((prev) => {
-          const idx = prev.findIndex((r) => r._id === res.review._id);
-          if (idx >= 0) {
-            const updated = [...prev];
-            updated[idx] = res.review;
-            return updated;
-          }
-          return [res.review, ...prev];
-        });
-      }
-      if (res.ratingSummary) {
-        setRatingSummary(res.ratingSummary);
-      }
-    } catch (err) {
-      notifyError(
-        err?.response?.data?.message || "Failed to submit review."
-      );
-      throw err;
-    } finally {
-      setReviewSubmitting(false);
-    }
-  };
-
-  const handleMarkHelpful = async (review) => {
-    if (!review?._id) return;
-    try {
-      const res = await ReviewServices.markHelpful(review._id);
-      if (res.review) {
-        setReviews((prev) =>
-          prev.map((r) => (r._id === res.review._id ? res.review : r))
-        );
-      }
-    } catch (err) {
-      notifyError(
-        err?.response?.data?.message || "Failed to mark as helpful."
-      );
-    }
-  };
-
-  const handleDeleteReview = async (reviewId) => {
-    if (!reviewId) return;
-    if (!window.confirm("Are you sure you want to delete this review?")) return;
-    try {
-      await ReviewServices.deleteReview(reviewId);
-      setReviews((prev) => prev.filter((r) => r._id !== reviewId));
-      notifySuccess("Review deleted successfully.");
-      // If we deleted the only review by the current user, it will disappear from existingReview too
-    } catch (err) {
-      notifyError(
-        err?.response?.data?.message || "Failed to delete review."
-      );
-    }
-  };
 
   // Additional useEffect to handle variant changes when selectVa changes (for immediate updates on button click)
   useEffect(() => {
@@ -1748,22 +1617,8 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
 {/* Trust Features Section */}
 <div className="mt-8 bg-blue-50 border border-blue-100 rounded-2xl p-4 sm:p-6 shadow-sm">
-  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-center">
-
-    {/* Feature 1 */}
-    <div className="flex items-center justify-center gap-3 sm:border-r border-blue-200 pr-4">
-      <div className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm border border-blue-100">
-        <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4 8-10V6l-8-4-8 4v6c0 6 8 10 8 10z"/>
-        </svg>
-      </div>
-      <p className="text-sm sm:text-base font-medium text-gray-700 text-left">
-        100% Authentic <br /> Products
-      </p>
-    </div>
-
-    {/* Feature 2 */}
-    <div className="flex items-center justify-center gap-3 sm:border-r border-blue-200 pr-4">
+  <div className="flex items-center justify-center">
+    <div className="flex items-center justify-center gap-3">
       <div className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm border border-blue-100">
         <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <rect x="2" y="7" width="20" height="14" rx="2"/>
@@ -1774,20 +1629,6 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         Safe & secure <br /> payments
       </p>
     </div>
-
-    {/* Feature 3 */}
-    <div className="flex items-center justify-center gap-3">
-      <div className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm border border-blue-100">
-        <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6"/>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M20 10A8 8 0 104 14"/>
-        </svg>
-      </div>
-      <p className="text-sm sm:text-base font-medium text-gray-700 text-left">
-        15 days Easy <br /> returns
-      </p>
-    </div>
-
   </div>
 </div>
 
@@ -1805,23 +1646,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                             {dynamicTitle || showingTranslateValue(product?.title)}
                           </h1>
 
-                          {/* Top summary rating row (like Flipkart) */}
-                          {ratingSummary && (
-                            <div className="flex items-center flex-wrap gap-2 mb-2">
-                              <div className="inline-flex items-center px-2 py-0.5 rounded-md text-white text-xs font-semibold" style={{ backgroundColor: '#006E44' }}>
-                                <span className="mr-1">
-                                  {ratingSummary.averageRating?.toFixed
-                                    ? ratingSummary.averageRating.toFixed(1)
-                                    : "0.0"}
-                                </span>
-                                <AiFillStar className="w-3.5 h-3.5" />
-                              </div>
-                              <span className="text-xs sm:text-sm text-gray-600">
-                                {ratingSummary.totalRatings || 0} Ratings &amp;{" "}
-                                {ratingSummary.totalReviews || 0} Reviews
-                              </span>
-                            </div>
-                          )}
+
 
                           {/* <p className="uppercase font-serif font-medium text-gray-500 text-sm">
                             SKU :{" "}
@@ -2108,10 +1933,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                                         : "text-gray-400 hover:text-gray-600"
                                     }`}
                                   >
-                                    Description
-                                    {activeTab === "product-description" && (
-                                      <span className="absolute bottom-0 left-0 w-full h-1 bg-store-500 rounded-full" />
-                                    )}
+                                  
                                   </button>
                                 )}
                                 {product?.dynamicSections?.some(s => s?.name?.toLowerCase().includes("specification")) && (
@@ -2397,33 +2219,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                             </div>
                           )}
 
-                          {/* Ratings & Reviews Section - right side only */}
-                          <div id="ratings-section" className="mt-8 lg:mt-10 space-y-4">
-                            <RatingSummary summary={ratingSummary} />
-                            <WriteReviewForm
-                              productId={product?._id}
-                              existingReview={reviews.find(
-                                (r) => r.user?._id === userInfo?._id
-                              )}
-                              onSubmitReview={handleSubmitReview}
-                              isSubmitting={reviewSubmitting}
-                            />
-                            <ReviewFilters
-                              sort={reviewsSort}
-                              ratingFilter={reviewsRatingFilter}
-                              onSortChange={setReviewsSort}
-                              onRatingFilterChange={setReviewsRatingFilter}
-                            />
-                            <ReviewList
-                              reviews={reviews}
-                              loading={reviewsLoading}
-                              onLoadMore={handleLoadMoreReviews}
-                              canLoadMore={reviewsHasMore}
-                              onMarkHelpful={handleMarkHelpful}
-                              onDeleteReview={handleDeleteReview}
-                              currentUser={userInfo}
-                            />
-                          </div>
+
 
                         
 

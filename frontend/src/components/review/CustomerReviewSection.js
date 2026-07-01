@@ -74,7 +74,6 @@ const REVIEWS = [
 const STATS = [
   { value: "5,000+", label: "Happy Customers" },
   { value: "5.0★", label: "Average Rating" },
-  { value: "2 Days", label: "Avg. Delivery" },
   { value: "100%", label: "Verified Reviews" },
 ];
 
@@ -177,7 +176,7 @@ export default function CustomerReviewSection() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 md:mb-10 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6 md:mb-10 max-w-3xl mx-auto">
           {STATS.map((stat) => (
             <div key={stat.label} className="flex flex-col items-center py-4 px-3 rounded-lg bg-[#0F0F0F] border border-neutral-800">
               <span className="text-xl sm:text-2xl font-black text-white">{stat.value}</span>
