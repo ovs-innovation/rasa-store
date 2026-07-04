@@ -68,6 +68,8 @@ const sidebar = [
       { path: "/homepage/new-arrivals", name: "New Arrivals" },
       { path: "/homepage/brands", name: "Shop By Brand" },
       { path: "/homepage/categories", name: "Shop By Category" },
+      { path: "/homepage/reviews", name: "Customer Reviews" },
+      { path: "/homepage/footer", name: "Footer Text" },
       { path: "/homepage/instagram", name: "Instagram Feed" },
       { path: "/homepage/order", name: "Section Ordering" },
     ],

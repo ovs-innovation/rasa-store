@@ -2,7 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .rasa-eyebrow {
+    @apply text-[10px] font-bold uppercase tracking-[0.35em] text-[#D4AF37];
+  }
+
+  .rasa-heading {
+    @apply text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-[0.12em] text-white leading-tight;
+  }
+
+  .rasa-subtext {
+    @apply text-xs text-neutral-500 leading-relaxed max-w-lg;
+  }
+
+  .rasa-link-pill {
+    @apply px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-neutral-300 border border-neutral-800 rounded-full hover:text-white hover:border-[#D4AF37]/50 transition-colors;
+  }
+
+  .rasa-divider {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-neutral-800 to-transparent;
+  }
+
+  .rasa-surface {
+    @apply bg-[#0A0A0A] border border-neutral-900/80 rounded-2xl;
+  }
+
+  .home-swiper-pagination .swiper-pagination-bullet {
+    @apply bg-neutral-700 opacity-100 w-1.5 h-1.5;
+  }
+
+  .home-swiper-pagination .swiper-pagination-bullet-active {
+    @apply bg-[#D4AF37] w-5 rounded-full;
+  }
+
+  .home-product-swiper .swiper-wrapper {
+    align-items: stretch;
+  }
+
+  .home-product-swiper .swiper-slide {
+    height: auto;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .home-product-swiper .swiper-slide > * {
+    width: 100%;
+  }
+
+  .reviews-swiper .swiper-wrapper {
+    align-items: stretch;
+  }
+
+  .reviews-swiper .swiper-slide {
+    height: auto;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .reviews-swiper .swiper-slide > * {
+    width: 100%;
+  }
+
+  .product-card-grid {
+    @apply grid items-stretch;
+  }
+}
+
 html {
+  scroll-behavior: smooth;
   background-color: #050505;
 }
 

@@ -115,15 +115,16 @@ const AddProduct = () => {
                     <Error errorName={errors.title} />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Slug (Auto Generated) *</label>
-                    <Input
-                      {...register("slug", { required: "Slug is required!" })}
-                      defaultValue={slug}
-                      placeholder="nike-air-max-90"
-                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 focus:border-emerald-500"
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Short Description *</label>
+                    <Textarea
+                      {...register("description", { required: "Short description is required!" })}
+                      rows="4"
+                      placeholder={"Line 1\nLine 2\nLine 3\nLine 4"}
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 focus:border-emerald-500 font-mono text-sm"
                     />
-                    <Error errorName={errors.slug} />
+                    <p className="text-[11px] text-gray-400 mt-1">Each line shows separately on the product page.</p>
+                    <Error errorName={errors.description} />
                   </div>
 
                   <div>
@@ -155,27 +156,6 @@ const AddProduct = () => {
                     </Select>
                     <Error errorName={errors.gender} />
                   </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Short Description *</label>
-                    <Textarea
-                      {...register("description", { required: "Short description is required!" })}
-                      rows="2"
-                      placeholder="Provide a quick summary of the product (fit, style, materials)."
-                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 focus:border-emerald-500"
-                    />
-                    <Error errorName={errors.description} />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Full Description</label>
-                    <Textarea
-                      {...register("highlights")}
-                      rows="4"
-                      placeholder="Detailed breakdown of construction, heritage, aesthetic detail, and tech details."
-                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 focus:border-emerald-500"
-                    />
-                  </div>
                 </div>
               </section>
 
@@ -183,52 +163,20 @@ const AddProduct = () => {
               <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
                   <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-sm font-bold">2</span>
-                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Section 2: Media</h2>
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Product Images</h2>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Featured Image (Front View)</label>
-                    <Uploader
-                      product={false}
-                      folder="product"
-                      imageUrl={featuredImage ? [featuredImage] : []}
-                      setImageUrl={(url) => setFeaturedImage(Array.isArray(url) ? url[0] : (url || ""))}
-                      useOriginalSize={true}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Hover Image (Alternative View)</label>
-                    <Uploader
-                      product={false}
-                      folder="product"
-                      imageUrl={hoverImage ? [hoverImage] : []}
-                      setImageUrl={(url) => setHoverImage(Array.isArray(url) ? url[0] : (url || ""))}
-                      useOriginalSize={true}
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Gallery Images</label>
-                    <Uploader
-                      product={true}
-                      folder="product"
-                      imageUrl={imageUrl}
-                      setImageUrl={setImageUrl}
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Product Video URL</label>
-                    <Input
-                      value={video}
-                      onChange={(e) => setVideo(e.target.value)}
-                      placeholder="e.g. https://www.youtube.com/watch?v=..."
-                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
-                    />
-                  </div>
-                </div>
+                <p className="text-xs text-gray-500">First image = main photo. Upload all photos together.</p>
+                <Uploader
+                  product={true}
+                  folder="product"
+                  imageUrl={imageUrl}
+                  setImageUrl={(urls) => {
+                    const list = Array.isArray(urls) ? urls : urls ? [urls] : [];
+                    setImageUrl(list);
+                    setFeaturedImage(list[0] || "");
+                    setHoverImage(list[1] || list[0] || "");
+                  }}
+                />
               </section>
 
               {/* SECTION 3 — PRODUCT ORGANIZATION */}
@@ -292,7 +240,7 @@ const AddProduct = () => {
                   <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Section 4: Pricing</h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">MRP (₹) *</label>
                     <Input
@@ -320,94 +268,16 @@ const AddProduct = () => {
                     />
                     <Error errorName={errors.price} />
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Sale Price (Optional)</label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      onKeyDown={(e) => (e.key === '-' || e.key === 'e') && e.preventDefault()}
-                      {...register("salePrice")}
-                      placeholder="0"
-                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
-                    />
-                  </div>
                 </div>
               </section>
 
-              {/* SECTION 5 — INVENTORY & STATUS */}
+              {/* SECTION 5 — VARIANTS (Color + Size) */}
               <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
                   <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-sm font-bold">5</span>
-                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Section 5: Inventory</h2>
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Color &amp; Size</h2>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Base SKU</label>
-                    <Input
-                      {...register("sku")}
-                      placeholder="e.g. NIKE-AM90-BLK"
-                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
-                      Total Stock *
-                    </label>
-                    <Input
-                      type="number"
-                      min="0"
-                      {...register("stock", {
-                        required: variants?.length ? false : "Stock is required!",
-                        min: { value: 0, message: "Stock cannot be negative" },
-                      })}
-                      placeholder="e.g. 50"
-                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
-                    />
-                    <Error errorName={errors.stock} />
-                    <p className="text-[11px] text-gray-400 mt-1">
-                      {variants?.length > 0
-                        ? `Variant stock total: ${variantStockTotal(variants)} units (edit in Section 6)`
-                        : "Units available to sell on the storefront"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Low Stock Alert *</label>
-                    <Input
-                      type="number"
-                      min="0"
-                      {...register("lowStockAlert")}
-                      placeholder="e.g. 5"
-                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Status</label>
-                    <Select
-                      {...register("status")}
-                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
-                    >
-                      <option value="Published">Published (Live on store)</option>
-                      <option value="Draft">Draft</option>
-                      <option value="Hidden">Hidden</option>
-                      <option value="Out Of Stock">Out Of Stock</option>
-                    </Select>
-                  </div>
-                </div>
-              </section>
-
-              {/* SECTION 6 — VARIANTS */}
-              <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm space-y-6">
-                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
-                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-sm font-bold">6</span>
-                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Section 6: Variants</h2>
-                </div>
-                <p className="text-xs text-gray-500 -mt-2">Configure color variants with color thumbnails and custom Galleries, and UK size stocks nested under each color.</p>
+                <p className="text-xs text-gray-500 -mt-2">Add color name, sizes, and stock per size.</p>
                 
                 <ColorVariantManager
                   variants={variants}
@@ -416,45 +286,9 @@ const AddProduct = () => {
                 />
               </section>
 
-              {/* SECTION 7 — SEO */}
-              <section className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 shadow-sm space-y-6">
-                <div className="flex items-center gap-3 border-b border-gray-100 dark:border-gray-700 pb-4">
-                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 text-sm font-bold">7</span>
-                  <h2 className="text-lg font-bold text-gray-800 dark:text-white uppercase tracking-wider">Section 7: SEO</h2>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Meta Title</label>
-                    <Input
-                      {...register("metaTitle")}
-                      placeholder="Search engine optimized listing title"
-                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Meta Description</label>
-                    <Textarea
-                      {...register("metaDescription")}
-                      rows="3"
-                      placeholder="Meta description for search snippets"
-                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">SEO Image</label>
-                    <Uploader
-                      product={false}
-                      folder="seo"
-                      imageUrl={seoImage ? [seoImage] : []}
-                      setImageUrl={(url) => setSeoImage(Array.isArray(url) ? url[0] : (url || ""))}
-                      useOriginalSize={true}
-                    />
-                  </div>
-                </div>
-              </section>
+              {/* Hidden defaults */}
+              <input type="hidden" {...register("stock")} value={variants?.length ? variantStockTotal(variants) : 10} />
+              <input type="hidden" {...register("status")} value="Published" />
 
               {/* HOMEPAGE PLACEMENT */}
               <section className="space-y-6">
@@ -481,7 +315,7 @@ const AddProduct = () => {
                 title={watchTitle}
                 brandName={brand ? (brand.name?.en || brand.name) : ""}
                 originalPrice={watchOriginalPrice}
-                discount={Number(watchOriginalPrice || 0) - (Number(watchSalePrice) || Number(watchPrice) || Number(watchOriginalPrice || 0))}
+                discount={Number(watchOriginalPrice || 0) - (Number(watchPrice) || Number(watchOriginalPrice || 0))}
                 discountType="flat"
                 badge={badge}
                 featuredImage={featuredImage}

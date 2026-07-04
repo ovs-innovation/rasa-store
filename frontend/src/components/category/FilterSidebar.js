@@ -404,38 +404,7 @@ const FilterSidebar = ({
         )}
       </div>
 
-      {/* Discount */}
-      <div className="border-b border-neutral-850">
-        <button
-          onClick={() => toggleSection("discount")}
-          className="w-full p-4 flex justify-between items-center text-xs font-black uppercase text-neutral-200 hover:bg-neutral-900/60 transition-colors"
-        >
-          Discount
-          {openSections.discount ? <FiChevronUp className="text-neutral-400" /> : <FiChevronDown className="text-neutral-400" />}
-        </button>
-        {openSections.discount && (
-          <div className="px-4 pb-4">
-            {discounts.map((discount) => (
-              <div
-                key={discount}
-                className="flex items-center mb-2 cursor-pointer group"
-                onClick={() => setSelectedDiscount(discount)}
-              >
-                <input
-                  type="radio"
-                  name="discount"
-                  checked={selectedDiscount === discount}
-                  onChange={() => setSelectedDiscount(discount)}
-                  className="text-[#D4AF37] bg-neutral-950 border-neutral-800 focus:ring-[#D4AF37] focus:ring-offset-0 focus:outline-none w-4 h-4"
-                />
-                <label className="ml-2 text-sm text-neutral-350 cursor-pointer group-hover:text-[#D4AF37] transition-colors">
-                  {discount}% or more
-                </label>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Discount filter removed per client request */}
     </div>
   );
 };

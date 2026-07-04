@@ -310,6 +310,18 @@ const routes = [
     component: RasaHomepage,
   },
   {
+    path: "/homepage/reviews",
+    component: RasaHomepage,
+  },
+  {
+    path: "/homepage/footer",
+    component: RasaHomepage,
+  },
+  {
+    path: "/homepage/order",
+    component: RasaHomepage,
+  },
+  {
     path: "/edit-profile",
     component: EditProfile,
   },

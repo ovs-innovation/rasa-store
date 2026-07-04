@@ -44,24 +44,10 @@ const RefundReturnPolicy = () => {
                     height={15}
                     error={error}
                     loading={loading}
-                    data={storeCustomizationSetting?.refund_return_policy?.description || `<h2>1. Return Eligibility</h2>
-<p>Items can be returned within 7 days of delivery under the following conditions:</p>
-<ul>
-  <li>Products are damaged upon arrival.</li>
-  <li>Wrong items or sizes were delivered.</li>
-  <li>Items must be unused, in original packaging, with all security tags and brand packaging intact.</li>
-</ul>
-<h2>2. Non-Returnable Items</h2>
-<p>Due to authenticity and safety reasons, the following cannot be returned:</p>
-<ul>
-  <li>Items with removed authentication tags or security seals.</li>
-  <li>Items showing signs of outdoor wear, usage, or scuffing (especially sneaker outsoles).</li>
-  <li>Limited edition collaborative drops that explicitly state no returns.</li>
-</ul>
-<h2>3. Refund Process</h2>
-<p>Once your return is received and inspected, refunds will be processed to your original payment method within 5-7 business days.</p>
-<h2>4. Cancellations</h2>
-<p>You may cancel your order at no cost before it has been dispatched. Dispatched orders cannot be cancelled.</p>`}
+                    data={storeCustomizationSetting?.refund_return_policy?.description || `<h2>Return &amp; Exchange Policy</h2>
+<p><strong>No Return. No Exchange.</strong></p>
+<p>Unless the supplier is at fault (wrong item, damaged product, or defective item received).</p>
+<p>If there is a supplier fault, contact us on WhatsApp at <strong>9731308713</strong> within 48 hours of delivery with photos.</p>`}
                   />
                 </div>
               </div>
@@ -76,72 +62,7 @@ const RefundReturnPolicy = () => {
             </div>
           </div>
 
-          {/* Info Cards Grid - 2x2 Layout */}
-          {!loading && !error && (
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5 font-sans">
-              
-              {/* Card 1 - Easy Returns */}
-              <div className="bg-[#0A0A0A] border border-neutral-900 rounded-xl p-5 hover:border-neutral-800 transition-all shadow-md">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-neutral-950 border border-neutral-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FiPackage className="w-5 h-5 text-[#D4AF37]" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-serif font-bold uppercase tracking-wider text-white mb-2">Easy Returns</h3>
-                    <p className="text-sm text-neutral-400 leading-relaxed">
-                      Return products within the specified time frame with our hassle-free return process.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 2 - Quick Refunds */}
-              <div className="bg-[#0A0A0A] border border-neutral-900 rounded-xl p-5 hover:border-neutral-800 transition-all shadow-md">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-neutral-950 border border-neutral-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FiRefreshCw className="w-5 h-5 text-[#D4AF37]" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-serif font-bold uppercase tracking-wider text-white mb-2">Quick Refunds</h3>
-                    <p className="text-sm text-neutral-400 leading-relaxed">
-                      Get your money back quickly once we receive and verify your returned items.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3 - Return Window */}
-              <div className="bg-[#0A0A0A] border border-neutral-900 rounded-xl p-5 hover:border-neutral-800 transition-all shadow-md">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-neutral-950 border border-neutral-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FiCalendar className="w-5 h-5 text-[#D4AF37]" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-serif font-bold uppercase tracking-wider text-white mb-2">Return Window</h3>
-                    <p className="text-sm text-neutral-400 leading-relaxed">
-                      Most products can be returned within 7-15 days of delivery. Check product page for specific details.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 4 - Quality Assurance */}
-              <div className="bg-[#0A0A0A] border border-neutral-900 rounded-xl p-5 hover:border-neutral-800 transition-all shadow-md">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-neutral-950 border border-neutral-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FiShield className="w-5 h-5 text-[#D4AF37]" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-serif font-bold uppercase tracking-wider text-white mb-2">Quality Assurance</h3>
-                    <p className="text-sm text-neutral-400 leading-relaxed">
-                      We ensure all returned products are inspected thoroughly before processing refunds.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          )}
+          {/* Info cards removed — policy text above is the source of truth */}
 
           {/* Contact Section - Box Style */}
           {!loading && !error && (
@@ -154,18 +75,8 @@ const RefundReturnPolicy = () => {
                   <div className="flex-1">
                     <h3 className="text-lg font-serif font-bold uppercase tracking-wider text-white mb-2">Need Help with Returns?</h3>
                     <p className="text-sm text-neutral-400 mb-4">
-                      If you have any questions about our refund and return policy, please contact our customer support team.
+                      WhatsApp us at <a href="https://wa.me/919731308713" className="text-[#D4AF37] hover:underline">9731308713</a> for any questions.
                     </p>
-                    <div className="flex flex-wrap items-center gap-4">
-                      <div className="flex items-center gap-2 text-sm text-[#D4AF37] bg-black border border-neutral-900 px-4 py-2 rounded-lg">
-                        <FiShield className="w-4 h-4" />
-                        <span className="font-medium">100% Secure Process</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-[#D4AF37] bg-black border border-neutral-900 px-4 py-2 rounded-lg">
-                        <FiCheckCircle className="w-4 h-4" />
-                        <span className="font-medium">Hassle-Free Returns</span>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>

@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { getBrandName } from "@utils/brandLogos";
+import { getBrandName, resolveBrandLogo } from "@utils/brandLogos";
 
 const BrandMarquee = ({ displayBrands }) => {
   const trackRef = useRef(null);
   const [paused, setPaused] = useState(false);
   const posRef = useRef(0);
   const rafRef = useRef(null);
-  const SPEED = 0.4;
-  const doubled = [...displayBrands, ...displayBrands, ...displayBrands];
+  const SPEED = 0.45;
+  const tripled = [...displayBrands, ...displayBrands, ...displayBrands];
 
   useEffect(() => {
     const track = trackRef.current;
@@ -30,47 +30,43 @@ const BrandMarquee = ({ displayBrands }) => {
   }, [paused]);
 
   return (
-    <div 
+    <div
       className="relative overflow-hidden py-2"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}
       onTouchEnd={() => setPaused(false)}
     >
-      {/* Smooth gradients for edges (white to transparent) */}
-      <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+      <div className="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-14 bg-gradient-to-r from-white to-transparent" />
+      <div className="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-14 bg-gradient-to-l from-white to-transparent" />
 
-      <div 
-        ref={trackRef} 
-        className="flex gap-6" 
+      <div
+        ref={trackRef}
+        className="flex gap-8"
         style={{ willChange: "transform", width: "max-content" }}
       >
-        {doubled.map((brand, i) => (
+        {tripled.map((brand, i) => (
           <Link
             key={`${brand.id}-${i}`}
             href={`/search?brand=${encodeURIComponent(brand.slug)}`}
-            className="group flex flex-col items-center shrink-0 w-[100px]"
+            className="group flex w-[112px] shrink-0 flex-col items-center"
           >
-            {/* Circle Image wrapper */}
-            <div className="w-[96px] h-[96px] rounded-full bg-[#F9F9F9] border border-neutral-100 flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:scale-105 group-hover:border-[#D4AF37]">
-              {brand.image ? (
+            <div className="flex h-[104px] w-[104px] items-center justify-center overflow-hidden rounded-full border border-neutral-200 bg-[#F9F9F9] transition-all duration-300 group-hover:scale-105 group-hover:border-[#D4AF37]">
+              {brand.logo ? (
                 <img
-                  src={brand.image}
+                  src={brand.logo}
                   alt={brand.displayName}
-                  className="w-[85%] h-[85%] object-contain object-center scale-[1.35] transition-transform duration-400"
+                  className="h-[100px] w-[100px] object-contain transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"
                   draggable={false}
                 />
               ) : (
-                <span className="text-xl font-black text-neutral-300">
+                <span className="text-2xl font-black text-neutral-300">
                   {brand.displayName[0]}
                 </span>
               )}
             </div>
-
-            {/* Brand name */}
-            <p className="text-[9px] font-black uppercase tracking-widest text-neutral-600 group-hover:text-[#D4AF37] text-center mt-2.5 transition-colors duration-300 truncate w-full">
+            <p className="mt-3 w-full truncate text-center text-[9px] font-black uppercase tracking-widest text-neutral-600 transition-colors duration-300 group-hover:text-[#D4AF37]">
               {brand.displayName}
             </p>
           </Link>
@@ -88,60 +84,50 @@ const ShopByBrandSection = ({ brands = [], enabled = true }) => {
       id: brand._id || brand.slug,
       displayName: getBrandName(brand),
       slug: brand.slug,
-      image: brand.image || brand.logo || null,
+      logo: resolveBrandLogo(brand),
     }))
     .filter((b) => b.slug);
 
   if (!displayBrands.length) return null;
 
   return (
-    <section className="py-8 md:py-16 bg-white border-y border-neutral-200 font-sans">
+    <section className="border-y border-neutral-200 bg-white py-10 font-sans md:py-16">
       <div className="mx-auto max-w-screen-2xl px-4 sm:px-8">
-
-        {/* Header */}
-        <div className="mb-6 md:mb-10 text-center">
-          <p className="text-[9px] font-black uppercase tracking-[0.4em] text-[#D4AF37] mb-2">
-            Authorized Labels
-          </p>
-          <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-[0.12em] text-black">
+        <div className="mb-8 text-center md:mb-12">
+          <h2 className="text-2xl font-black uppercase tracking-[0.12em] text-black sm:text-3xl">
             Shop By Brand
           </h2>
-          <div className="h-[2px] w-12 bg-[#D4AF37] mx-auto mt-3" />
+          <div className="mx-auto mt-3 h-[2px] w-12 bg-[#D4AF37]" />
         </div>
 
-        {/* Desktop View: Grid (7 columns) */}
-        <div className="hidden md:grid md:grid-cols-7 gap-3">
+        {/* Desktop — big brand tiles */}
+        <div className="hidden gap-4 md:grid md:grid-cols-4 lg:grid-cols-7">
           {displayBrands.map((brand) => (
             <Link
               key={brand.id}
               href={`/search?brand=${encodeURIComponent(brand.slug)}`}
               aria-label={`Shop ${brand.displayName}`}
-              className="group block bg-white rounded-xl border border-neutral-200 hover:border-[#D4AF37] hover:shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-all duration-300 overflow-hidden w-full"
+              className="group block w-full overflow-hidden rounded-xl border border-neutral-200 bg-white transition-all duration-300 hover:border-[#D4AF37] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
             >
-              {/* Image area */}
-              <div className="relative w-full bg-white" style={{ paddingBottom: "90%" }}>
-                <div className="absolute inset-0 p-3 flex items-center justify-center">
-                  {brand.image ? (
+              <div className="relative w-full bg-white" style={{ paddingBottom: "95%" }}>
+                <div className="absolute inset-0 flex items-center justify-center p-1">
+                  {brand.logo ? (
                     <img
-                      src={brand.image}
+                      src={brand.logo}
                       alt={brand.displayName}
-                      className="w-full h-full object-contain object-center transition-transform duration-400 group-hover:scale-108"
+                      className="h-[98%] w-[98%] object-contain transition-transform duration-300 group-hover:scale-105"
                       loading="lazy"
                       draggable={false}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-3xl font-black text-neutral-200">
-                        {brand.displayName[0]}
-                      </span>
-                    </div>
+                    <span className="text-4xl font-black text-neutral-200">
+                      {brand.displayName[0]}
+                    </span>
                   )}
                 </div>
               </div>
-
-              {/* Brand name bar */}
-              <div className="px-3 py-2.5 border-t border-neutral-100 bg-[#F9F9F9] group-hover:bg-[#D4AF37] transition-colors duration-300">
-                <p className="text-[9px] font-black uppercase tracking-widest text-neutral-600 group-hover:text-black text-center transition-colors duration-300 truncate">
+              <div className="border-t border-neutral-100 bg-[#F9F9F9] px-3 py-3 transition-colors duration-300 group-hover:bg-[#D4AF37]">
+                <p className="truncate text-center text-[9px] font-black uppercase tracking-widest text-neutral-600 transition-colors duration-300 group-hover:text-black">
                   {brand.displayName}
                 </p>
               </div>
@@ -149,11 +135,10 @@ const ShopByBrandSection = ({ brands = [], enabled = true }) => {
           ))}
         </div>
 
-        {/* Mobile View: Auto-scrolling marquee */}
+        {/* Mobile — big scrolling logos */}
         <div className="block md:hidden">
           <BrandMarquee displayBrands={displayBrands} />
         </div>
-
       </div>
     </section>
   );

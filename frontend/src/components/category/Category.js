@@ -63,47 +63,18 @@ const Category = () => {
     queryFn: async () => await CategoryServices.getShowingCategory(),
   });
 
-  const buildCategoryTree = (flatList) => {
-    if (!flatList || !Array.isArray(flatList)) return [];
-    
-    const footwearId = flatList.find(c => c.name?.en === 'Footwear' || c._id === '6a33872af6601848fc56574b')?._id;
-    const bagsId = flatList.find(c => c.name?.en === 'Bags' || c._id === '6a33872af6601848fc56574c')?._id;
-    const homeId = flatList.find(c => c.name?.en === 'Home' || c._id === '6a33872af6601848fc56574a')?._id;
-
-    const normalizedList = flatList.map(cat => {
-      let parentId = cat.parentId;
-      if (parentId === 'rasa-footwear') {
-        parentId = footwearId;
-      } else if (parentId === 'rasa-bags') {
-        parentId = bagsId;
-      } else if (parentId === 'rasa-root') {
-        parentId = homeId;
-      }
-      return { ...cat, parentId };
-    });
-
-    const map = {};
-    const roots = [];
-    
-    normalizedList.forEach((cat) => {
-      map[cat._id] = { ...cat, children: [] };
-    });
-    
-    normalizedList.forEach((cat) => {
-      const mapped = map[cat._id];
-      const parentId = cat.parentId;
-      
-      if (parentId && map[parentId]) {
-        map[parentId].children.push(mapped);
-      } else {
-        roots.push(mapped);
-      }
-    });
-    
-    return roots;
-  };
-
-  const data = buildCategoryTree(flatCategories);
+  const level1Categories = (() => {
+    if (!flatCategories?.length) return [];
+    const homeRoot = flatCategories.find(
+      (cat) =>
+        cat.id === "Root" ||
+        showingTranslateValue(cat?.name)?.toLowerCase() === "home"
+    );
+    if (homeRoot?.children?.length) return homeRoot.children;
+    return flatCategories.filter(
+      (cat) => cat.parentId === "0" || cat.parentId === "Root" || !cat.parentId
+    );
+  })();
 
   const mainLinks = [
     { title: "Home", href: "/", icon: FiHome },
@@ -199,75 +170,75 @@ const Category = () => {
               </p>
             ) : (
               <div className="relative grid grid-cols-1 gap-2 p-4 pt-3">
-                {data?.map((mainCategory) => (
-                  <div key={mainCategory._id}>
-                    {/* Main Categories - Direct display without parent */}
-                    {mainCategory?.children?.length > 0 && (
-                      <div className="border-b border-neutral-900/60 last:border-b-0">
-                        {mainCategory.children.map((subcategory1) => (
-                          <div key={subcategory1._id}>
-                            <div 
-                              className="flex items-center gap-3 px-3 py-3 text-xs font-black uppercase tracking-widest text-neutral-200 hover:bg-neutral-900 hover:text-[#D4AF37] border-b border-neutral-900/30 transition-colors cursor-pointer"
-                              onClick={() => toggleCategoryExpansion(subcategory1._id)}
-                            >
-                              {subcategory1?.icon ? (
-                                <Image
-                                  src={subcategory1.icon}
-                                  alt={showingTranslateValue(subcategory1?.name)}
-                                  width={20}
-                                  height={20}
-                                  className="object-contain flex-shrink-0"
-                                />
-                              ) : (
-                                <div className="w-5 h-5 flex-shrink-0"></div>
-                              )}
-                              <span>
-                                {showingTranslateValue(subcategory1?.name)}
-                              </span>
-                              {subcategory1?.children?.length > 0 && (
-                                <div className="ml-auto">
-                                  {expandedCategories[subcategory1._id] ? (
-                                    <IoChevronDown className="text-gray-400 transition-transform duration-200" />
-                                  ) : (
-                                    <IoChevronForward className="text-gray-400 transition-transform duration-200" />
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                            
-                            {/* Subcategories Level 2 - Collapsible */}
-                            {subcategory1?.children?.length > 0 && expandedCategories[subcategory1._id] && (
-                              <div className="bg-[#0A0A0A] rounded-md overflow-hidden my-1">
-                                {subcategory1.children.map((subcategory2) => (
-                                  <div
-                                    key={subcategory2._id}
-                                    onClick={() => {
-                                      const name = (subcategory2?.name?.en || subcategory2?.name)
-                                        .toLowerCase()
-                                        .replace(/[^A-Z0-9]+/gi, "-");
-                                      router.push(`/search?category=${name}&_id=${subcategory2._id}`);
-                                      closeCategoryDrawer();
-                                    }}
-                                    className="flex items-center gap-3 px-6 py-2.5 text-xs text-neutral-400 hover:bg-neutral-900/60 hover:text-[#D4AF37] transition-colors cursor-pointer border-b border-neutral-900/20 last:border-b-0"
-                                  >
-                                    {subcategory2?.icon ? (
-                                      <Image
-                                        src={subcategory2.icon}
-                                        alt={showingTranslateValue(subcategory2?.name)}
-                                        width={16}
-                                        height={16}
-                                        className="object-contain flex-shrink-0"
-                                      />
-                                    ) : (
-                                      <div className="w-4 h-4 flex-shrink-0"></div>
-                                    )}
-                                    <span>
-                                      {showingTranslateValue(subcategory2?.name)}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
+                {level1Categories?.map((subcategory1) => (
+                  <div key={subcategory1._id}>
+                    <div
+                      className="flex items-center gap-3 px-3 py-3 text-xs font-black uppercase tracking-widest text-neutral-200 hover:bg-neutral-900 hover:text-[#D4AF37] border-b border-neutral-900/30 transition-colors cursor-pointer"
+                      onClick={() => {
+                        if (subcategory1?.children?.length > 0) {
+                          toggleCategoryExpansion(subcategory1._id);
+                          return;
+                        }
+                        const slug =
+                          subcategory1.slug ||
+                          (subcategory1?.name?.en || subcategory1?.name || "")
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/gi, "-");
+                        router.push(`/search?category=${slug}&_id=${subcategory1._id}`);
+                        closeCategoryDrawer();
+                      }}
+                    >
+                      {subcategory1?.icon ? (
+                        <Image
+                          src={subcategory1.icon}
+                          alt={showingTranslateValue(subcategory1?.name)}
+                          width={20}
+                          height={20}
+                          className="object-contain flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-5 h-5 flex-shrink-0" />
+                      )}
+                      <span>{showingTranslateValue(subcategory1?.name)}</span>
+                      {subcategory1?.children?.length > 0 && (
+                        <div className="ml-auto">
+                          {expandedCategories[subcategory1._id] ? (
+                            <IoChevronDown className="text-gray-400 transition-transform duration-200" />
+                          ) : (
+                            <IoChevronForward className="text-gray-400 transition-transform duration-200" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {subcategory1?.children?.length > 0 && expandedCategories[subcategory1._id] && (
+                      <div className="bg-[#0A0A0A] rounded-md overflow-hidden my-1">
+                        {subcategory1.children.map((subcategory2) => (
+                          <div
+                            key={subcategory2._id}
+                            onClick={() => {
+                              const slug =
+                                subcategory2.slug ||
+                                (subcategory2?.name?.en || subcategory2?.name || "")
+                                  .toLowerCase()
+                                  .replace(/[^a-z0-9]+/gi, "-");
+                              router.push(`/search?category=${slug}&_id=${subcategory2._id}`);
+                              closeCategoryDrawer();
+                            }}
+                            className="flex items-center gap-3 px-6 py-2.5 text-xs text-neutral-400 hover:bg-neutral-900/60 hover:text-[#D4AF37] transition-colors cursor-pointer border-b border-neutral-900/20 last:border-b-0"
+                          >
+                            {subcategory2?.icon ? (
+                              <Image
+                                src={subcategory2.icon}
+                                alt={showingTranslateValue(subcategory2?.name)}
+                                width={16}
+                                height={16}
+                                className="object-contain flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-4 h-4 flex-shrink-0" />
                             )}
+                            <span>{showingTranslateValue(subcategory2?.name)}</span>
                           </div>
                         ))}
                       </div>

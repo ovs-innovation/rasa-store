@@ -14,7 +14,6 @@ import { getUserSession } from "@lib/auth";
 import useGetSetting from "@hooks/useGetSetting";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import CustomerServices from "@services/CustomerServices";
-import LocationPickerDropdown from "@components/location/LocationPickerDropdown";
 
 const NavBarTop = () => {
   const userInfo = getUserSession();
@@ -124,19 +123,8 @@ const NavBarTop = () => {
       <div className="bg-black text-neutral-400 py-2.5 border-b border-neutral-900 relative z-[51]">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-8">
           <div className="font-sans text-[10px] tracking-widest font-black uppercase flex justify-between items-center">
-            <span className="flex items-center gap-2">
-              {displayAddress ? (
-                <span className="flex items-center text-neutral-300">
-                  <span
-                    className="truncate max-w-xs"
-                    title={displayAddress}
-                  >
-                    {displayAddress}
-                  </span>
-                </span>
-              ) : (
-                <LocationPickerDropdown className="!p-0 !bg-transparent !border-none text-[10px] tracking-widest font-black font-sans text-neutral-300 hover:text-white transition-colors z-40 h-auto" />
-              )}
+            <span className="flex items-center gap-2 text-neutral-500 text-[10px] tracking-widest font-black uppercase">
+              The Rasa Store
             </span>
 
             <div className="lg:text-right flex items-center gap-4 text-neutral-400">

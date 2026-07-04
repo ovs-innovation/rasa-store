@@ -9,7 +9,6 @@ import NavBarTop from "./navbar/NavBarTop";
 import FooterTop from "@layout/footer/FooterTop";
 import MobileFooter from "@layout/footer/MobileFooter";
 import MobileBottomNavigation from "@layout/footer/MobileBottomNavigation";
-import FeatureCard from "@components/feature-card/FeatureCard";
 import useGetSetting from "@hooks/useGetSetting";
 import { getPalette } from "@utils/themeColors";
 import useCartSync from "@hooks/useCartSync";

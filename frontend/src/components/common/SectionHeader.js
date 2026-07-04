@@ -1,16 +1,18 @@
 import React from "react";
 import useGetSetting from "@hooks/useGetSetting";
-import { getPalette } from "@utils/themeColors";
 import CMSkeleton from "@components/preloader/CMSkeleton";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 
-const SectionHeader = ({ title, subtitle, loading = false, error = null, align = "left", className = "mb-12" }) => {
-  const { storeCustomizationSetting } = useGetSetting();
+const SectionHeader = ({
+  title,
+  subtitle,
+  loading = false,
+  error = null,
+  align = "left",
+  className = "mb-8",
+}) => {
   const { showingTranslateValue } = useUtilsFunction();
-  const storeColor = storeCustomizationSetting?.theme?.color || "green";
-  const palette = getPalette(storeColor);
-  
-  // Helper function to get display value (handles both strings and translation objects)
+
   const getDisplayValue = (value) => {
     if (!value) return "";
     if (typeof value === "string") return value;
@@ -19,26 +21,26 @@ const SectionHeader = ({ title, subtitle, loading = false, error = null, align =
   };
 
   const alignmentClass = align === "center" ? "text-center" : "text-left";
-  const containerClass = align === "center" ? "justify-center" : "justify-start";
-
   const displayTitle = getDisplayValue(title);
   const displaySubtitle = subtitle ? getDisplayValue(subtitle) : "";
 
   return (
     <div className={`${alignmentClass} ${className}`}>
-      <h2 
-        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-widest text-current mb-4 leading-none" 
-      >
+      <h2 className="text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-[0.1em] text-white mb-2 leading-tight">
         {loading ? (
-          <CMSkeleton count={1} height={40} loading={loading} data="" />
+          <CMSkeleton count={1} height={32} loading={loading} data="" />
         ) : (
           displayTitle
         )}
       </h2>
       {displaySubtitle && (
-        <p className={`text-neutral-500 text-[10px] md:text-xs font-bold uppercase tracking-widest leading-relaxed ${align === "center" ? "max-w-2xl mx-auto" : ""}`}>
+        <p
+          className={`text-xs text-neutral-500 leading-relaxed ${
+            align === "center" ? "max-w-md mx-auto" : "max-w-lg"
+          }`}
+        >
           {loading ? (
-            <CMSkeleton count={2} height={10} error={error} loading={loading} data="" />
+            <CMSkeleton count={1} height={10} error={error} loading={loading} data="" />
           ) : (
             displaySubtitle
           )}
@@ -49,4 +51,3 @@ const SectionHeader = ({ title, subtitle, loading = false, error = null, align =
 };
 
 export default SectionHeader;
-

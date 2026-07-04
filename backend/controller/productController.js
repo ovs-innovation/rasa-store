@@ -967,10 +967,44 @@ const getShowingStoreProducts = async (req, res) => {
         brandsSectionEnabled: rasaHomepage.brandsSectionEnabled !== false,
         categoryBanners: rasaHomepage.categoryBanners || [],
         instagramPosts: rasaHomepage.instagramPosts || [],
-        heroSlides: rasaHomepage.heroSlides || [],
-        sectionOrder: (rasaHomepage.sectionOrder || ["Hero", "Brands", "New Arrival", "Trending", "Categories", "Newsletter"]).filter(
-          (s) => s !== "Instagram"
-        ),
+        heroSlides: (() => {
+          const cms = rasaHomepage.heroSlides || [];
+          const bagFallback = {
+            title: "Bags & More",
+            subtitle: "Bags & More",
+            image: "/bag1.png",
+            link: "/search?category=bags",
+            brand: "Rasa",
+            accentColor: "#B07A4F",
+          };
+          const shoeFallback = {
+            title: "Fresh Drops",
+            subtitle: "Fresh Drops",
+            image: "/shoes1.png",
+            link: "/search?category=footwear",
+            brand: "Rasa",
+          };
+          const isBag = (s) =>
+            /bag|duffle|backpack/i.test(
+              `${s?.title || ""} ${s?.subtitle || ""} ${s?.link || ""} ${s?.image || ""}`
+            );
+          if (cms.length >= 2) return cms;
+          if (!cms.length) return [shoeFallback, bagFallback];
+          const merged = [...cms];
+          if (!merged.some(isBag)) merged.push(bagFallback);
+          if (merged.length < 2) merged.unshift(shoeFallback);
+          return merged.slice(0, 2);
+        })(),
+        customerReviews: rasaHomepage.customerReviews || [],
+        reviewsSection: rasaHomepage.reviewsSection || {
+          enabled: true,
+          eyebrow: "Reviews",
+          title: "What Customers Say",
+          subtitle: "Real feedback from shoppers who bought from Rasa Store.",
+        },
+        sectionOrder: (rasaHomepage.sectionOrder || ["Hero", "Brands", "New Arrival", "Trending", "Categories", "Reviews"])
+          .filter((s) => s !== "Instagram")
+          .map((s) => (s === "Newsletter" ? "Reviews" : s)),
       };
 
       discountedProducts = await Product.find({

@@ -1746,50 +1746,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                         </p>
 
 
-{/* Trust Features Section */}
-<div className="mt-8 bg-blue-50 border border-blue-100 rounded-2xl p-4 sm:p-6 shadow-sm">
-  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 text-center">
-
-    {/* Feature 1 */}
-    <div className="flex items-center justify-center gap-3 sm:border-r border-blue-200 pr-4">
-      <div className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm border border-blue-100">
-        <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s8-4 8-10V6l-8-4-8 4v6c0 6 8 10 8 10z"/>
-        </svg>
-      </div>
-      <p className="text-sm sm:text-base font-medium text-gray-700 text-left">
-        100% Authentic <br /> Products
-      </p>
-    </div>
-
-    {/* Feature 2 */}
-    <div className="flex items-center justify-center gap-3 sm:border-r border-blue-200 pr-4">
-      <div className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm border border-blue-100">
-        <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <rect x="2" y="7" width="20" height="14" rx="2"/>
-          <path d="M16 3v4M8 3v4"/>
-        </svg>
-      </div>
-      <p className="text-sm sm:text-base font-medium text-gray-700 text-left">
-        Safe & secure <br /> payments
-      </p>
-    </div>
-
-    {/* Feature 3 */}
-    <div className="flex items-center justify-center gap-3">
-      <div className="w-12 h-12 flex items-center justify-center rounded-full bg-white shadow-sm border border-blue-100">
-        <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v6h6M20 20v-6h-6"/>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M20 10A8 8 0 104 14"/>
-        </svg>
-      </div>
-      <p className="text-sm sm:text-base font-medium text-gray-700 text-left">
-        15 days Easy <br /> returns
-      </p>
-    </div>
-
-  </div>
-</div>
+{/* Trust Features removed per client request */}
 
                       </div>
                     </div>
@@ -1805,23 +1762,8 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                             {dynamicTitle || showingTranslateValue(product?.title)}
                           </h1>
 
-                          {/* Top summary rating row (like Flipkart) */}
-                          {ratingSummary && (
-                            <div className="flex items-center flex-wrap gap-2 mb-2">
-                              <div className="inline-flex items-center px-2 py-0.5 rounded-md text-white text-xs font-semibold" style={{ backgroundColor: '#006E44' }}>
-                                <span className="mr-1">
-                                  {ratingSummary.averageRating?.toFixed
-                                    ? ratingSummary.averageRating.toFixed(1)
-                                    : "0.0"}
-                                </span>
-                                <AiFillStar className="w-3.5 h-3.5" />
-                              </div>
-                              <span className="text-xs sm:text-sm text-gray-600">
-                                {ratingSummary.totalRatings || 0} Ratings &amp;{" "}
-                                {ratingSummary.totalReviews || 0} Reviews
-                              </span>
-                            </div>
-                          )}
+
+                          {/* Ratings removed per client request */}
 
                           {/* <p className="uppercase font-serif font-medium text-gray-500 text-sm">
                             SKU :{" "}
@@ -1837,27 +1779,26 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                               </span>
                             </p>
                           )} */}
-                          <div className="text-sm leading-6 text-gray-500 md:leading-7">
+                          <div className="text-sm leading-6 text-gray-500 md:leading-7 whitespace-pre-line">
                             {(() => {
                               const descriptionText = dynamicDescription || showingTranslateValue(product?.description);
-                              const displayText = isReadMore 
-                                ? (descriptionText?.slice(0, 230) || "")
+                              const lines = (descriptionText || "").split(/\r?\n/).filter(Boolean);
+                              const displayText = isReadMore
+                                ? lines.slice(0, 4).join("\n")
                                 : (descriptionText || "");
-                              const textLength = descriptionText?.length || 0;
-                              
+                              const textLength = lines.length || 0;
+
                               return (
                                 <>
                                   {displayText}
-                                  {textLength > 230 && (
+                                  {textLength > 4 && (
                                     <>
                                       <br />
                                       <span
                                         onClick={() => setIsReadMore(!isReadMore)}
                                         className="read-or-hide cursor-pointer text-store-600 hover:text-store-700"
                                       >
-                                        {isReadMore
-                                          ? t("moreInfo")
-                                          : t("showLess")}
+                                        {isReadMore ? t("moreInfo") : t("showLess")}
                                       </span>
                                     </>
                                   )}
@@ -1975,23 +1916,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                               </a>
                             </p>
                           </div>
-                           {/* Expected Delivery Time */}
-                          {expectedDeliveryTime ? (
-                            <div className="mt-4    rounded-md    flex items-center gap-3 text-sm">
-                              <FiTruck className="w-5 h-5 text-store-600 flex-shrink-0" />
-                              <div className="flex flex-col">
-                                <span className="text-gray-600 text-xs">Expected Delivery</span>
-                                <span className="text-store-700 font-bold text-base">
-                                  {expectedDeliveryTime}
-                                </span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="mt-4 flex gap-4 items-center">
-                              <div className="text-sm text-neutral-400 mb-1.5 font-medium">Check delivery time &amp; availability:</div>
-                              <LocationPickerDropdown className="w-30 !border !border-neutral-800 rounded-md py-2 px-3 bg-neutral-900/50 hover:bg-neutral-900 hover:!border-[#D4AF37] transition-all justify-between !h-auto !border-r" />
-                            </div>
-                          )}
+                          {/* Delivery time / location picker removed per client request */}
                           {/* social share
                           <div className="mt-2">
                               <h3 className="text-base font-semibold mb-1 font-serif">
@@ -2397,35 +2322,8 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                             </div>
                           )}
 
-                          {/* Ratings & Reviews Section - right side only */}
-                          <div id="ratings-section" className="mt-8 lg:mt-10 space-y-4">
-                            <RatingSummary summary={ratingSummary} />
-                            <WriteReviewForm
-                              productId={product?._id}
-                              existingReview={reviews.find(
-                                (r) => r.user?._id === userInfo?._id
-                              )}
-                              onSubmitReview={handleSubmitReview}
-                              isSubmitting={reviewSubmitting}
-                            />
-                            <ReviewFilters
-                              sort={reviewsSort}
-                              ratingFilter={reviewsRatingFilter}
-                              onSortChange={setReviewsSort}
-                              onRatingFilterChange={setReviewsRatingFilter}
-                            />
-                            <ReviewList
-                              reviews={reviews}
-                              loading={reviewsLoading}
-                              onLoadMore={handleLoadMoreReviews}
-                              canLoadMore={reviewsHasMore}
-                              onMarkHelpful={handleMarkHelpful}
-                              onDeleteReview={handleDeleteReview}
-                              currentUser={userInfo}
-                            />
-                          </div>
 
-                        
+                          {/* Reviews removed per client request */}
 
                          
                         </div>

@@ -430,13 +430,18 @@ const useProductSubmit = (id) => {
         status: mapStatusForApi(data.status || "Published"),
         lowStockAlert: typeof data.lowStockAlert === "number" ? data.lowStockAlert : Number(data.lowStockAlert || 5),
 
-        prices: {
-          price: getNumberTwo(data.salePrice) || getNumberTwo(data.price) || getNumberTwo(data.originalPrice),
-          originalPrice: getNumberTwo(data.originalPrice),
-          salePrice: data.salePrice ? getNumberTwo(data.salePrice) : 0,
-          discount: Math.max(0, getNumberTwo(data.originalPrice) - (getNumberTwo(data.salePrice) || getNumberTwo(data.price) || getNumberTwo(data.originalPrice))),
-          discountType: "flat",
-        },
+        prices: (() => {
+          const mrp = getNumber(data.originalPrice);
+          const sellingPrice = getNumber(data.price);
+          const effectivePrice = sellingPrice > 0 ? sellingPrice : mrp;
+          return {
+            price: effectivePrice,
+            originalPrice: mrp,
+            salePrice: 0,
+            discount: Math.max(0, mrp - effectivePrice),
+            discountType: "flat",
+          };
+        })(),
         isCombination: hasColorVariants,
         variants: hasColorVariants ? updatedVariants : [],
         variantFilters: variantFiltersPayload,

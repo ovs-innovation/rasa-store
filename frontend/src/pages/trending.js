@@ -3,44 +3,26 @@ import Layout from "@layout/Layout";
 import ProductServices from "@services/ProductServices";
 import AttributeServices from "@services/AttributeServices";
 import ProductCard from "@components/product/ProductCard";
+import CatalogPageLayout from "@components/common/CatalogPageLayout";
 
 const TrendingCollection = ({ products, attributes }) => {
+  const list = products || [];
+
   return (
-    <Layout title="Trending Collection" description="Shop the most wanted streetwear and footwear trending right now at Rasa Store.">
-      <div className="bg-white min-h-screen pb-16">
-        {/* Editorial Banner */}
-        <div className="relative bg-[#FAF9F6] py-16 px-4 border-b border-gray-100 mb-10 text-center">
-          <span className="text-[10px] bg-[#D4AF37] text-black px-3 py-1 font-extrabold uppercase tracking-widest inline-block mb-3">
-            Best Sellers
-          </span>
-          <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tight text-black mb-3">
-            Trending Collection
-          </h1>
-          <p className="text-gray-500 text-sm max-w-lg mx-auto font-medium">
-            Explore the styles everyone is talking about. High-conversion streetwear fits, iconic gold-accent sneakers, and accessories worn by the community.
-          </p>
+    <Layout title="Trending" description="Best-selling sneakers and streetwear at Rasa Store.">
+      <CatalogPageLayout
+        eyebrow="Most wanted"
+        title="Trending Now"
+        description="This week's best-selling picks."
+        count={list.length}
+        emptyMessage="No trending items right now."
+      >
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4 product-card-grid">
+          {list.map((product) => (
+            <ProductCard key={product._id} product={product} attributes={attributes} />
+          ))}
         </div>
-
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-8">
-          <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-            <span className="text-xs text-gray-400 font-extrabold uppercase tracking-widest">
-              {products?.length || 0} Items Found
-            </span>
-          </div>
-
-          {products?.length === 0 ? (
-            <div className="text-center py-20 text-gray-400 font-bold uppercase tracking-wider">
-              No trending items available.
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-              {products.map((product) => (
-                <ProductCard key={product._id} product={product} attributes={attributes} />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      </CatalogPageLayout>
     </Layout>
   );
 };
@@ -58,13 +40,8 @@ export const getServerSideProps = async () => {
       },
     };
   } catch (err) {
-    console.error("Error fetching trending collection data:", err);
-    return {
-      props: {
-        products: [],
-        attributes: []
-      }
-    };
+    console.error("Error fetching trending:", err);
+    return { props: { products: [], attributes: [] } };
   }
 };
 

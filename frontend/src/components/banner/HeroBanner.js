@@ -2,15 +2,15 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { IoChevronForward } from "react-icons/io5";
 
-export const heroSlides = [
+const DEFAULT_HERO_SLIDES = [
   {
     id: "01",
-    brand: "Aero",
-    name: "Phantom Lux",
-    desc: "Elevate your daily rotation. Crafted from ultra-premium full-grain leather, featuring handmade stitching details and a custom-molded comfort sole.",
+    brand: "Rasa",
+    name: "Fresh Drops",
+    desc: "Affordable sneakers and streetwear — curated picks, delivered to your door.",
     image: "/shoes1.png",
-    bgText: "AERO",
-    glowColor: "rgba(212, 175, 55, 0.25)",
+    bgText: "RASA",
+    glowColor: "rgba(212, 175, 55, 0.2)",
     accentColor: "#D4AF37",
     textGradient: "linear-gradient(180deg, #F8E9A6 0%, #E7C765 28%, #D4AF37 55%, #9A7B22 80%, #6E5512 100%)",
     shopLink: "/search?category=footwear",
@@ -18,11 +18,11 @@ export const heroSlides = [
   {
     id: "02",
     brand: "Rasa",
-    name: "Apex Duffle",
-    desc: "Ultimate urban utility. Built from ultra-durable ballistic nylon, featuring heavy-duty zippers, waterproof lining, and versatile carrying straps.",
+    name: "Bags & More",
+    desc: "Bags, accessories and latest styles — if you've seen it, chances are we've got it.",
     image: "/bag1.png",
-    bgText: "RASA",
-    glowColor: "rgba(176, 122, 79, 0.25)",
+    bgText: "BAGS",
+    glowColor: "rgba(176, 122, 79, 0.2)",
     accentColor: "#B07A4F",
     textGradient: "linear-gradient(180deg, #E2C2A4 0%, #CFA57E 30%, #B07A4F 60%, #7E512E 100%)",
     shopLink: "/search?category=bags",
@@ -30,7 +30,76 @@ export const heroSlides = [
   },
 ];
 
-const HeroBanner = () => {
+const CMS_FALLBACK_SLIDES = [
+  {
+    title: "Fresh Drops",
+    subtitle: "Fresh Drops",
+    description: DEFAULT_HERO_SLIDES[0].desc,
+    image: "/shoes1.png",
+    link: "/search?category=footwear",
+    brand: "Rasa",
+  },
+  {
+    title: "Bags & More",
+    subtitle: "Bags & More",
+    description: DEFAULT_HERO_SLIDES[1].desc,
+    image: "/bag1.png",
+    link: "/search?category=bags",
+    brand: "Rasa",
+    accentColor: "#B07A4F",
+  },
+];
+
+const isBagSlide = (slide = {}) =>
+  /bag|duffle|backpack/i.test(
+    `${slide.title || ""} ${slide.subtitle || ""} ${slide.link || ""} ${slide.image || ""}`
+  );
+
+const isFootwearSlide = (slide = {}) =>
+  /footwear|shoe|sneaker/i.test(
+    `${slide.title || ""} ${slide.subtitle || ""} ${slide.link || ""} ${slide.image || ""}`
+  );
+
+/** Always ensure shoes + bags hero slides when CMS has fewer than 2 */
+const normalizeHeroSlides = (cmsSlides = []) => {
+  const input = Array.isArray(cmsSlides) ? cmsSlides.filter(Boolean) : [];
+  if (input.length >= 2) return input;
+
+  if (!input.length) return CMS_FALLBACK_SLIDES;
+
+  const merged = [...input];
+  if (!merged.some(isBagSlide)) {
+    merged.push(CMS_FALLBACK_SLIDES.find(isBagSlide));
+  }
+  if (!merged.some(isFootwearSlide) && merged.length < 2) {
+    merged.unshift(CMS_FALLBACK_SLIDES.find((s) => !isBagSlide(s)));
+  }
+  return merged.slice(0, 2);
+};
+
+const mapCmsToHeroSlide = (s, i) => ({
+  id: String(i + 1).padStart(2, "0"),
+  brand: s.brand || s.title?.split(" ")[0] || "RASA",
+  name: s.subtitle || s.title || "",
+  desc:
+    s.description ||
+    s.desc ||
+    (isBagSlide(s)
+      ? "Bags, accessories and latest styles — if you've seen it, chances are we've got it."
+      : "Affordable sneakers and streetwear — curated picks, delivered to your door."),
+  image: s.image || "/shoes1.png",
+  bgText: (s.brand || s.title || "RASA").toUpperCase().slice(0, 4),
+  glowColor: isBagSlide(s) ? "rgba(176, 122, 79, 0.2)" : "rgba(212, 175, 55, 0.2)",
+  accentColor: s.accentColor || (isBagSlide(s) ? "#B07A4F" : "#D4AF37"),
+  textGradient: isBagSlide(s)
+    ? "linear-gradient(180deg, #E2C2A4 0%, #CFA57E 30%, #B07A4F 60%, #7E512E 100%)"
+    : "linear-gradient(180deg, #F8E9A6 0%, #D4AF37 100%)",
+  shopLink: s.link || "/search",
+  isBag: isBagSlide(s),
+});
+
+const HeroBanner = ({ cmsSlides = [] }) => {
+  const slides = normalizeHeroSlides(cmsSlides).map(mapCmsToHeroSlide);
   const containerRef = useRef(null);
   const stickyRef = useRef(null);
   const spacerRef = useRef(null);
@@ -88,7 +157,7 @@ const HeroBanner = () => {
         });
 
         // Initialize default layout styles
-        heroSlides.forEach((slide, i) => {
+        slides.forEach((slide, i) => {
           if (i > 0) {
             gsap.set(`#details-${slide.id}`, { opacity: 0, y: 80, filter: "blur(10px)" });
             gsap.set(`#img-wrapper-${slide.id}`, { opacity: 0, scale: 0.6, rotation: -60, filter: "blur(10px)" });
@@ -102,9 +171,9 @@ const HeroBanner = () => {
         const HOLD = 1.4;
         tl.to({}, { duration: HOLD });
 
-        heroSlides.forEach((slide, i) => {
-          if (i < heroSlides.length - 1) {
-            const next = heroSlides[i + 1];
+        slides.forEach((slide, i) => {
+          if (i < slides.length - 1) {
+            const next = slides[i + 1];
 
             tl.to(`#details-${slide.id}`, { opacity: 0, y: -80, filter: "blur(10px)", duration: 1.5 })
               .to(
@@ -161,15 +230,16 @@ const HeroBanner = () => {
       window.removeEventListener("resize", onResize);
       if (ctx) ctx.revert();
     };
-  }, []);
+  }, [slides.length]);
 
   // Mobile slideshow autoplay
   useEffect(() => {
+    if (slides.length <= 1) return undefined;
     const timer = setInterval(() => {
-      setActiveMobileIndex((prev) => (prev + 1) % heroSlides.length);
+      setActiveMobileIndex((prev) => (prev + 1) % slides.length);
     }, 4500);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   return (
     <>
@@ -180,12 +250,12 @@ const HeroBanner = () => {
         ref={containerRef}
         id="hero-section"
         className="hidden md:block relative w-full bg-[#050505] select-none font-sans"
-        style={{ height: `${heroSlides.length * 135}vh` }}
+        style={{ height: `${slides.length * 135}vh` }}
       >
         {/* Sticky viewport frame */}
         <div
           ref={stickyRef}
-          style={{ "--glow-color": heroSlides[0].glowColor }}
+          style={{ "--glow-color": slides[0].glowColor }}
           className="sticky top-0 w-full h-screen flex flex-col overflow-hidden transition-all duration-700"
         >
           {/* Spacer band */}
@@ -202,7 +272,7 @@ const HeroBanner = () => {
             </div>
 
             {/* Giant Background Word */}
-            {heroSlides.map((slide, index) => (
+            {slides.map((slide, index) => (
               <div
                 key={`bg-text-${slide.id}`}
                 id={`bg-text-${slide.id}`}
@@ -236,7 +306,7 @@ const HeroBanner = () => {
             </div>
 
             {/* Particles */}
-            <div className="absolute inset-0 pointer-events-none z-[3] opacity-40">
+            <div className="absolute inset-0 pointer-events-none z-[3] opacity-20 hidden lg:block">
               <div className="absolute w-1.5 h-1.5 bg-[#D4AF37] rounded-full blur-[1px] top-1/4 left-2/3 animate-[pulse_3s_infinite]" />
               <div className="absolute w-1 h-1 bg-white rounded-full top-2/3 left-1/2 animate-[pulse_4s_infinite]" />
               <div className="absolute w-2 h-2 bg-[#D4AF37]/80 rounded-full blur-[2px] top-1/3 right-1/4 animate-[pulse_5s_infinite]" />
@@ -247,7 +317,7 @@ const HeroBanner = () => {
 
             {/* Giant Floating Sneaker */}
             <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-end md:pr-0 lg:pr-0 translate-x-[4vw] md:translate-x-[6vw] lg:translate-x-[8vw]">
-              {heroSlides.map((slide, index) => (
+              {slides.map((slide, index) => (
                 <div
                   key={`img-${slide.id}`}
                   id={`img-wrapper-${slide.id}`}
@@ -275,7 +345,7 @@ const HeroBanner = () => {
             {/* Left Editorial details */}
             <div className="relative z-30 w-full max-w-screen-2xl mx-auto px-6 sm:px-10 lg:px-16">
               <div className="relative h-[22rem] md:h-[26rem] w-full md:w-[46%] lg:w-[40%] flex items-center">
-                {heroSlides.map((slide, index) => (
+                {slides.map((slide, index) => (
                   <div
                     key={`details-${slide.id}`}
                     id={`details-${slide.id}`}
@@ -283,40 +353,32 @@ const HeroBanner = () => {
                       index === 0 ? "opacity-100" : "opacity-0 pointer-events-none"
                     }`}
                   >
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0F0F0F]/80 border border-neutral-800 text-[#D4AF37] text-[9px] font-black uppercase tracking-widest rounded-full backdrop-blur-sm">
-                      <span>Drop {slide.id}</span>
-                      <span className="text-[6px] text-[#D4AF37]">●</span>
-                    </div>
-
-                    <h1 className="text-5xl sm:text-[80px] font-black text-white leading-[0.82] uppercase tracking-tighter font-sans drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
-                      {slide.brand} <br />
+                    <h1 className="text-4xl sm:text-6xl lg:text-[72px] font-black text-white leading-[0.9] uppercase tracking-tighter font-sans">
                       <span style={{ color: slide.accentColor }}>{slide.name}</span>
                     </h1>
 
-                    <p className="text-neutral-300 max-w-xs text-xs sm:text-sm font-normal leading-relaxed">
-                      {slide.desc}
+                    <p className="text-neutral-400 max-w-sm text-xs sm:text-sm leading-relaxed">
+                      {slide.desc || "Shop sneakers, bags & latest styles."}
                     </p>
 
-                    <div className="flex flex-col gap-6 pt-2">
-                      <div>
-                        <Link
-                          href={slide.shopLink}
-                          className="px-8 py-3.5 bg-white text-black font-extrabold text-[11px] uppercase tracking-widest transition-all rounded-md flex items-center gap-2 hover:bg-[#D4AF37] hover:text-black duration-300 shadow-lg hover:scale-105 active:scale-95 pointer-events-auto"
-                        >
-                          Shop Collection <span className="font-sans font-light">&gt;</span>
-                        </Link>
-                      </div>
+                    <div className="flex flex-col gap-5 pt-1">
+                      <Link
+                        href={slide.shopLink}
+                        className="px-7 py-3 bg-[#D4AF37] text-black font-extrabold text-[10px] uppercase tracking-widest transition-all rounded-lg flex items-center gap-2 hover:bg-[#EAC348] duration-300 active:scale-95 pointer-events-auto w-fit"
+                      >
+                        Shop Now <IoChevronForward className="text-sm" />
+                      </Link>
 
                       <div className="flex items-center gap-1.5">
-                        {heroSlides.map((dot) => {
+                        {slides.map((dot) => {
                           const isCurrent = dot.id === slide.id;
                           return (
                             <div
                               key={`dot-${dot.id}`}
-                              className="h-1.5 rounded-full transition-all duration-300"
+                              className="h-1 rounded-full transition-all duration-300"
                               style={{
-                                width: isCurrent ? "20px" : "6px",
-                                backgroundColor: isCurrent ? slide.accentColor : "#404040",
+                                width: isCurrent ? "18px" : "6px",
+                                backgroundColor: isCurrent ? slide.accentColor : "#333",
                               }}
                             />
                           );
@@ -328,26 +390,11 @@ const HeroBanner = () => {
               </div>
             </div>
 
-            {/* Counter */}
-            <div className="absolute bottom-8 right-8 flex flex-col items-end gap-1 pointer-events-none z-40">
-              {heroSlides.map((slide, i) => (
-                <div key={slide.id} className="flex items-center gap-2">
-                  <span className="text-[8px] font-black uppercase tracking-widest text-neutral-600">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div className="w-8 h-px bg-neutral-800" />
-                </div>
-              ))}
-            </div>
-
-            {/* Scroll indicator */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none z-40">
-              <span className="text-[8px] font-black uppercase tracking-widest text-neutral-500">
-                Scroll to reveal drops
-              </span>
-              <div className="w-1 h-8 bg-neutral-900 rounded-full relative overflow-hidden border border-neutral-800">
-                <div className="absolute w-full h-1/3 bg-[#D4AF37] rounded-full animate-[bounce_2s_infinite]" />
-              </div>
+            {/* Tagline strip */}
+            <div className="absolute bottom-6 left-6 sm:left-10 lg:left-16 z-40 pointer-events-none">
+              <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-neutral-600 max-w-xs leading-relaxed">
+                The Rasa Store · Sneakers, bags &amp; latest styles
+              </p>
             </div>
           </div>
         </div>
@@ -362,11 +409,11 @@ const HeroBanner = () => {
         {/* Ambient background blur behind the shoe */}
         <div 
           className="absolute top-[22%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[85vw] h-[85vw] rounded-full blur-[90px] transition-all duration-500 pointer-events-none opacity-30 z-0"
-          style={{ backgroundColor: heroSlides[activeMobileIndex].glowColor }}
+          style={{ backgroundColor: slides[activeMobileIndex].glowColor }}
         />
 
         {/* Giant Background Word for Mobile */}
-        {heroSlides.map((slide, index) => (
+        {slides.map((slide, index) => (
           <div
             key={`mobile-bg-text-${slide.id}`}
             className={`absolute inset-x-0 top-[6%] flex items-center justify-center pointer-events-none z-0 select-none transition-opacity duration-500 ${
@@ -390,12 +437,7 @@ const HeroBanner = () => {
           </div>
         ))}
 
-        {/* Mobile Particles */}
-        <div className="absolute inset-0 pointer-events-none z-0 opacity-40">
-          <div className="absolute w-1.5 h-1.5 bg-[#D4AF37] rounded-full blur-[0.5px] top-[15%] left-[25%] animate-[pulse_3s_infinite]" />
-          <div className="absolute w-2 h-2 bg-[#D4AF37] rounded-full blur-[1px] top-[28%] right-[20%] animate-[pulse_4s_infinite]" />
-          <div className="absolute w-1 h-1 bg-white rounded-full top-[32%] left-[65%] animate-[pulse_5s_infinite]" />
-        </div>
+        {/* Mobile Particles — removed for cleaner look */}
 
         {/* Ambient light lines/streaks */}
         <div className="absolute top-[28%] left-0 right-0 h-40 bg-gradient-to-r from-transparent via-[#D4AF37]/5 to-transparent skew-y-[-15deg] pointer-events-none z-0" />
@@ -405,7 +447,7 @@ const HeroBanner = () => {
           
           {/* 1. SHOE IMAGE - Centered, rotated -28deg */}
           <div className="relative w-full flex items-center justify-center h-[280px] pointer-events-none">
-            {heroSlides.map((slide, idx) => {
+            {slides.map((slide, idx) => {
               const isCurrent = idx === activeMobileIndex;
               return (
                 <div
@@ -431,8 +473,8 @@ const HeroBanner = () => {
                       alt={slide.name}
                       className="object-contain drop-shadow-[0_20px_45px_rgba(0,0,0,0.8)] select-none pointer-events-none"
                       style={{
-                        width: slide.isBag ? '50%' : '85%',
-                        height: slide.isBag ? '50%' : '85%',
+                        width: slide.isBag ? "62%" : "85%",
+                        height: slide.isBag ? "62%" : "85%",
                       }}
                     />
                   </div>
@@ -443,7 +485,7 @@ const HeroBanner = () => {
 
           {/* 2. Slider Dots - Centered directly under the shoe */}
           <div className="flex items-center justify-center gap-1.5 pb-6">
-            {heroSlides.map((slide, idx) => {
+            {slides.map((slide, idx) => {
               const isCurrent = idx === activeMobileIndex;
               return (
                 <button
@@ -452,7 +494,7 @@ const HeroBanner = () => {
                   className="h-1 rounded-full transition-all duration-300 pointer-events-auto"
                   style={{
                     width: isCurrent ? "20px" : "14px",
-                    backgroundColor: isCurrent ? heroSlides[activeMobileIndex].accentColor : "#2c2c2c",
+                    backgroundColor: isCurrent ? slides[activeMobileIndex].accentColor : "#2c2c2c",
                   }}
                   aria-label={`Go to slide ${idx + 1}`}
                 />
@@ -460,70 +502,33 @@ const HeroBanner = () => {
             })}
           </div>
 
-          {/* 3. DETAILS & CTA - Left Aligned */}
-          <div className="w-full flex flex-col items-start text-left space-y-4">
-            
-            {/* Drop badge */}
-            <div className="inline-flex items-center px-3 py-1 bg-transparent border border-[#D4AF37] text-[#D4AF37] text-[9px] font-black uppercase tracking-[0.25em] rounded-md">
-              Drop {heroSlides[activeMobileIndex].id}
-            </div>
-
-            {/* Product Name */}
-            <h1 className="text-4xl font-black text-white leading-[0.95] uppercase tracking-tight font-sans">
-              RASA <br />
-              <span style={{ color: heroSlides[activeMobileIndex].accentColor }}>
-                {heroSlides[activeMobileIndex].name}
+          {/* 3. DETAILS & CTA */}
+          <div className="w-full flex flex-col items-start text-left space-y-3 pt-2">
+            <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#D4AF37]/80">
+              {slides[activeMobileIndex].brand}
+            </p>
+            <h1 className="text-3xl font-black text-white leading-tight uppercase tracking-tight">
+              <span style={{ color: slides[activeMobileIndex].accentColor }}>
+                {slides[activeMobileIndex].name}
               </span>
             </h1>
 
-            {/* Description */}
-            <p className="text-neutral-400 text-xs leading-relaxed max-w-md">
-              {heroSlides[activeMobileIndex].desc}
+            <p className="text-neutral-500 text-xs leading-relaxed max-w-sm">
+              {slides[activeMobileIndex].desc}
             </p>
 
-            {/* CTA Button - Left aligned, compact width */}
             <Link
-              href={heroSlides[activeMobileIndex].shopLink}
-              className="px-4 py-2.5 text-white font-extrabold text-[9px] uppercase tracking-[0.2em] rounded-lg transition-all active:scale-95 flex items-center gap-2 pointer-events-auto duration-300"
-              style={{
-                backgroundColor: heroSlides[activeMobileIndex].accentColor,
-                boxShadow: `0 8px 24px ${heroSlides[activeMobileIndex].accentColor}33`,
-              }}
+              href={slides[activeMobileIndex].shopLink}
+              className="px-5 py-2.5 text-black font-extrabold text-[9px] uppercase tracking-[0.2em] rounded-lg transition-all active:scale-95 flex items-center gap-2 pointer-events-auto"
+              style={{ backgroundColor: slides[activeMobileIndex].accentColor }}
             >
-              <span>Shop Collection</span>
-              <IoChevronForward className="text-xs stroke-[3px]" />
+              Shop Now
+              <IoChevronForward className="text-xs" />
             </Link>
 
-            {/* 4. Stats Trust Banner */}
-            <div className="w-full mt-6 py-4 px-4 bg-[#0A0A0A] border border-neutral-900 rounded-2xl grid grid-cols-3 gap-2">
-              {/* Feature 1 */}
-              <div className="flex flex-col items-center text-center space-y-1.5 border-r border-neutral-900/60 pr-1">
-                <svg className="w-5 h-5 text-[#D4AF37]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  <path d="M9 11l2 2 4-4" />
-                </svg>
-                <span className="text-[7px] text-neutral-450 uppercase tracking-widest font-black leading-tight">Premium Quality</span>
-              </div>
-              {/* Feature 2 */}
-              <div className="flex flex-col items-center text-center space-y-1.5 border-r border-neutral-900/60 px-1">
-                <svg className="w-5 h-5 text-[#D4AF37]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="1" y="3" width="15" height="13" />
-                  <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-                  <circle cx="5.5" cy="18.5" r="2.5" />
-                  <circle cx="18.5" cy="18.5" r="2.5" />
-                </svg>
-                <span className="text-[7px] text-neutral-450 uppercase tracking-widest font-black leading-tight">Fast & Safe Delivery</span>
-              </div>
-              {/* Feature 3 */}
-              <div className="flex flex-col items-center text-center space-y-1.5 pl-1">
-                <svg className="w-5 h-5 text-[#D4AF37]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="8" r="7" />
-                  <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
-                </svg>
-                <span className="text-[7px] text-neutral-450 uppercase tracking-widest font-black leading-tight">100% Authentic Products</span>
-              </div>
-            </div>
-
+            <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-neutral-600 pt-2">
+              The Rasa Store · Sneakers, bags &amp; latest styles
+            </p>
           </div>
         </div>
 

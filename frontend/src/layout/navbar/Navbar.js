@@ -77,44 +77,9 @@ const Navbar = () => {
     setMounted(true);
   }, []);
 
-  // Initialize from route to avoid "flash" on first paint.
-  const initialShowSearch =
-    router.pathname !== "/" || router.pathname === "/search";
-  const [showSearchInNavbar, setShowSearchInNavbar] = useState(initialShowSearch);
   const [searchText, setSearchText] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchInputRef = useRef(null);
-
-  const isHome = router.pathname === "/";
-  const showNavbarSearch =
-    !isHome || showSearchInNavbar || router.pathname === "/search";
-
-  useEffect(() => {
-    if (!isHome) {
-      setShowSearchInNavbar(true);
-      return;
-    }
-
-    // On the homepage the navbar keeps its initial state (category menu) for the
-    // entire pinned hero experience, and only swaps to the search bar once the
-    // full hero section has been scrolled past.
-    const onScroll = () => {
-      const heroEl = document.getElementById("hero-section");
-      if (heroEl) {
-        const rect = heroEl.getBoundingClientRect();
-        setShowSearchInNavbar(rect.bottom <= 100);
-      } else {
-        setShowSearchInNavbar(false);
-      }
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [isHome, router.asPath]);
 
   useEffect(() => {
     if (router.pathname === "/search" && router.query.query) {
@@ -146,69 +111,59 @@ const Navbar = () => {
     }
   };
 
+  const isHome = router.pathname === "/";
+
   return (
     <>
       <CartDrawer />
       <header className="hidden lg:block bg-[#050505] text-white border-b border-neutral-900">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-8">
-          <div
-            className={`flex items-center gap-4 transition-all duration-300 ${
-              showNavbarSearch ? "py-2.5" : "py-2"
-            }`}
-          >
+          <div className="flex items-center gap-3 py-2">
             <NavbarLogo />
 
-            <div className="flex-1 min-w-0 flex items-center justify-center gap-2">
-              {showNavbarSearch ? (
-                <form
-                  onSubmit={handleSearchSubmit}
-                  className="navbar-search-form flex items-center w-full max-w-3xl rounded-none border border-neutral-800 bg-[#0F0F0F] p-0.5 hover:border-neutral-700 focus-within:border-neutral-700 focus-within:ring-0 focus-within:ring-offset-0 transition-all"
+            <div className="flex min-w-0 flex-1 items-center justify-center">
+              <form
+                onSubmit={handleSearchSubmit}
+                className="navbar-search-form flex w-full max-w-xl items-center rounded-full border border-neutral-800 bg-[#0F0F0F] px-1 py-0.5 transition-colors hover:border-neutral-700 focus-within:border-neutral-700"
+              >
+                <div className="relative flex min-h-[36px] min-w-0 flex-1 items-center">
+                  <IoSearchOutline className="pointer-events-none absolute left-3 z-10 text-base text-neutral-500" />
+                  <input
+                    ref={searchInputRef}
+                    type="search"
+                    placeholder="Search sneakers, bags, streetwear..."
+                    className="navbar-search-input h-full w-full rounded-full py-2 pl-9 pr-2 text-xs font-medium normal-case tracking-normal !border-0 !bg-transparent !shadow-none !outline-none placeholder-neutral-500 text-white focus:!border-0 focus:!ring-0"
+                    value={searchText}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    onFocus={() => searchText.length > 0 && setShowSuggestions(true)}
+                    onBlur={(e) => {
+                      const relatedTarget = e.relatedTarget;
+                      const box = document.querySelector(".search-suggestions-container");
+                      if (!relatedTarget || (box && !box.contains(relatedTarget))) {
+                        setTimeout(() => {
+                          const active = document.activeElement;
+                          if (!box || !box.contains(active)) setShowSuggestions(false);
+                        }, 200);
+                      }
+                    }}
+                  />
+                  <SearchSuggestions
+                    searchText={searchText}
+                    showSuggestions={showSuggestions}
+                    onSelect={() => {
+                      setSearchText("");
+                      setShowSuggestions(false);
+                    }}
+                    onClose={() => setShowSuggestions(false)}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="shrink-0 rounded-full bg-[#D4AF37] px-4 py-2 text-[10px] font-black uppercase tracking-wider text-black transition-colors hover:bg-[#c9a432]"
                 >
-                  <div className="flex-1 relative min-w-0 flex items-center min-h-[42px]">
-                    <IoSearchOutline className="absolute left-3 text-neutral-400 text-lg pointer-events-none z-10" />
-                    <input
-                      ref={searchInputRef}
-                      type="search"
-                      placeholder="Search for streetwear, footwear, accessories..."
-                      className="navbar-search-input w-full h-full py-2 pl-10 pr-2 text-xs font-black uppercase tracking-wider !bg-transparent !border-0 !border-none !shadow-none !ring-0 !outline-none focus:!ring-0 focus:!border-0 focus:!outline-none placeholder-neutral-500 text-white"
-                      value={searchText}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      onFocus={() => searchText.length > 0 && setShowSuggestions(true)}
-                      onBlur={(e) => {
-                        const relatedTarget = e.relatedTarget;
-                        const box = document.querySelector(".search-suggestions-container");
-                        if (!relatedTarget || (box && !box.contains(relatedTarget))) {
-                          setTimeout(() => {
-                            const active = document.activeElement;
-                            if (!box || !box.contains(active)) setShowSuggestions(false);
-                          }, 200);
-                        }
-                      }}
-                    />
-                    <SearchSuggestions
-                      searchText={searchText}
-                      showSuggestions={showSuggestions}
-                      onSelect={() => {
-                        setSearchText("");
-                        setShowSuggestions(false);
-                      }}
-                      onClose={() => setShowSuggestions(false)}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="shrink-0 rounded-none bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-black uppercase tracking-widest px-8 py-3.5 border-0 outline-none shadow-none transition-colors duration-200"
-                  >
-                    Search
-                  </button>
-                </form>
-              ) : isHome ? (
-                <LowerCategoryNavbar
-                  variant="inline"
-                  categories={categories}
-                  showingTranslateValue={showingTranslateValue}
-                />
-              ) : null}
+                  Search
+                </button>
+              </form>
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
@@ -260,7 +215,7 @@ const Navbar = () => {
                 <button
                   type="button"
                   onClick={() => router.push("/auth/login")}
-                  className="text-xs font-black uppercase tracking-widest text-black bg-[#D4AF37] hover:bg-[#b8952f] px-6 py-3.5 rounded-md transition-all duration-200"
+                  className="rounded-md bg-[#D4AF37] px-4 py-2 text-[10px] font-black uppercase tracking-wider text-black transition-colors hover:bg-[#c9a432]"
                 >
                   Login
                 </button>
@@ -269,7 +224,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        {showNavbarSearch && (
+        {!isHome && (
           <LowerCategoryNavbar
             variant="row"
             categories={categories}

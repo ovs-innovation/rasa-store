@@ -3,13 +3,58 @@ import { notifyError, notifySuccess } from "@/utils/toast";
 import SettingServices from "@/services/SettingServices";
 
 const DEFAULT_RASA_HOMEPAGE = {
-  heroSlides: [],
+  heroSlides: [
+    { title: "Aero Phantom Lux", subtitle: "Phantom Lux", image: "/shoes1.png", link: "/search?category=footwear", brand: "Aero" },
+    { title: "Rasa Apex Duffle", subtitle: "Apex Duffle", image: "/bag1.png", link: "/search?category=bags", brand: "Rasa" },
+  ],
   instagramPosts: [],
   trendingProductIds: [],
   newArrivalProductIds: [],
   categoryBanners: [],
   brandsSectionEnabled: true,
-  sectionOrder: ["Hero", "Brands", "New Arrival", "Trending", "Categories", "Newsletter"],
+  customerReviews: [
+    {
+      name: "Aarav S.",
+      role: "Verified Buyer",
+      item: "Sneakers",
+      rating: 5,
+      comment: "Great quality and fast delivery. Exactly what I ordered — will shop again.",
+      avatar: "",
+    },
+    {
+      name: "Riya P.",
+      role: "Verified Buyer",
+      item: "Crossbody Bag",
+      rating: 5,
+      comment: "Love the bag! Packaging was neat and the product matched the photos perfectly.",
+      avatar: "",
+    },
+    {
+      name: "Vikram M.",
+      role: "Repeat Customer",
+      item: "Streetwear Drop",
+      rating: 5,
+      comment: "Best prices I've found online. WhatsApp support was super helpful with sizing.",
+      avatar: "",
+    },
+  ],
+  reviewsSection: {
+    enabled: true,
+    eyebrow: "Reviews",
+    title: "What Customers Say",
+    subtitle: "Real feedback from shoppers who bought from Rasa Store.",
+  },
+  footerIntro:
+    "Your one-stop shop for affordable sneakers, bags, and the latest styles.",
+  sectionOrder: ["Hero", "Brands", "New Arrival", "Trending", "Categories", "Reviews"],
+};
+
+const normalizeCustomizationSetting = (res) => {
+  const raw = res?.[0] || res || {};
+  if (raw?.setting && typeof raw.setting === "object") {
+    return { id: raw._id || null, setting: raw.setting };
+  }
+  return { id: raw._id || null, setting: raw };
 };
 
 const useRasaHomepage = () => {
@@ -22,11 +67,11 @@ const useRasaHomepage = () => {
     try {
       setLoading(true);
       const res = await SettingServices.getStoreCustomizationSetting();
-      const doc = res?.[0] || res;
-      setSettingId(doc?._id || null);
+      const { id, setting } = normalizeCustomizationSetting(res);
+      setSettingId(id);
       const merged = {
         ...DEFAULT_RASA_HOMEPAGE,
-        ...(doc?.setting?.rasaHomepage || {}),
+        ...(setting?.rasaHomepage || {}),
       };
       setHomepage(merged);
     } catch (err) {
@@ -58,8 +103,7 @@ const useRasaHomepage = () => {
     try {
       setSaving(true);
       const res = await SettingServices.getStoreCustomizationSetting();
-      const doc = res?.[0] || res;
-      const baseSetting = doc?.setting || {};
+      const { setting: baseSetting } = normalizeCustomizationSetting(res);
       const payload = {
         name: "storeCustomizationSetting",
         setting: {
@@ -67,7 +111,7 @@ const useRasaHomepage = () => {
           rasaHomepage: homepage,
         },
       };
-      if (doc?._id) {
+      if (settingId) {
         await SettingServices.updateStoreCustomizationSetting(payload);
       } else {
         await SettingServices.addStoreCustomizationSetting(payload);

@@ -7,7 +7,7 @@ const FloatingWhatsApp = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
 
-  const whatsappNumber = storeCustomizationSetting?.footer?.social_whatsapp || "09240250346";
+  const whatsappNumber = storeCustomizationSetting?.footer?.social_whatsapp || "919731308713";
 
   useEffect(() => {
     // Delay showing the widget to make it feel natural
@@ -29,7 +29,7 @@ const FloatingWhatsApp = () => {
       >
         <div className="relative">
           <p className="text-sm font-semibold leading-snug">
-            Need styling help? 👟<br/>
+            Need sizing help? 👟<br/>
             <span className="text-neutral-400 font-normal text-xs">Chat with the RASA team!</span>
           </p>
           {/* Arrow pointing down right */}

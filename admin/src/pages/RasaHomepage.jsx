@@ -19,6 +19,8 @@ const SECTIONS = [
   { path: "/homepage/trending", key: "trending", label: "Trending Products" },
   { path: "/homepage/new-arrivals", key: "newArrivals", label: "New Arrivals" },
   { path: "/homepage/categories", key: "categories", label: "Category Banners" },
+  { path: "/homepage/reviews", key: "reviews", label: "Customer Reviews" },
+  { path: "/homepage/footer", key: "footer", label: "Footer Text" },
   { path: "/homepage/order", key: "order", label: "Section Ordering" },
 ];
 
@@ -61,11 +63,33 @@ const RasaHomepage = () => {
         return (
           <div className="space-y-6">
             <p className="text-sm text-gray-500">
-              Hero scroll animation on the storefront uses shoe images. Update slide copy and fallback images here.
-              The live GSAP hero remains code-driven — these settings are for future CMS wiring.
+              Edit hero slides shown on the storefront homepage. Save here, then refresh the website.
             </p>
+            <Button
+              size="small"
+              onClick={() =>
+                setHomepage({
+                  ...homepage,
+                  heroSlides: [
+                    ...(homepage.heroSlides || []),
+                    { title: "", subtitle: "", image: "", link: "/search", brand: "RASA" },
+                  ],
+                })
+              }
+            >
+              + Add Slide
+            </Button>
             {(homepage.heroSlides || []).map((slide, idx) => (
               <div key={idx} className="border rounded-lg p-4 bg-white dark:bg-gray-800 space-y-3">
+                <Input
+                  value={slide.brand || ""}
+                  onChange={(e) => {
+                    const slides = [...homepage.heroSlides];
+                    slides[idx] = { ...slides[idx], brand: e.target.value };
+                    setHomepage({ ...homepage, heroSlides: slides });
+                  }}
+                  placeholder="Brand name (e.g. Nike)"
+                />
                 <Input
                   value={slide.title || ""}
                   onChange={(e) => {
@@ -82,7 +106,7 @@ const RasaHomepage = () => {
                     slides[idx] = { ...slides[idx], subtitle: e.target.value };
                     setHomepage({ ...homepage, heroSlides: slides });
                   }}
-                  placeholder="Subtitle"
+                  placeholder="Product name / subtitle"
                 />
                 <Input
                   value={slide.link || ""}
@@ -91,8 +115,20 @@ const RasaHomepage = () => {
                     slides[idx] = { ...slides[idx], link: e.target.value };
                     setHomepage({ ...homepage, heroSlides: slides });
                   }}
-                  placeholder="Link (e.g. /search)"
+                  placeholder="Link (e.g. /search?category=footwear)"
                 />
+                <div>
+                  <label className="text-xs font-bold uppercase text-gray-500 mb-1 block">Slide Image</label>
+                  <Uploader
+                    folder="rasa/hero"
+                    imageUrl={slide.image}
+                    setImageUrl={(url) => {
+                      const slides = [...homepage.heroSlides];
+                      slides[idx] = { ...slides[idx], image: url };
+                      setHomepage({ ...homepage, heroSlides: slides });
+                    }}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -197,6 +233,20 @@ const RasaHomepage = () => {
       case "categories":
         return (
           <div className="space-y-4">
+            <Button
+              size="small"
+              onClick={() =>
+                setHomepage({
+                  ...homepage,
+                  categoryBanners: [
+                    ...(homepage.categoryBanners || []),
+                    { title: "", slug: "footwear", image: "" },
+                  ],
+                })
+              }
+            >
+              + Add Category Banner
+            </Button>
             {(homepage.categoryBanners || []).map((banner, idx) => (
               <div key={idx} className="border rounded-lg p-4 bg-white dark:bg-gray-800 grid md:grid-cols-3 gap-4">
                 <Input
@@ -231,8 +281,185 @@ const RasaHomepage = () => {
           </div>
         );
 
+      case "reviews":
+        return (
+          <div className="space-y-6">
+            <p className="text-sm text-gray-500">
+              Manage customer reviews shown at the bottom of the homepage. Save here, then refresh the website.
+            </p>
+            <label className="flex items-center gap-2 text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={homepage.reviewsSection?.enabled !== false}
+                onChange={(e) =>
+                  setHomepage({
+                    ...homepage,
+                    reviewsSection: {
+                      ...(homepage.reviewsSection || {}),
+                      enabled: e.target.checked,
+                    },
+                  })
+                }
+              />
+              Show reviews section on homepage
+            </label>
+            <Input
+              value={homepage.reviewsSection?.eyebrow || ""}
+              onChange={(e) =>
+                setHomepage({
+                  ...homepage,
+                  reviewsSection: { ...(homepage.reviewsSection || {}), eyebrow: e.target.value },
+                })
+              }
+              placeholder="Small label (e.g. Reviews)"
+            />
+            <Input
+              value={homepage.reviewsSection?.title || ""}
+              onChange={(e) =>
+                setHomepage({
+                  ...homepage,
+                  reviewsSection: { ...(homepage.reviewsSection || {}), title: e.target.value },
+                })
+              }
+              placeholder="Section title"
+            />
+            <Input
+              value={homepage.reviewsSection?.subtitle || ""}
+              onChange={(e) =>
+                setHomepage({
+                  ...homepage,
+                  reviewsSection: { ...(homepage.reviewsSection || {}), subtitle: e.target.value },
+                })
+              }
+              placeholder="Section subtitle"
+            />
+            <Button
+              size="small"
+              onClick={() =>
+                setHomepage({
+                  ...homepage,
+                  customerReviews: [
+                    ...(homepage.customerReviews || []),
+                    {
+                      name: "",
+                      role: "Verified Buyer",
+                      item: "",
+                      rating: 5,
+                      comment: "",
+                      avatar: "",
+                    },
+                  ],
+                })
+              }
+            >
+              + Add Review
+            </Button>
+            {(homepage.customerReviews || []).map((review, idx) => (
+              <div key={idx} className="border rounded-lg p-4 bg-white dark:bg-gray-800 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold uppercase text-gray-500">Review {idx + 1}</span>
+                  <Button
+                    size="small"
+                    layout="outline"
+                    onClick={() => {
+                      const list = [...(homepage.customerReviews || [])];
+                      list.splice(idx, 1);
+                      setHomepage({ ...homepage, customerReviews: list });
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+                <Input
+                  value={review.name || ""}
+                  onChange={(e) => {
+                    const list = [...(homepage.customerReviews || [])];
+                    list[idx] = { ...list[idx], name: e.target.value };
+                    setHomepage({ ...homepage, customerReviews: list });
+                  }}
+                  placeholder="Customer name"
+                />
+                <Input
+                  value={review.role || ""}
+                  onChange={(e) => {
+                    const list = [...(homepage.customerReviews || [])];
+                    list[idx] = { ...list[idx], role: e.target.value };
+                    setHomepage({ ...homepage, customerReviews: list });
+                  }}
+                  placeholder="Role (e.g. Verified Buyer)"
+                />
+                <Input
+                  value={review.item || ""}
+                  onChange={(e) => {
+                    const list = [...(homepage.customerReviews || [])];
+                    list[idx] = { ...list[idx], item: e.target.value };
+                    setHomepage({ ...homepage, customerReviews: list });
+                  }}
+                  placeholder="Product / item purchased"
+                />
+                <Input
+                  type="number"
+                  min={1}
+                  max={5}
+                  value={review.rating ?? 5}
+                  onChange={(e) => {
+                    const list = [...(homepage.customerReviews || [])];
+                    list[idx] = { ...list[idx], rating: Number(e.target.value) };
+                    setHomepage({ ...homepage, customerReviews: list });
+                  }}
+                  placeholder="Rating (1-5)"
+                />
+                <textarea
+                  className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm bg-white dark:bg-gray-900"
+                  rows={3}
+                  value={review.comment || ""}
+                  onChange={(e) => {
+                    const list = [...(homepage.customerReviews || [])];
+                    list[idx] = { ...list[idx], comment: e.target.value };
+                    setHomepage({ ...homepage, customerReviews: list });
+                  }}
+                  placeholder="Review text"
+                />
+                <div>
+                  <label className="text-xs font-bold uppercase text-gray-500 mb-1 block">
+                    Avatar (optional)
+                  </label>
+                  <Uploader
+                    folder="rasa/reviews"
+                    imageUrl={review.avatar}
+                    setImageUrl={(url) => {
+                      const list = [...(homepage.customerReviews || [])];
+                      list[idx] = { ...list[idx], avatar: url };
+                      setHomepage({ ...homepage, customerReviews: list });
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+
+      case "footer":
+        return (
+          <div className="space-y-4 max-w-xl">
+            <p className="text-sm text-gray-500">
+              Short description under the RASA logo in the website footer. Shown on every page.
+            </p>
+            <label className="text-xs font-bold uppercase text-gray-500 block">Footer intro text</label>
+            <textarea
+              className="w-full border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm bg-white dark:bg-gray-900"
+              rows={4}
+              value={homepage.footerIntro || ""}
+              onChange={(e) => setHomepage({ ...homepage, footerIntro: e.target.value })}
+              placeholder="Your one-stop shop for affordable sneakers, bags, and the latest styles."
+            />
+          </div>
+        );
+
       case "order": {
-        const currentOrder = homepage.sectionOrder || ["Hero", "Brands", "New Arrival", "Trending", "Categories", "Instagram", "Newsletter"];
+        const currentOrder = (homepage.sectionOrder || ["Hero", "Brands", "New Arrival", "Trending", "Categories", "Reviews"])
+          .filter((s) => s !== "Instagram")
+          .map((s) => (s === "Newsletter" ? "Reviews" : s));
         const moveSection = (index, direction) => {
           const newOrder = [...currentOrder];
           const targetIndex = index + direction;
