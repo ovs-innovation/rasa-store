@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Autoplay, Pagination } from "swiper/modules";
 import { IoChevronBack, IoChevronForward } from "react-icons/io5";
