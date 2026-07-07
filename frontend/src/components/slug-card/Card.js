@@ -3,7 +3,6 @@ import {
   FiDollarSign,
   FiHome,
   FiMapPin,
-  FiRepeat,
   FiShieldOff,
   FiSun,
   FiTruck,
@@ -49,17 +48,6 @@ const Card = () => {
           )}
         </p>
       </li>
-      <li className="flex items-center py-3">
-        <span className="text-xl text-gray-400 items-start mr-4">
-          <FiRepeat />
-        </span>
-        <p className="font-sans leading-5 text-sm text-gray-500">
-          {showingTranslateValue(
-            storeCustomizationSetting?.slug?.card_description_four
-          )}
-        </p>
-      </li>
-
       <li className="flex items-center py-3">
         <span className="text-xl text-gray-400 items-start mr-4">
           <FiShieldOff />

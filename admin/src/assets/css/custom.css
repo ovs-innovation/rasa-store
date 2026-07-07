@@ -1556,3 +1556,331 @@ input[type="number"]::-webkit-outer-spin-button {
 .dark .dark\:border-pink-500 {
   border-color: var(--brand-500) !important;
 }
+
+/* ─────────────────────────────────────────
+   RASA DARK LUXURY THEME OVERRIDES
+   Matches the #050505 dark website aesthetic
+   ───────────────────────────────────────── */
+
+/* Force dark background on root elements */
+.dark body,
+.dark #root {
+  background-color: #050505 !important;
+  color: #e5e7eb !important;
+}
+
+/* Main content area background */
+.dark main,
+.dark [class*="bg-gray-100"],
+.dark .bg-gray-50 {
+  background-color: #080808 !important;
+}
+
+/* Sidebar */
+.dark aside,
+.dark [class*="sidebar"],
+.dark nav {
+  background-color: #0A0A0A !important;
+  border-color: rgba(255,255,255,0.06) !important;
+}
+
+/* Cards / panels */
+.dark .bg-white,
+.dark [class*="bg-gray-800"],
+.dark [class*="bg-gray-700"] {
+  background-color: #0f0f0f !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+
+/* Table header */
+.dark [class*="bg-gray-800\\/80"],
+.dark [class*="bg-gray-800"] thead,
+.dark thead {
+  background-color: #0a0a0a !important;
+}
+
+/* Table body rows */
+.dark tbody tr {
+  border-color: rgba(255,255,255,0.04) !important;
+}
+
+.dark tbody tr:hover {
+  background-color: rgba(212,175,55,0.04) !important;
+}
+
+/* Table footer */
+.dark tfoot,
+.dark [class*="tableFooter"],
+.dark [class*="TableFooter"] {
+  background-color: #0f0f0f !important;
+  border-color: rgba(255,255,255,0.06) !important;
+}
+
+/* All card backgrounds in dashboard */
+.dark .rounded-2xl,
+.dark .rounded-3xl {
+  border-color: rgba(255,255,255,0.06) !important;
+}
+
+/* Input fields in dark mode */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.1) !important;
+  color: #e5e7eb !important;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: rgba(212,175,55,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(212,175,55,0.08) !important;
+}
+
+/* Navbar top header area */
+.dark header {
+  background-color: #0A0A0A !important;
+  border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* Search bar in dashboard */
+.dark .bg-\[\#f8fafb\] {
+  background-color: rgba(255,255,255,0.04) !important;
+}
+
+/* Stat card items — gold-tinted hover */
+.dark .group:hover .group-hover\:text-teal-600,
+.dark .group:hover .group-hover\:text-teal-400 {
+  color: #D4AF37 !important;
+}
+
+/* Active sidebar link */
+.dark .bg-store-100,
+.dark [class*="bg-store-100"] {
+  background-color: rgba(212,175,55,0.1) !important;
+}
+
+/* Log Out button */
+.dark .bg-store-500,
+.dark [class*="bg-store-500"] {
+  background: linear-gradient(135deg, #D4AF37 0%, #B8962E 100%) !important;
+  color: #000 !important;
+  font-weight: 700 !important;
+}
+
+/* Pagination active */
+.dark .bg-store-600,
+.dark [class*="bg-store-600"] {
+  background-color: #D4AF37 !important;
+  color: #000 !important;
+}
+
+/* Dropdown menus */
+.dark [class*="dropdown"],
+.dark .absolute.bg-white {
+  background-color: #111111 !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Scrollbar */
+.dark ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.dark ::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(212,175,55,0.3);
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(212,175,55,0.5);
+}
+
+/* Modal dark */
+.dark .custom-modal {
+  background-color: #111111 !important;
+  border: 1px solid rgba(212,175,55,0.15) !important;
+}
+
+/* Badge overrides */
+.dark .bg-store-100 {
+  background-color: rgba(212,175,55,0.12) !important;
+}
+
+/* Chart card */
+.dark [class*="ChartCard"],
+.dark [class*="chart-card"] {
+  background-color: #0f0f0f !important;
+}
+
+/* Section card backgrounds in dashboard stats */
+.dark .from-orange-50,
+.dark .from-blue-50,
+.dark .from-teal-50,
+.dark .from-green-50,
+.dark .from-purple-50,
+.dark .from-emerald-50,
+.dark .from-red-50,
+.dark .from-yellow-50 {
+  --tw-gradient-from: #0f0f0f !important;
+}
+.dark .to-white {
+  --tw-gradient-to: #0A0A0A !important;
+}
+
+/* ─────────────────────────────────────────
+   REACT MULTI-SELECT DROPDOWN — DARK THEME
+   ───────────────────────────────────────── */
+
+/* Trigger / control area */
+.dark .rmsc .dropdown-container {
+  background-color: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 10px !important;
+  color: #e5e7eb !important;
+}
+
+.dark .rmsc .dropdown-container:focus-within {
+  border-color: rgba(212,175,55,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(212,175,55,0.08) !important;
+}
+
+/* Dropdown panel */
+.dark .rmsc .dropdown-content {
+  background-color: #111111 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6) !important;
+  z-index: 9999 !important;
+}
+
+/* Search input inside dropdown */
+.dark .rmsc .search input {
+  background-color: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 8px !important;
+  color: #e5e7eb !important;
+}
+
+.dark .rmsc .search input::placeholder {
+  color: rgba(255,255,255,0.3) !important;
+}
+
+/* Option items */
+.dark .rmsc .options li label {
+  color: #e5e7eb !important;
+}
+
+.dark .rmsc .options li:hover,
+.dark .rmsc .options .item-renderer:hover {
+  background-color: rgba(212,175,55,0.08) !important;
+}
+
+/* Checkbox */
+.dark .rmsc .item-renderer input[type="checkbox"] {
+  accent-color: #D4AF37 !important;
+}
+
+/* Select all row */
+.dark .rmsc .select-item {
+  color: #e5e7eb !important;
+}
+
+.dark .rmsc .select-item:hover {
+  background-color: rgba(212,175,55,0.08) !important;
+}
+
+/* Selected tags / chips */
+.dark .rmsc .dropdown-heading {
+  color: #e5e7eb !important;
+  background: transparent !important;
+}
+
+.dark .rmsc .dropdown-heading-value span {
+  color: #e5e7eb !important;
+}
+
+/* Arrow icon */
+.dark .rmsc .dropdown-heading svg {
+  fill: rgba(255,255,255,0.4) !important;
+}
+
+/* No options found */
+.dark .rmsc .no-options {
+  color: rgba(255,255,255,0.35) !important;
+  background: #111111 !important;
+}
+
+/* Clear button */
+.dark .rmsc .clear-selected-button {
+  color: rgba(255,255,255,0.4) !important;
+}
+.dark .rmsc .clear-selected-button:hover {
+  color: #ef4444 !important;
+}
+
+/* Invoice always uses light theme (matches customer-facing invoice) */
+.dark .invoice-container {
+  background-color: #fff5f6 !important;
+  color: #1f2937 !important;
+  border-color: #f5d6da !important;
+}
+
+.dark .invoice-container .bg-white,
+.dark .invoice-container [class*="bg-white"] {
+  background-color: #ffffff !important;
+}
+
+.dark .invoice-container .bg-gray-50,
+.dark .invoice-container [class*="bg-gray-50"] {
+  background-color: #f9fafb !important;
+}
+
+.dark .invoice-container thead,
+.dark .invoice-container thead tr {
+  background-color: #fdf0f2 !important;
+  color: #1f2937 !important;
+}
+
+.dark .invoice-container tbody tr {
+  background-color: #ffffff !important;
+  border-color: #f3f4f6 !important;
+}
+
+.dark .invoice-container tbody tr:hover {
+  background-color: #f9fafb !important;
+}
+
+.dark .invoice-container th,
+.dark .invoice-container td,
+.dark .invoice-container .text-gray-900 {
+  color: #111827 !important;
+}
+
+.dark .invoice-container .text-gray-800 {
+  color: #1f2937 !important;
+}
+
+.dark .invoice-container .text-gray-700 {
+  color: #374151 !important;
+}
+
+.dark .invoice-container .text-gray-650 {
+  color: #4b5563 !important;
+}
+
+.dark .invoice-container .text-gray-500,
+.dark .invoice-container .text-gray-400 {
+  color: #6b7280 !important;
+}
+
+.dark .invoice-container .text-[#d67b8c] {
+  color: #d67b8c !important;
+}
+
+.dark .invoice-container .border-[#f5d6da] {
+  border-color: #f5d6da !important;
+}

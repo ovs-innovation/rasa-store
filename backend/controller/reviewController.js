@@ -133,6 +133,175 @@ const hasVerifiedPurchase = async (userId, productId) => {
   };
 };
 
+const assertAdminUser = async (userId) => {
+  if (!userId) return false;
+  const admin = await Admin.findById(userId);
+  return Boolean(
+    admin && (admin.role === "Admin" || admin.role === "Super Admin")
+  );
+};
+
+// POST /api/reviews/admin — admin creates a review
+const adminCreateReview = async (req, res) => {
+  try {
+    const {
+      productId,
+      rating,
+      reviewText,
+      displayName,
+      userId,
+      verified,
+      reply,
+    } = req.body;
+
+    const isAdmin = await assertAdminUser(req.user?._id);
+    if (!isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ message: "Valid productId is required" });
+    }
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: "Rating must be between 1 and 5" });
+    }
+    if (!reviewText || !String(reviewText).trim()) {
+      return res.status(400).json({ message: "Review text is required" });
+    }
+    if (!displayName?.trim() && !userId) {
+      return res
+        .status(400)
+        .json({ message: "Customer name or linked customer is required" });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (userId) {
+      const existing = await Review.findOne({ product: productId, user: userId });
+      if (existing) {
+        return res
+          .status(400)
+          .json({ message: "This customer already has a review for this product" });
+      }
+    }
+
+    const review = await Review.create({
+      product: productId,
+      user: userId && mongoose.Types.ObjectId.isValid(userId) ? userId : undefined,
+      displayName: displayName?.trim() || "",
+      rating: Number(rating),
+      reviewText: String(reviewText).trim(),
+      verified: verified === true || verified === "true",
+      reply: reply?.trim() || "",
+      images: [],
+    });
+
+    await recomputeProductRating(productId);
+
+    const populatedReview = await Review.findById(review._id)
+      .populate({ path: "user", select: "name email image phone" })
+      .populate({ path: "product", select: "title slug image" })
+      .lean();
+
+    res.status(201).json({
+      message: "Review added successfully",
+      review: populatedReview,
+    });
+  } catch (err) {
+    console.error("adminCreateReview error:", err);
+    res.status(500).json({ message: err.message || "Failed to create review" });
+  }
+};
+
+// PUT /api/reviews/admin/:reviewId — admin updates a review
+const adminUpdateReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    const {
+      rating,
+      reviewText,
+      displayName,
+      verified,
+      reply,
+      productId,
+    } = req.body;
+
+    const isAdmin = await assertAdminUser(req.user?._id);
+    if (!isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
+    if (!reviewId || !mongoose.Types.ObjectId.isValid(reviewId)) {
+      return res.status(400).json({ message: "Valid reviewId is required" });
+    }
+
+    const review = await Review.findById(reviewId);
+    if (!review) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+
+    if (rating !== undefined) {
+      const ratingNumber = Number(rating);
+      if (ratingNumber < 1 || ratingNumber > 5) {
+        return res.status(400).json({ message: "Rating must be between 1 and 5" });
+      }
+      review.rating = ratingNumber;
+    }
+
+    if (reviewText !== undefined) {
+      if (!String(reviewText).trim()) {
+        return res.status(400).json({ message: "Review text cannot be empty" });
+      }
+      review.reviewText = String(reviewText).trim();
+    }
+
+    if (displayName !== undefined) {
+      review.displayName = String(displayName).trim();
+    }
+
+    if (verified !== undefined) {
+      review.verified = verified === true || verified === "true";
+    }
+
+    if (reply !== undefined) {
+      review.reply = String(reply).trim();
+    }
+
+    if (
+      productId &&
+      mongoose.Types.ObjectId.isValid(productId) &&
+      productId !== String(review.product)
+    ) {
+      const product = await Product.findById(productId);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      review.product = productId;
+    }
+
+    await review.save();
+
+    const productIdToUpdate = review.product;
+    await recomputeProductRating(productIdToUpdate);
+
+    const populatedReview = await Review.findById(review._id)
+      .populate({ path: "user", select: "name email image phone" })
+      .populate({ path: "product", select: "title slug image" })
+      .lean();
+
+    res.json({
+      message: "Review updated successfully",
+      review: populatedReview,
+    });
+  } catch (err) {
+    console.error("adminUpdateReview error:", err);
+    res.status(500).json({ message: err.message || "Failed to update review" });
+  }
+};
+
 // POST /api/reviews
 const createOrUpdateReview = async (req, res) => {
   try {
@@ -470,6 +639,8 @@ module.exports = {
   markReviewHelpful,
   deleteReview,
   getAllReviews,
+  adminCreateReview,
+  adminUpdateReview,
 };
 
 

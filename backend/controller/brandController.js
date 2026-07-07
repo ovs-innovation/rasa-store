@@ -47,6 +47,7 @@ const addBrand = async (req, res) => {
       websiteUrl = "",
       sortOrder = 0,
       isFeatured = false,
+      showOnHomepage = true,
       status = "show",
     } = req.body;
 
@@ -69,6 +70,7 @@ const addBrand = async (req, res) => {
         ? 0
         : Number(sortOrder),
       isFeatured,
+      showOnHomepage: showOnHomepage !== false,
       status,
     });
 
@@ -96,7 +98,15 @@ const getAllBrands = async (req, res) => {
 
 const getShowingBrands = async (req, res) => {
   try {
-    const brands = await Brand.find({ status: "show" }).sort({
+    const forHomepage = req.query.homepage === "true" || req.query.homepage === "1";
+    const query = { status: "show" };
+    if (forHomepage) {
+      query.showOnHomepage = { $ne: false };
+    }
+
+    const brands = await Brand.find(query).sort({
+      isFeatured: -1,
+      sortOrder: 1,
       createdAt: -1,
     });
     res.send(brands);
@@ -129,6 +139,7 @@ const updateBrand = async (req, res) => {
       sortOrder,
       isFeatured,
       status,
+      showOnHomepage,
     } = req.body;
 
     const brand = await Brand.findById(req.params.id);
@@ -152,6 +163,8 @@ const updateBrand = async (req, res) => {
     }
     brand.isFeatured =
       typeof isFeatured === "boolean" ? isFeatured : brand.isFeatured;
+    brand.showOnHomepage =
+      typeof showOnHomepage === "boolean" ? showOnHomepage : brand.showOnHomepage;
     brand.status = status || brand.status;
 
     await brand.save();

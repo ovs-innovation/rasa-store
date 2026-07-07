@@ -2,19 +2,15 @@ import dayjs from "dayjs";
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-//internal import
-import OrderTable from "@components/order/OrderTable";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import useGetSetting from "@hooks/useGetSetting";
 import { pickBrandLogo } from "@utils/brandAssets";
 
 const Invoice = ({ data, printRef, globalSetting, currency }) => {
-  // console.log('invoice data',data)
-
-  const { getNumberTwo } = useUtilsFunction();
+  const { getNumberTwo, showingTranslateValue } = useUtilsFunction();
   const { storeCustomizationSetting } = useGetSetting();
-  const storeColor = storeCustomizationSetting?.theme?.color || "green";
-  // Aggregate values for summary box - match checkout page exactly
+
+  // Aggregate values for summary box
   const mrpTotal =
     data?.cart?.reduce((sum, item) => {
       const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
@@ -22,27 +18,12 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
       return sum + mrp * qty;
     }, 0) || 0;
 
-  // Calculate total discount from cart items - match checkout page
   const totalDiscount = data?.cart?.reduce((sum, item) => {
     const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
     const salePrice = item.price ?? 0;
     const qty = item.quantity || 1;
     return sum + ((mrp - salePrice) * qty);
   }, 0) || 0;
-
-  // Calculate total GST - use taxSummary from order data (same as checkout), fallback to calculating from cart
-  const totalGst = data?.taxSummary?.exclusiveTax > 0 
-    ? data.taxSummary.exclusiveTax 
-    : data?.cart?.reduce((sum, item) => {
-        const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
-        const salePrice = item.price ?? 0;
-        const qty = item.quantity || 1;
-        const discount = mrp - salePrice;
-        const sellingPrice = mrp - discount;
-        const gstRate = parseFloat(item.taxRate || item.gstRate || item.gstPercentage || 12);
-        const gstAmount = (sellingPrice * qty * gstRate) / 100;
-        return sum + gstAmount;
-      }, 0) || 0;
 
   const shippingCharge = data?.shippingCost || 0;
   const payableAmount = data?.total || 0;
@@ -51,7 +32,6 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
     if (!invoice) return "-";
     const invStr = String(invoice).trim();
 
-    // If already formatted like FK/2026/0892, return as-is
     if (invStr.startsWith("FK/")) return invStr;
 
     const year = createdAt
@@ -61,372 +41,299 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
     return `FK/${year}/${invStr}`;
   };
 
-
   return (
-    <div ref={printRef} className=" ">
-      <div className="  px-4 pb-1 pt-4 rounded-t-xl">
-        <div className=" flex gap-x-5  pb-4 border-b border-gray-50 items-start">
-          {/* Logo + Invoice on same line */}
-          <div className="hidden">
-            <h2 className="text-lg font-serif font-semibold">
-              <Link href="/">
-                <Image
-                  width={120}
-                  height={40}
-                  src={pickBrandLogo(
-                    storeCustomizationSetting?.navbar?.logo,
-                    storeCustomizationSetting?.footer?.block4_logo
-                  )}
-                  alt="logo"
-                />
-              </Link>
-            </h2>
-              
-              {/* Bill From - from common settings */}
-              <div className="flex-1 min-w-[0] items-start">
-                
-                <p className="text-semibold md:text-base font-semibold text-gray-900">
-                  {globalSetting?.company_name || "AQOSU Rasa Store PRIVATE LIMITED"}
-                </p>
-                <p className=" text-sm text-gray-600 leading-snug">
-                  {globalSetting?.address ||
-                    "GF D-90, KH NO-1100, RAJNAGAR COLONY, BEHTA HAJIPUR, LONI BORDER, LONI, GHAZIABAD, UTTAR PRADESH, Landmark: NEAR MUNISH PUBLIC, Pin: 201102"}
-                </p>
-                {/* Email */}
-               <div  className="flex gap-x-3">
-                  <div className="flex gap-x-2 text-sm text-gray-600 leading-snug mt-0.5">
-                    <div className="font-semibold">Email:</div>
-                    <div>{globalSetting?.email || "Rasa Store@gmail.com"}</div>
-                  </div>
+    <div 
+      ref={printRef} 
+      className="max-w-4xl mx-auto bg-[#FFF5F6] text-gray-800 p-6 md:p-10 rounded-[2rem] shadow-xl border border-[#f5d6da] font-sans relative overflow-hidden invoice-container"
+    >
+      <style jsx>{`
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Playfair+Display:ital,wght@1,600&display=swap');
+        
+        .cursive-title {
+          font-family: 'Dancing Script', 'Playfair Display', cursive, serif;
+        }
+        
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 0 !important;
+          }
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+          }
+          .invoice-container {
+            background-color: #FFF5F6 !important;
+            color: #1f2937 !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            padding: 10mm 15mm !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            height: 100vh !important;
+            max-height: 297mm !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            page-break-inside: avoid !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .bg-white {
+            background-color: #ffffff !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .bg-gray-50 {
+            background-color: #f9fafb !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .text-gray-900 {
+            color: #111827 !important;
+          }
+          .text-neutral-500 {
+            color: #737373 !important;
+          }
+        }
+      `}</style>
 
-                  <div className="flex gap-x-2 text-sm text-gray-600 leading-snug mt-0.5">
-                    <div className="font-semibold">Phone No:</div>
-                    <div>{globalSetting?.contact || "07112255930"}</div>
-                  </div>
-               </div>
-               
-                <div className="flex gap-x-2">
-                  {/* GST */}
-                  <div className="flex gap-x-2 text-sm text-gray-600 leading-snug mt-0.5">
-                    <div className="font-semibold">GST NO.:</div>
-                    <div>{globalSetting?.gstin || "09AAZCA5886C1ZV"}</div>
-                  </div>
-                  {/* CIN */}
-                  {globalSetting?.cin && (
-                    <div className="flex gap-x-2 text-sm text-gray-600 leading-snug mt-0.5">
-                      <div className="font-semibold">CIN:</div>
-                      <div>{globalSetting.cin}</div>
-                    </div>
-                  )}
-                </div>
-                {/* DL */}
-                <div className="flex gap-x-2 text-sm text-gray-600 leading-snug mt-0.5">
-                  <div className="font-semibold">DL No:</div>
-                  <div>{globalSetting?.dl_number || "UP14200002337, UP14210002215"}</div>
-                </div>
-                
-              </div>
-
-             
+      {/* Top Banner Header */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center pb-6 mb-8 relative border-b border-[#f5d6da]">
+        {/* Left Side: Brand Logo Badge - Plain */}
+        <div className="p-4 max-w-[280px]">
+          <div className="mb-2">
+            <Image
+              width={140}
+              height={45}
+              src={pickBrandLogo(
+                storeCustomizationSetting?.navbar?.logo,
+                storeCustomizationSetting?.footer?.block4_logo
+              )}
+              alt="logo"
+              className="object-contain"
+            />
           </div>
-          <div className="flex flex-col gap-y-8 hidden lg:block">
-            <div className="flex flex gap-1 text-lg gap-x-10 text-store-700">
+          <p className="text-[9px] tracking-[0.25em] font-bold text-[#d67b8c] uppercase">
+            SNEAKERS • BAGS • ACCESSORIES
+          </p>
+        </div>
+
+        {/* Right Side: Thank You & Cute Illustration */}
+        <div className="flex justify-between items-center md:text-right pl-4">
+          <div className="flex-grow">
+            <h1 className="cursive-title text-4xl text-[#d67b8c] leading-none mb-1">
+              Thank You <span className="text-red-400">♥</span>
+            </h1>
+            <p className="text-xs uppercase font-extrabold tracking-wider text-gray-900">
+              FOR SHOPPING WITH US!
+            </p>
+            <p className="text-[10px] text-gray-500 italic mt-0.5">
+              Your style, our passion.
+            </p>
+          </div>
           
-            <div className=" pl-3">
-              <span className="font-semibold">Invoice No :</span>{" "}
-              <span>{formatInvoiceNumber(data?.invoice, data?.createdAt)}</span>
-            </div>
-            <div className="border-l border-store-600 pl-3">
-              <span className="font-semibold">Order ID :</span>{" "}
-              <span>{data?._id || data?.orderId || "-"}</span>
-            </div>
-            <div className="border-l border-store-600 pl-3">
-              <span className="font-semibold text-store-800">Date:</span>{" "}
-              {data?.createdAt
-                ? dayjs(data.createdAt).format("DD MMM YYYY")
-                : "-"}
-            </div>
+          <div className="w-28 h-20 md:w-32 md:h-24 relative overflow-hidden shrink-0">
+            <Image
+              src="/invoice_illustration.png"
+              alt="invoice header"
+              layout="fill"
+              objectFit="contain"
+              className="object-right"
+            />
           </div>
-           <div className=" border-l-2 mt-5 border-store-600 bg-white px-5 flex flex-row flex-wrap items-center justify-between gap-2">
-         
-          {/* Bill To - user address details (styled) */}
-          <div className="flex-1 min-w-[0]">
-            <span className="font-bold font-serif text-xs md:text-sm uppercase text-store-700 block mt-1">
-              Bill To:
+        </div>
+      </div>
+
+      {/* Details Row: Invoice (Left) vs Bill To (Right) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 pb-4">
+        {/* Invoice Info */}
+        <div className="space-y-4">
+          <div className="inline-flex items-center gap-2 bg-[#FDF0F2] text-[#d67b8c] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border border-[#f5d6da]">
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z" /><path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" /></svg>
+            INVOICE
+          </div>
+          
+          <div className="grid grid-cols-3 gap-y-2 text-xs sm:text-sm">
+            <span className="text-gray-500 font-medium">Invoice No.</span>
+            <span className="col-span-2 font-bold text-[#d67b8c]">: {formatInvoiceNumber(data?.invoice, data?.createdAt)}</span>
+            
+            <span className="text-gray-500 font-medium">Order ID</span>
+            <span className="col-span-2 font-bold text-gray-900">: {data?._id ? data._id.slice(-8).toUpperCase() : "-"}</span>
+            
+            <span className="text-gray-500 font-medium">Date</span>
+            <span className="col-span-2 font-bold text-gray-900">: {data?.createdAt ? dayjs(data.createdAt).format("DD MMMM YYYY") : "-"}</span>
+            
+            <span className="text-gray-500 font-medium">Payment Method</span>
+            <span className="col-span-2 font-bold text-gray-900">: {data?.paymentMethod || "RazorPay"}</span>
+          </div>
+        </div>
+
+        {/* Bill To Info */}
+        <div className="space-y-4 md:border-l border-[#f5d6da] md:pl-8">
+          <div className="inline-flex items-center gap-2 bg-[#FDF0F2] text-[#d67b8c] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border border-[#f5d6da]">
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
+            BILL TO
+          </div>
+          
+          <div className="grid grid-cols-3 gap-y-2 text-xs sm:text-sm">
+            <span className="text-gray-500 font-medium">Name</span>
+            <span className="col-span-2 font-bold text-gray-900">: {data?.user_info?.name || "-"}</span>
+            
+            <span className="text-gray-500 font-medium">Phone</span>
+            <span className="col-span-2 font-bold text-gray-900">: {data?.user_info?.contact || "-"}</span>
+            
+            <span className="text-gray-500 font-medium">Address</span>
+            <span className="col-span-2 font-bold text-gray-750 leading-relaxed">
+              : {data?.user_info?.address}, {data?.user_info?.city}, {data?.user_info?.country} - {data?.user_info?.zipCode}
             </span>
-            <div className="mt-1 text-[11px] md:text-base text-gray-700 leading-relaxed space-y-0.5">
-              <p>
-                <span className="font-semibold text-gray-800">
-                  Order Placed By:
-                </span>{" "}
-                <span>{data?.user_info?.name || "-"}</span>
-              </p>
-
-              <p className="">
-                <span className="font-semibold text-gray-800">Email:</span>{" "}
-                <span>{data?.user_info?.email || "-"}</span> 
-                {data?.user_info?.contact && (
-                  <span className="ml-3">
-                    <span className="font-semibold text-gray-800">Phone:</span>{" "}
-                    {data.user_info.contact}
-                  </span>
-                )}
-              </p>
-
-              {(data?.user_info?.address || data?.user_info?.city || data?.user_info?.country || data?.user_info?.zipCode) && (
-                <p>
-                  <span className="font-semibold text-gray-800">
-                    Address:
-                  </span>{" "}
-                  <span>
-                    {data?.user_info?.address}
-                    {data?.user_info?.address && (data?.user_info?.city || data?.user_info?.country || data?.user_info?.zipCode) ? ", " : ""}
-                    {data?.user_info?.city}
-                    {data?.user_info?.city && (data?.user_info?.country || data?.user_info?.zipCode) ? ", " : ""}
-                    {data?.user_info?.country}
-                    {data?.user_info?.country && data?.user_info?.zipCode ? ", " : ""}
-                    {data?.user_info?.zipCode}
-                  </span>
-                </p>
-              )}
-            </div>
           </div>
-
-
-          </div>
-          </div>
-           
         </div>
-        {/* Address below logo/invoice */}
-       
-        {/* Top strip: Bill To / Invoice / Date / Time */}
-        {/* <div className="border-t-4 border-store-800 flex flex-col sm:flex-row justify-between text-xs sm:text-sm text-store-700">
-          <div className="mb-1 sm:mb-0">
-            <div className="font-semibold uppercase">Bill To:</div>
-            <div className="mt-0.5">
-              <span className="font-semibold">Invoice :</span>{" "}
-              <span>{formatInvoiceNumber(data?.invoice, data?.createdAt)}</span>
-            </div>
-          </div>
-          <div className="text-left sm:text-right space-y-0.5">
-            <div>
-              <span className="font-semibold">Date:</span>{" "}
-              {data?.createdAt
-                ? dayjs(data.createdAt).format("DD MMM YYYY")
-                : "-"}
-              {data?.invoice && (
-                <>
-                  {" "}
-                  |{" "}
-                  <span>{formatInvoiceNumber(data.invoice, data?.createdAt)}</span>
-                </>
-              )}
-            </div>
-            <div>
-              <span className="font-semibold">Time:</span>{" "}
-              {data?.createdAt
-                ? dayjs(data.createdAt).format("hh:mm A")
-                : "-"}
-            </div>
-          </div>
-        </div> */}
-
-        {/* Bill From (left) + Bill To (middle) + QR (right) pill card */}
-       
       </div>
-      <div className="s border-t-4 mx-4  border-store-800">
-        {/* Desktop / Tablet view: product table with highlighted header like example */}
-        <div className="hidden md:block print:block overflow-hidden lg:overflow-visible">
-          <div className="-my-2 overflow-x-auto print:overflow-visible">
-            <table className="table-auto min-w-full border border-gray-200 print:table-fixed">
-              <thead>
-                {/* Top green bar: Product Details + tax note */}
-                
-                {/* Column headers */}
-                  <tr className="text-xs bg-store-700 text-white">
-                  <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-left w-12">
-                    Sr.
-                  </th>
-                  <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-left w-64">
-                  Product Name
-                </th>
-                {/* <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-left w-40">
-                  Manufacturer Name
-                </th> */}
-                <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-20">
-                  HSN
-                </th>
-                  <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-16">
-                    Qty
-                  </th>
-                  <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-24">
-                    MRP
-                  </th>
-                  <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-24">
-                    Discount
-                  </th>
-                  <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-20">
-                  GST %
-                </th>
-                <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-center w-24">
-                  GST Amt
-                </th>
-                <th className="font-serif font-semibold px-4 py-2 uppercase tracking-wider text-right">
-                  Pay. AMT
-                </th>
-                </tr>
-              </thead>
-              <OrderTable data={data} currency={currency} />
-            </table>
-          </div>
-        </div>
 
-        {/* Mobile view: responsive two-column cards */}
-        <div className="block md:hidden print:hidden my-8">
-          <div className="grid grid-cols-1 xs:grid-cols-2 gap-4">
+      {/* Shipping Address Box - Plain */}
+      <div className="border border-[#f5d6da] bg-white/70 rounded-2xl p-5 mb-8 text-xs sm:text-sm">
+        <h3 className="font-bold text-[#d67b8c] uppercase tracking-wider mb-2 text-xs flex items-center gap-1.5">
+          <span>🎁 Deliver To:</span>
+        </h3>
+        <p className="font-semibold text-gray-900">{data?.user_info?.name || "-"}</p>
+        {data?.user_info?.contact && <p className="text-gray-650 mt-0.5">📞 {data.user_info.contact}</p>}
+        {(data?.user_info?.address || data?.user_info?.city) && (
+          <p className="text-gray-650 mt-1 leading-relaxed">
+            📍 {data?.user_info?.address}, {data?.user_info?.city}, {data?.user_info?.country} - {data?.user_info?.zipCode}
+          </p>
+        )}
+      </div>
+
+      {/* Product Items Table */}
+      <div className="mb-8 rounded-2xl overflow-hidden border border-[#f5d6da] bg-white">
+        <table className="w-full text-xs sm:text-sm text-left border-collapse">
+          <thead>
+            <tr className="bg-[#FDF0F2] text-gray-800 text-xs uppercase tracking-wider font-bold border-b border-[#f5d6da]">
+              <th className="py-3.5 px-4 w-12 text-center">Sr.</th>
+              <th className="py-3.5 px-4">Product</th>
+              <th className="py-3.5 px-4 text-center w-28">Size / Color</th>
+              <th className="py-3.5 px-4 text-center w-16">Qty</th>
+              <th className="py-3.5 px-4 text-right w-24">Price</th>
+              <th className="py-3.5 px-4 text-right w-24">Total</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
             {data?.cart?.map((item, index) => (
-              <div
-                key={index}
-                className="bg-white border border-gray-100 rounded-lg p-3 shadow-sm"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-gray-500">
-                    {index + 1}
-                  </span>
-                  <span className="text-xs font-semibold text-gray-500">
-                    Qty: {item.quantity}
-                  </span>
-                </div>
-                <p className="text-sm font-semibold text-gray-800 line-clamp-2 mb-1">
-                  {item.title}
-                </p>
-                <div className="flex items-center justify-between text-xs mt-1">
-                  <span className="text-gray-600">
-                    Item: {currency}
-                    {getNumberTwo(item.price)}
-                  </span>
-                  <span className="font-semibold text-gray-600">
-                    Total: {currency}
-                    {getNumberTwo(item.itemTotal)}
-                  </span>
-                </div>
-              </div>
+              <tr key={index} className="hover:bg-gray-50/50">
+                <td className="py-4 px-4 text-center font-medium text-gray-400">{index + 1}</td>
+                <td className="py-4 px-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 relative rounded-lg border border-gray-100 overflow-hidden shrink-0 bg-gray-50">
+                      <Image
+                        src={item.image || "/placeholder.png"}
+                        alt={item.title}
+                        layout="fill"
+                        objectFit="cover"
+                      />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 leading-snug">{item.title}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{item.categoryName || "Premium Item"}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-4 px-4 text-center font-semibold text-gray-700">
+                  {item.variantName || "-"}
+                </td>
+                <td className="py-4 px-4 text-center font-bold text-gray-900">{item.quantity}</td>
+                <td className="py-4 px-4 text-right font-medium text-gray-650">
+                  {currency}{getNumberTwo(item.price)}
+                </td>
+                <td className="py-4 px-4 text-right font-bold text-gray-900">
+                  {currency}{getNumberTwo(item.itemTotal || (item.price * item.quantity))}
+                </td>
+              </tr>
             ))}
-          </div>
-        </div>
+          </tbody>
+        </table>
       </div>
 
-      {/* Approved badge (left) + amount summary (right) under table */}
-      <div className="px-4 pb-6 pt-4 flex flex-row items-start lg:justify-between gap-4">
-        {/* Left: Approved by a Registered Pharmacist tag */}
-        <div className="flex flex-col items-start w-full">
-        <div className="  border border-gray-200 rounded-md px-3 py-2 text-xs md:text-sm text-gray-800 hidden md:block">
-            {/* <div className=" flex items-center justify-between gap-x-10 `">
-              <span className="font-semibold text-gray-600 border-r-2 border-gray-700 pr-5">Payment Method</span>
-              <span className="font-semibold text-gray-800">
-                {data?.paymentMethod || "-"} 
-              </span>
-            </div> */}
-             <div className="">
-              <div className="text-sm text-gray-700">
-                {/* <h3 className="text-xs md:text-sm font-semibold text-store-700 tracking-wide uppercase mb-2 border-b-2 border-store-700 inline-block">
-                  TERMS AND CONDITIONS
-                </h3>
-
-                <div className="mt-3">
-                  
-                  <p className="leading-relaxed">
-                    This invoice is issued by RASA Store. Products once sold will not be
-                    taken back or exchanged unless required by law. Please verify the
-                    product name, size, and quantity before accepting delivery.
-                  </p>
-                </div> */}
-
-                
-              </div>
-            </div>
-            <div className="hidden">
-            <div className="w-full md:w-64 flex flex-col items-start md:items-start text-xs md:text-sm space-y-0.5">
-              <div className="w-24 md:ml-auto" />
-              <p className="font-semibold text-gray-700 leading-snug">
-                {globalSetting?.authorized_signatory || "RASA Store"}
-              </p>
-              <p className="text-[11px] text-gray-500 leading-snug">
-                {globalSetting?.company_name || "Rasa Store"}
-              </p>
-              {globalSetting?.website && (
-                <p className="text-[11px] text-store-600 leading-snug">
-                  {globalSetting.website}
-                </p>
-              )}
-            </div>
+      {/* Under Table: Custom Message vs Totals */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mb-8">
+        {/* Left Side Message Card */}
+        <div className="bg-[#FDF0F2]/55 border border-dashed border-[#d67b8c]/35 rounded-2xl p-5 flex items-start gap-3">
+          <div className="bg-white p-2 rounded-xl shadow-sm shrink-0 border border-[#f5d6da]">
+            <svg className="w-5 h-5 text-[#d67b8c]" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 5a3 3 0 015-2.236A3 3 0 0114.83 6H16a2 2 0 110 4h-5V9a1 1 0 10-2 0v1H4a2 2 0 110-4h1.17C5.06 5.687 5 5.35 5 5zm4 1V5a1 1 0 10-1 1h1zm3 0a1 1 0 10-1-1v1h1z" clipRule="evenodd" /><path d="M9 11H3v5a2 2 0 002 2h4v-7zM11 18h4a2 2 0 002-2v-5h-6v7z" /></svg>
           </div>
+          <div>
+            <p className="text-xs text-gray-800 leading-relaxed font-bold">
+              {showingTranslateValue(storeCustomizationSetting?.dashboard?.invoice_greeting_message) || "We pack every order with love and care. ♥"}
+            </p>
           </div>
+        </div>
+
+        {/* Right Side Price Details */}
+        <div className="space-y-3 text-xs sm:text-sm text-gray-600 ml-auto w-full max-w-sm">
+          <div className="flex justify-between px-2">
+            <span>SUBTOTAL</span>
+            <span className="font-bold text-gray-900">{currency}{getNumberTwo(mrpTotal)}</span>
+          </div>
+          {shippingCharge > 0 ? (
+            <div className="flex justify-between px-2">
+              <span>SHIPPING</span>
+              <span className="font-bold text-gray-900">{currency}{getNumberTwo(shippingCharge)}</span>
+            </div>
+          ) : (
+            <div className="flex justify-between px-2 text-[#d67b8c] font-semibold">
+              <span>SHIPPING</span>
+              <span>FREE</span>
+            </div>
+          )}
+          {totalDiscount > 0 && (
+            <div className="flex justify-between px-2 text-red-500 font-semibold">
+              <span>DISCOUNT</span>
+              <span>-{currency}{getNumberTwo(totalDiscount)}</span>
+            </div>
+          )}
           
-        </div>
-
-        {/* Right: amount breakdown summary */}
-                <div className="invoice-amount-summary md:w-[580px] lg:w-[720px] w-full ">
-          <div className="bg-white border border-gray-200 rounded-md text-xs md:text-sm text-gray-800 divide-y divide-gray-100">
-            <div className="flex items-center justify-between px-3 py-1.5">
-              <span>MRP Total</span>
-              <span className="font-DejaVu">
-                {currency}
-                {getNumberTwo(mrpTotal)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between px-3 py-1.5">
-              <span>Total Discount</span>
-              <span className="font-DejaVu text-green-600">
-                -{currency}
-                {getNumberTwo(totalDiscount)}
-              </span>
-            </div>
-            {data?.coupon?.couponCode && (
-              <div className="flex items-center justify-between px-3 py-1.5 bg-green-50">
-                <span className="text-green-700">
-                  Coupon Applied: <span className="font-semibold">{data.coupon.couponCode}</span>
-                </span>
-                <span className="font-DejaVu text-green-600 font-semibold">
-                  -{currency}{getNumberTwo(data?.coupon?.discountAmount || data?.discount || 0)}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center justify-between px-3 py-1.5">
-              <span>GST {data?.taxSummary?.gstRate ? `(${data.taxSummary.gstRate}%)` : ""}</span>
-              <span className="font-DejaVu">
-                {currency}
-                {getNumberTwo(totalGst)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between px-3 py-1.5">
-              <span>Shipping Cost</span>
-              <span className="font-DejaVu text-green-600">
-                {shippingCharge > 0 ? `${currency}${getNumberTwo(shippingCharge)}` : "FREE"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between px-3 py-2 bg-gray-100 font-semibold">
-              <span>Estimated Payable</span>
-              <span className="font-DejaVu">
-                {currency}
-                {getNumberTwo(payableAmount)}
-              </span>
-            </div>
+          <div className="border-t border-[#f5d6da] pt-3 flex justify-between items-center text-sm font-bold text-gray-900 px-2">
+            <span className="uppercase tracking-wider">GRAND TOTAL</span>
+            <span className="text-[#d67b8c] font-black text-base">{currency}{getNumberTwo(payableAmount)}</span>
           </div>
-
-          {/* Payment method under total section (right) */}
-         
         </div>
       </div>
 
-      {/* Terms & Conditions section at bottom */}
-     
+      {/* Footer Content */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center text-center md:text-left text-xs text-gray-600">
+        {/* Left column - Plain */}
+        <div className="space-y-1 border-l-2 border-[#d67b8c] pl-4 max-w-[260px] mx-auto md:mx-0">
+          <p className="font-bold text-[#d67b8c]">Need Help? 💬</p>
+          <p className="font-semibold text-gray-800">WhatsApp: +91 9731308713</p>
+          <p className="text-[10px] text-gray-500">workwithrasa@gmail.com</p>
+        </div>
 
-      {/* Bottom-right signature / pharmacist info */}
-     
+        {/* Center column circular stamp */}
+        <div className="flex justify-center">
+          <div className="w-20 h-20 rounded-full border border-dashed border-[#d67b8c] flex flex-col items-center justify-center p-2 text-[9px] uppercase tracking-wider font-extrabold text-center text-gray-500">
+            <span>Rasa Store</span>
+            <div className="w-4 h-4 my-0.5 relative">
+              <Image
+                src="/favicon.png"
+                alt="stamp"
+                layout="fill"
+                objectFit="contain"
+              />
+            </div>
+            <span>Thank You</span>
+          </div>
+        </div>
+
+        {/* Right column */}
+        <div className="md:text-right space-y-1 font-medium">
+          <p className="text-gray-900 font-extrabold">Stay Connected With Us</p>
+          <p className="text-[#d67b8c] font-bold text-xs">Instagram: @kicksbyrasaa</p>
+          <p className="text-gray-500 tracking-wider">www.therasastore.in</p>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default Invoice;
-

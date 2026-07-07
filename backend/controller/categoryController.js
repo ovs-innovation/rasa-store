@@ -219,6 +219,7 @@ const readyToParentAndChildrenCategory = (categories, parentId = null) => {
     categoryList.push({
       _id: item._id,
       name: item.name,
+      slug: item.slug,
       parentId: item.parentId,
       parentName: item.parentName,
       description: item.description,
@@ -233,6 +234,51 @@ const readyToParentAndChildrenCategory = (categories, parentId = null) => {
   return categoryList;
 };
 
+// Sync Shoes & Bags from shop category banners into product categories
+const syncShopCategories = async (req, res) => {
+  try {
+    const banners = Array.isArray(req.body?.categories) ? req.body.categories : [];
+    const synced = [];
+
+    for (const banner of banners) {
+      const slug = String(banner?.slug || banner?.type || "").trim().toLowerCase();
+      const title = String(banner?.title || "").trim();
+      if (!slug || !title) continue;
+
+      let category =
+        (await Category.findOne({ slug })) ||
+        (await Category.findOne({ "name.en": new RegExp(`^${title}$`, "i") }));
+
+      if (category) {
+        category.name = { ...category.name, en: title, default: title };
+        category.slug = slug;
+        category.banner = banner?.image || category.banner || "";
+        category.status = "show";
+        category.parentId = null;
+        category.parentName = null;
+        await category.save();
+      } else {
+        category = await Category.create({
+          name: { en: title, default: title },
+          slug,
+          banner: banner?.image || "",
+          status: "show",
+          featured: true,
+          priority: "High",
+        });
+      }
+
+      synced.push(category);
+    }
+
+    res.status(200).send({
+      message: "Shop categories synced for products",
+      categories: synced,
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
 
 module.exports = {
   addCategory,
@@ -247,4 +293,5 @@ module.exports = {
   deleteManyCategory,
   getAllCategories,
   updateManyCategory,
+  syncShopCategories,
 };

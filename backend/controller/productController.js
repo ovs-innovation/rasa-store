@@ -25,6 +25,79 @@ const normalizeProductStatus = (status) => {
   return map[status] || status || "show";
 };
 
+const normalizeImageList = (val) => {
+  if (!val) return [];
+  const source = Array.isArray(val)
+    ? val
+    : typeof val === "string" && val.trim()
+    ? [val]
+    : [];
+  return source
+    .flat(Infinity)
+    .filter((item) => typeof item === "string" && item.trim())
+    .map((item) => item.trim());
+};
+
+const pickFirstImageUrl = (val) => {
+  const list = normalizeImageList(val);
+  return list[0] || "";
+};
+
+const resolveBrandQueryId = async (brandParam) => {
+  if (!brandParam) return null;
+
+  const raw = decodeURIComponent(String(brandParam)).trim();
+  if (!raw) return null;
+
+  if (mongoose.Types.ObjectId.isValid(raw)) {
+    const byId = await Brand.findOne({ _id: raw, status: "show" }).select("_id");
+    if (byId) return byId._id;
+  }
+
+  const slugCandidates = [
+    raw,
+    raw.toLowerCase(),
+    raw.replace(/\s+/g, "-").toLowerCase(),
+  ];
+
+  const bySlug = await Brand.findOne({
+    slug: { $in: [...new Set(slugCandidates)] },
+    status: "show",
+  }).select("_id");
+
+  if (bySlug) return bySlug._id;
+
+  const label = raw.replace(/[-_]+/g, " ").trim();
+  if (!label) return null;
+
+  const nameQueries = languageCodes.map((lang) => ({
+    [`name.${lang}`]: { $regex: `^${label}$`, $options: "i" },
+  }));
+
+  const byName = await Brand.findOne({
+    $or: nameQueries,
+    status: "show",
+  }).select("_id");
+
+  return byName?._id || null;
+};
+
+const normalizeProductMediaFields = (body = {}) => {
+  const gallery = normalizeImageList(body.image);
+  const featured =
+    pickFirstImageUrl(body.featuredImage) || gallery[0] || "";
+  const hover =
+    pickFirstImageUrl(body.hoverImage) || gallery[1] || gallery[0] || "";
+
+  return {
+    image: gallery,
+    featuredImage: featured,
+    hoverImage: hover,
+    thumbnail: pickFirstImageUrl(body.thumbnail) || featured,
+    seoImage: pickFirstImageUrl(body.seoImage) || featured,
+  };
+};
+
 const normalizePricesPayload = (prices = {}) => {
   const originalPrice = Math.max(0, Number(prices.originalPrice) || 0);
   const discount = Math.max(0, Number(prices.discount) || 0);
@@ -100,11 +173,70 @@ const flattenVariants = (variants) => {
   return flat;
 };
 
+const buildColorVariants = (variants) => {
+  if (!Array.isArray(variants) || variants.length === 0) return [];
+
+  const isNested = variants.some(
+    (v) => v && typeof v === "object" && (Array.isArray(v.sizes) || v.sizes)
+  );
+
+  if (isNested) {
+    return variants.filter(Boolean).map((colorVar, idx) => {
+      const color = String(
+        colorVar.color || colorVar.colorName || `Color ${idx + 1}`
+      ).trim();
+      const images = Array.isArray(colorVar.images)
+        ? colorVar.images.filter((img) => typeof img === "string" && img.trim())
+        : [];
+      const thumbnail =
+        (typeof colorVar.thumbnail === "string" && colorVar.thumbnail.trim()) ||
+        images[0] ||
+        "";
+
+      const hasStock = (colorVar.sizes || []).some(
+        (sizeVar) =>
+          sizeVar?.enabled !== false &&
+          Number(sizeVar?.quantity ?? sizeVar?.stock ?? 0) > 0
+      );
+
+      return { color, images, thumbnail, hasStock };
+    });
+  }
+
+  const map = new Map();
+  variants.forEach((variant) => {
+    const color = String(variant.color || variant.colorName || "").trim();
+    if (!color || map.has(color)) return;
+
+    const images = Array.isArray(variant.images)
+      ? variant.images.filter((img) => typeof img === "string" && img.trim())
+      : [];
+    map.set(color, {
+      color,
+      images,
+      thumbnail:
+        (typeof variant.thumbnail === "string" && variant.thumbnail.trim()) ||
+        images[0] ||
+        "",
+      hasStock: variants.some(
+        (v) =>
+          String(v.color || v.colorName || "").trim() === color &&
+          Number(v.quantity) > 0
+      ),
+    });
+  });
+
+  return Array.from(map.values());
+};
+
 const flattenProductVariants = (product) => {
   if (!product) return product;
   const productObj = typeof product.toObject === "function" ? product.toObject() : product;
   if (Array.isArray(productObj.variants) && productObj.variants.length > 0) {
+    productObj.colorVariants = buildColorVariants(productObj.variants);
     productObj.variants = flattenVariants(productObj.variants);
+  } else {
+    productObj.colorVariants = [];
   }
   return productObj;
 };
@@ -418,9 +550,12 @@ const addProduct = async (req, res) => {
 
     const taxFields = normalizeTaxPayload(req.body);
 
+    const mediaFields = normalizeProductMediaFields(req.body);
+
     const payload = {
       ...req.body,
       ...taxFields,
+      ...mediaFields,
       status: normalizeProductStatus(req.body.status),
       dynamicSections: sanitizeDynamicSections(req.body.dynamicSections),
       mediaSections: sanitizeMediaSections(req.body.mediaSections),
@@ -528,7 +663,10 @@ const getAllProducts = async (req, res) => {
   }
 
   if (brand) {
-    queryObject.brand = brand;
+    const brandId = await resolveBrandQueryId(brand);
+    if (brandId) {
+      queryObject.brand = brandId;
+    }
   }
 
   const pages = Number(page);
@@ -627,15 +765,16 @@ const updateProduct = async (req, res) => {
       product.variants = req.body.variants;
       product.stock = req.body.stock;
       product.prices = req.body.prices;
-      product.image = req.body.image;
+      const mediaFields = normalizeProductMediaFields(req.body);
+      product.image = mediaFields.image;
       product.tag = req.body.tag;
       product.gender = req.body.gender;
       product.productType = req.body.productType;
       product.metaTitle = req.body.metaTitle;
       product.metaDescription = req.body.metaDescription;
-      product.seoImage = req.body.seoImage;
-      product.featuredImage = req.body.featuredImage;
-      product.hoverImage = req.body.hoverImage;
+      product.seoImage = mediaFields.seoImage;
+      product.featuredImage = mediaFields.featuredImage;
+      product.hoverImage = mediaFields.hoverImage;
       product.badge = req.body.badge;
 
       const { hsnCode, taxRate, isPriceInclusive } = normalizeTaxPayload(
@@ -846,7 +985,10 @@ const getShowingStoreProducts = async (req, res) => {
     }
 
     if (brand) {
-      queryObject.brand = brand;
+      const brandId = await resolveBrandQueryId(brand);
+      if (brandId) {
+        queryObject.brand = brandId;
+      }
     }
 
     if (title) {
@@ -906,12 +1048,36 @@ const getShowingStoreProducts = async (req, res) => {
         .populate({ path: "brand", select: "_id name slug logo" })
         .sort({ createdAt: -1 })
         .limit(500);
-      relatedProducts = await Product.find({
-        category: products[0]?.category,
-        status: "show",
-      })
-        .populate({ path: "category", select: "_id name" })
-        .populate({ path: "brand", select: "_id name slug logo" });
+      const currentProduct = products[0];
+      if (currentProduct) {
+        const currentId = currentProduct._id;
+        const catId = currentProduct.category?._id || currentProduct.category;
+        const relatedQuery = {
+          _id: { $ne: currentId },
+          status: "show",
+        };
+        if (catId) {
+          relatedQuery.$or = [
+            { category: catId },
+            { categories: catId },
+          ];
+        }
+        relatedProducts = await Product.find(relatedQuery)
+          .populate({ path: "category", select: "_id name" })
+          .populate({ path: "brand", select: "_id name slug logo" })
+          .sort({ sales: -1, createdAt: -1 })
+          .limit(12);
+        if (!relatedProducts.length) {
+          relatedProducts = await Product.find({
+            _id: { $ne: currentId },
+            status: "show",
+          })
+            .populate({ path: "category", select: "_id name" })
+            .populate({ path: "brand", select: "_id name slug logo" })
+            .sort({ sales: -1, createdAt: -1 })
+            .limit(12);
+        }
+      }
     } else if (title || category || brand) {
       products = await Product.find(queryObject)
         .populate({ path: "category", select: "name _id" })
@@ -928,7 +1094,9 @@ const getShowingStoreProducts = async (req, res) => {
 
       const settingDoc = await Setting.findOne({
         name: "storeCustomizationSetting",
-      }).lean();
+      })
+        .sort({ updatedAt: -1 })
+        .lean();
       const rasaHomepage = settingDoc?.setting?.rasaHomepage || {};
 
       // New Arrivals — admin picks → tag fallback → newest
@@ -965,36 +1133,81 @@ const getShowingStoreProducts = async (req, res) => {
 
       rasaHomepagePayload = {
         brandsSectionEnabled: rasaHomepage.brandsSectionEnabled !== false,
-        categoryBanners: rasaHomepage.categoryBanners || [],
+        categoryBanners: (() => {
+          const cms = rasaHomepage.categoryBanners || [];
+          const defaults = [
+            { type: "footwear", title: "Shoes", slug: "footwear", image: "/shoes1.png" },
+            { type: "bags", title: "Bags", slug: "bags", image: "/bag1.png" },
+          ];
+          const footwear =
+            cms.find((b) => b?.type === "footwear" || b?.slug === "footwear") || defaults[0];
+          const bags =
+            cms.find((b) => b?.type === "bags" || b?.slug === "bags") || defaults[1];
+          const normalize = (banner, fallback) => ({
+            type: banner?.type === "bags" ? "bags" : "footwear",
+            title: String(banner?.title || fallback.title).trim(),
+            slug: String(banner?.slug || fallback.slug).trim().toLowerCase(),
+            image: String(banner?.image || fallback.image).trim(),
+          });
+          return [
+            normalize({ ...footwear, type: "footwear" }, defaults[0]),
+            normalize({ ...bags, type: "bags" }, defaults[1]),
+          ];
+        })(),
         instagramPosts: rasaHomepage.instagramPosts || [],
         heroSlides: (() => {
           const cms = rasaHomepage.heroSlides || [];
           const bagFallback = {
+            type: "bags",
             title: "Bags & More",
             subtitle: "Bags & More",
+            description:
+              "Bags, accessories and latest styles — if you've seen it, chances are we've got it.",
             image: "/bag1.png",
             link: "/search?category=bags",
             brand: "Rasa",
+            bgText: "BAGS",
             accentColor: "#B07A4F",
           };
           const shoeFallback = {
+            type: "footwear",
             title: "Fresh Drops",
             subtitle: "Fresh Drops",
+            description:
+              "Affordable sneakers and streetwear — curated picks, delivered to your door.",
             image: "/shoes1.png",
             link: "/search?category=footwear",
             brand: "Rasa",
+            bgText: "RASA",
+            accentColor: "#D4AF37",
           };
           const isBag = (s) =>
+            s?.type === "bags" ||
             /bag|duffle|backpack/i.test(
               `${s?.title || ""} ${s?.subtitle || ""} ${s?.link || ""} ${s?.image || ""}`
             );
-          if (cms.length >= 2) return cms;
+          const isFootwear = (s) =>
+            s?.type === "footwear" ||
+            /footwear|shoe|sneaker/i.test(
+              `${s?.title || ""} ${s?.subtitle || ""} ${s?.link || ""} ${s?.image || ""}`
+            );
+
+          if (cms.length >= 2) {
+            const footwear = cms.find(isFootwear) || shoeFallback;
+            const bags = cms.find(isBag) || bagFallback;
+            return [footwear, bags];
+          }
           if (!cms.length) return [shoeFallback, bagFallback];
           const merged = [...cms];
           if (!merged.some(isBag)) merged.push(bagFallback);
-          if (merged.length < 2) merged.unshift(shoeFallback);
+          if (!merged.some(isFootwear)) merged.unshift(shoeFallback);
           return merged.slice(0, 2);
         })(),
+        heroSectionEnabled: rasaHomepage.heroSectionEnabled !== false,
+        trendingSectionEnabled: rasaHomepage.trendingSectionEnabled !== false,
+        newArrivalsSectionEnabled: rasaHomepage.newArrivalsSectionEnabled !== false,
+        categoriesSectionEnabled: rasaHomepage.categoriesSectionEnabled !== false,
+        footerSectionEnabled: rasaHomepage.footerSectionEnabled !== false,
         customerReviews: rasaHomepage.customerReviews || [],
         reviewsSection: rasaHomepage.reviewsSection || {
           enabled: true,
@@ -1441,6 +1654,44 @@ const importProductsCSV = async (req, res) => {
   }
 };
 
+const updateProductStock = async (req, res) => {
+  try {
+    const { stock } = req.body;
+
+    if (stock === undefined || stock === null || Number.isNaN(Number(stock))) {
+      return res.status(400).send({ message: "Valid stock quantity is required" });
+    }
+
+    const stockValue = Math.max(0, Number(stock));
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).send({ message: "Product not found" });
+    }
+
+    if (product.isCombination && Array.isArray(product.variants) && product.variants.length > 0) {
+      return res.status(400).send({
+        message:
+          "This product uses color/size variants. Update stock from the product edit page.",
+      });
+    }
+
+    product.stock = stockValue;
+    await product.save();
+
+    res.send({
+      message: "Stock updated successfully",
+      product: {
+        _id: product._id,
+        stock: product.stock,
+        title: product.title,
+      },
+    });
+  } catch (err) {
+    res.status(500).send({ message: err.message || "Failed to update stock" });
+  }
+};
+
 module.exports = {
   addProductView,
   getRecommendations,
@@ -1451,6 +1702,7 @@ module.exports = {
   getProductById,
   getProductBySlug,
   updateProduct,
+  updateProductStock,
   updateManyProducts,
   updateStatus,
   deleteProduct,

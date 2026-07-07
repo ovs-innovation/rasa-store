@@ -1,24 +1,34 @@
 import Cookies from "js-cookie";
 import { useSession } from "next-auth/react";
-import React, { createContext, useEffect, useReducer } from "react";
+import React, { createContext, useEffect, useReducer, useState } from "react";
 
 import { setToken } from "@services/httpServices";
 import LoadingForSession from "@components/preloader/LoadingForSession";
 
 export const UserContext = createContext();
 
-const getInitialState = () => {
-  const userInfoCookie = Cookies.get("userInfo");
-  const shippingAddressCookie = Cookies.get("shippingAddress");
-  const couponInfoCookie = Cookies.get("couponInfo");
+const emptyState = {
+  userInfo: null,
+  shippingAddress: {},
+  couponInfo: {},
+};
 
-  return {
-    userInfo: userInfoCookie ? JSON.parse(userInfoCookie) : null,
-    shippingAddress: shippingAddressCookie
-      ? JSON.parse(shippingAddressCookie)
-      : {},
-    couponInfo: couponInfoCookie ? JSON.parse(couponInfoCookie) : {},
-  };
+const readCookieState = () => {
+  if (typeof window === "undefined") return emptyState;
+
+  try {
+    const userInfoCookie = Cookies.get("userInfo");
+    const shippingAddressCookie = Cookies.get("shippingAddress");
+    const couponInfoCookie = Cookies.get("couponInfo");
+
+    return {
+      userInfo: userInfoCookie ? JSON.parse(userInfoCookie) : null,
+      shippingAddress: shippingAddressCookie ? JSON.parse(shippingAddressCookie) : {},
+      couponInfo: couponInfoCookie ? JSON.parse(couponInfoCookie) : {},
+    };
+  } catch {
+    return emptyState;
+  }
 };
 
 function reducer(state, action) {
@@ -44,12 +54,30 @@ function reducer(state, action) {
 }
 
 export const UserProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(reducer, null, getInitialState);
+  const [state, dispatch] = useReducer(reducer, emptyState);
+  const [mounted, setMounted] = useState(false);
   const { data: session, status } = useSession();
 
   useEffect(() => {
+    setMounted(true);
+    const cookieState = readCookieState();
+    if (cookieState.userInfo?.token) {
+      setToken(cookieState.userInfo.token);
+      dispatch({ type: "USER_LOGIN", payload: cookieState.userInfo });
+    }
+    if (cookieState.shippingAddress && Object.keys(cookieState.shippingAddress).length > 0) {
+      dispatch({ type: "SAVE_SHIPPING_ADDRESS", payload: cookieState.shippingAddress });
+    }
+    if (cookieState.couponInfo && Object.keys(cookieState.couponInfo).length > 0) {
+      dispatch({ type: "SAVE_COUPON", payload: cookieState.couponInfo });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     const cookieUserInfo = Cookies.get("userInfo");
-    
+
     if (cookieUserInfo) {
       const parsedUser = JSON.parse(cookieUserInfo);
       if (parsedUser?.token) {
@@ -72,7 +100,7 @@ export const UserProvider = ({ children }) => {
       Cookies.remove("userInfo");
       dispatch({ type: "USER_LOGOUT" });
     }
-  }, [session, status]);
+  }, [session, status, mounted]);
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -90,7 +118,7 @@ export const UserProvider = ({ children }) => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  if (status === "loading" && !state.userInfo) {
+  if (mounted && status === "loading" && !state.userInfo) {
     return <LoadingForSession />;
   }
 

@@ -5,6 +5,10 @@ const CategoryServices = {
     return requests.get("/category");
   },
 
+  syncShopCategories: async (body) => {
+    return requests.post("/category/sync-shop", body);
+  },
+
   getAllCategories: async () => {
     return requests.get("/category/all");
   },

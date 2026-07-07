@@ -10,6 +10,18 @@ const Footer = () => {
   const { showingTranslateValue } = useUtilsFunction();
   const { storeCustomizationSetting } = useGetSetting();
 
+  const footer = storeCustomizationSetting?.rasaHomepage?.footer || {};
+  const footerEnabled =
+    storeCustomizationSetting?.rasaHomepage?.footerSectionEnabled !== false;
+  const intro =
+    footer.intro ||
+    storeCustomizationSetting?.rasaHomepage?.footerIntro ||
+    "The Rasa Store.\nYour one-stop shop for affordable sneakers, bags, and the latest styles. If you've seen it, chances are we've got it.";
+  const whatsapp = footer.whatsapp || "9731308713";
+  const email = footer.email || "workwithrasa@gmail.com";
+  const instagram = footer.instagram || "https://www.instagram.com/kicksbyrasaa";
+  const whatsappLink = `https://wa.me/${whatsapp.replace(/\D/g, "")}`;
+
   const block1Links = [
     { title: "New Arrivals", href: "/new-arrivals" },
     { title: "Trending", href: "/trending" },
@@ -19,14 +31,12 @@ const Footer = () => {
     { title: "About Us", href: "/about-us" },
     { title: "Contact", href: "/contact-us" },
     { title: "FAQs", href: "/faq" },
-    { title: "Returns Policy", href: "/refund-return-policy" },
-  ];
-
-  const block3Links = [
     { title: "Privacy Policy", href: "/privacy-policy" },
     { title: "Terms & Conditions", href: "/terms-and-conditions" },
     { title: "Shipping & Delivery", href: "/shipping-delivery-policy" },
   ];
+
+  const block3Links = [];
 
   return (
     <footer className="bg-[#050505] text-neutral-400 border-t border-neutral-900/80 relative overflow-hidden font-sans">
@@ -40,13 +50,13 @@ const Footer = () => {
                 RASA<span className="text-[#D4AF37]">.</span>
               </span>
             </Link>
-            <p className="text-xs text-neutral-500 leading-relaxed max-w-sm">
-              {storeCustomizationSetting?.rasaHomepage?.footerIntro ||
-                "Your one-stop shop for affordable sneakers, bags, and the latest styles."}
+            <p className="text-xs text-neutral-500 leading-relaxed max-w-sm whitespace-pre-line">
+              {footerEnabled ? intro : ""}
             </p>
+            {footerEnabled && (
             <div className="flex items-center gap-2.5 pt-1">
               <a
-                href="https://www.instagram.com/kicksbyrasaa"
+                href={instagram}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Instagram"
@@ -55,7 +65,7 @@ const Footer = () => {
                 <FaInstagram className="w-4 h-4" />
               </a>
               <a
-                href="https://wa.me/919731308713"
+                href={whatsappLink}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="WhatsApp"
@@ -64,18 +74,19 @@ const Footer = () => {
                 <FaWhatsapp className="w-4 h-4" />
               </a>
               <a
-                href="mailto:workwithrasa@gmail.com"
+                href={`mailto:${email}`}
                 aria-label="Email"
                 className="w-9 h-9 rounded-full border border-neutral-800 flex items-center justify-center text-neutral-400 hover:text-[#D4AF37] hover:border-[#D4AF37]/40 transition-all"
               >
                 <FiMail className="w-4 h-4" />
               </a>
             </div>
+            )}
           </div>
 
           <div className="lg:col-span-2 space-y-4">
             <h4 className="rasa-eyebrow !text-neutral-300 !tracking-[0.2em]">
-              {showingTranslateValue(storeCustomizationSetting?.footer?.block1_title) || "Shop"}
+              Explore
             </h4>
             <ul className="text-[10px] uppercase tracking-wider font-bold flex flex-col space-y-3">
               {block1Links.map((link) => (
@@ -90,7 +101,7 @@ const Footer = () => {
 
           <div className="lg:col-span-3 space-y-4">
             <h4 className="rasa-eyebrow !text-neutral-300 !tracking-[0.2em]">
-              {showingTranslateValue(storeCustomizationSetting?.footer?.block2_title) || "Support"}
+              Support
             </h4>
             <ul className="text-[10px] uppercase tracking-wider font-bold flex flex-col space-y-3">
               {block2Links.map((link) => (
@@ -104,48 +115,67 @@ const Footer = () => {
           </div>
 
           <div className="lg:col-span-3 space-y-4">
+            {footerEnabled && (
+            <>
             <h4 className="rasa-eyebrow !text-neutral-300 !tracking-[0.2em]">Contact</h4>
             <div className="space-y-3 text-xs">
               <div className="flex items-center gap-3">
                 <FaWhatsapp className="w-4 h-4 text-[#D4AF37] shrink-0" />
                 <a
-                  href="https://wa.me/919731308713"
+                  href={whatsappLink}
                   target="_blank"
                   rel="noreferrer"
                   className="text-neutral-500 hover:text-white transition-colors"
                 >
-                  9731308713
+                  {whatsapp}
                 </a>
               </div>
               <div className="flex items-center gap-3">
                 <FiMail className="w-4 h-4 text-[#D4AF37] shrink-0" />
                 <a
-                  href="mailto:workwithrasa@gmail.com"
+                  href={`mailto:${email}`}
                   className="text-neutral-500 hover:text-white transition-colors break-all"
                 >
-                  workwithrasa@gmail.com
+                  {email}
                 </a>
               </div>
             </div>
-            <ul className="text-[10px] uppercase tracking-wider font-bold flex flex-col space-y-3 pt-2 border-t border-neutral-900/80">
-              {block3Links.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="text-neutral-600 hover:text-neutral-400 transition-colors">
-                    {link.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {block3Links.length > 0 && (
+              <ul className="text-[10px] uppercase tracking-wider font-bold flex flex-col space-y-3 pt-2 border-t border-neutral-900/80">
+                {block3Links.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="text-neutral-600 hover:text-neutral-400 transition-colors">
+                      {link.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            </>
+            )}
           </div>
         </div>
 
-        <div className="py-6 border-t border-neutral-900/60">
-          <p className="text-[9px] uppercase tracking-[0.15em] text-neutral-600 font-medium mb-1">
-            © {new Date().getFullYear()} Rasa Store. All rights reserved.
-          </p>
-          <p className="text-[9px] text-neutral-700 leading-relaxed max-w-2xl">
-            All trademarks and brand names belong to their respective owners. Product listings are for identification only.
-          </p>
+        <div className="py-6 border-t border-neutral-900/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <p className="text-[9px] uppercase tracking-[0.15em] text-neutral-600 font-medium mb-1">
+              © {new Date().getFullYear()} Rasa Store. All rights reserved.
+            </p>
+            <p className="text-[9px] text-neutral-700 leading-relaxed max-w-2xl">
+              All trademarks and brand names belong to their respective owners. Product listings are for identification only.
+            </p>
+          </div>
+          <div className="text-[9px] uppercase tracking-[0.15em] text-neutral-600 font-medium md:text-right shrink-0">
+            Developed by{" "}
+            <a
+              href="https://vastoratech.com/"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[#D4AF37] hover:text-white transition-colors"
+            >
+              VastoraTech
+            </a>
+          </div>
         </div>
       </div>
     </footer>

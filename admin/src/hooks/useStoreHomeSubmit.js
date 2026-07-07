@@ -111,7 +111,6 @@ const useStoreHomeSubmit = () => {
   const [offersMenuLink, setOffersMenuLink] = useState(true);
   const [privacyPolicy, setPrivacyPolicy] = useState(true);
   const [termsConditions, setTermsConditions] = useState(true);
-  const [refundReturnPolicy, setRefundReturnPolicy] = useState(true);
   const [shippingDeliveryPolicy, setShippingDeliveryPolicy] = useState(true);
   const [faqLeftColStatus, setFaqLeftColStatus] = useState(true);
   const [faqRightColStatus, setFaqRightColStatus] = useState(true);
@@ -173,10 +172,6 @@ const useStoreHomeSubmit = () => {
   const [aboutTopContentRightImage, setAboutTopContentRightImage] =
     useState("");
   const [termsConditionsHeaderBg, setTermsConditionsHeaderBg] = useState("");
-  const [refundReturnPolicyHeaderBg, setRefundReturnPolicyHeaderBg] = useState("");
-  const [refundReturnPolicyTextEdit, setRefundReturnPolicyTextEdit] = useState(
-    createEditorState("")
-  );
   const [shippingDeliveryPolicyHeaderBg, setShippingDeliveryPolicyHeaderBg] = useState("");
   const [shippingDeliveryPolicyTextEdit, setShippingDeliveryPolicyTextEdit] = useState(
     createEditorState("")
@@ -623,18 +618,7 @@ const useStoreHomeSubmit = () => {
             },
           },
           refund_return_policy: {
-            status: refundReturnPolicy,
-            header_bg: refundReturnPolicyHeaderBg,
-            title: handleRemoveEmptyKey({
-              ...resData?.refund_return_policy?.title,
-              [language]: data.refund_return_page_title || "",
-            }),
-            description: handleRemoveEmptyKey({
-              ...resData?.refund_return_policy?.description,
-              [language]: refundReturnPolicyTextEdit
-                ? draftToHtml(convertToRaw(refundReturnPolicyTextEdit.getCurrentContent()))
-                : "",
-            }),
+            status: false,
           },
           shipping_delivery_policy: {
             status: shippingDeliveryPolicy,
@@ -934,6 +918,10 @@ const useStoreHomeSubmit = () => {
             invoice_message_last: handleRemoveEmptyKey({
               ...resData?.dashboard?.invoice_message_last,
               [language]: data.invoice_message_last || "",
+            }),
+            invoice_greeting_message: handleRemoveEmptyKey({
+              ...resData?.dashboard?.invoice_greeting_message,
+              [language]: data.invoice_greeting_message || "",
             }),
             print_button: handleRemoveEmptyKey({
               ...resData?.dashboard?.print_button,
@@ -1588,6 +1576,10 @@ const useStoreHomeSubmit = () => {
             res?.dashboard?.invoice_message_last[language || "en"]
           );
           setValue(
+            "invoice_greeting_message",
+            res?.dashboard?.invoice_greeting_message ? res?.dashboard?.invoice_greeting_message[language || "en"] : ""
+          );
+          setValue(
             "print_button",
             res?.dashboard?.print_button[language || "en"]
           );
@@ -2049,19 +2041,6 @@ const useStoreHomeSubmit = () => {
             )
           );
 
-          //refund return policy
-          setRefundReturnPolicy(res?.refund_return_policy?.status);
-          setRefundReturnPolicyHeaderBg(res?.refund_return_policy?.header_bg);
-          setValue(
-            "refund_return_page_title",
-            res?.refund_return_policy?.title?.[language || "en"] || ""
-          );
-          setRefundReturnPolicyTextEdit(
-            createEditorState(
-              showingTranslateValue(res?.refund_return_policy?.description)
-            )
-          );
-
           //shipping delivery policy
           setShippingDeliveryPolicy(res?.shipping_delivery_policy?.status);
           setShippingDeliveryPolicyHeaderBg(res?.shipping_delivery_policy?.header_bg);
@@ -2339,12 +2318,6 @@ const useStoreHomeSubmit = () => {
     termsConditions,
     setTermsConditionsHeaderBg,
     termsConditionsHeaderBg,
-    refundReturnPolicy,
-    setRefundReturnPolicy,
-    refundReturnPolicyHeaderBg,
-    setRefundReturnPolicyHeaderBg,
-    refundReturnPolicyTextEdit,
-    setRefundReturnPolicyTextEdit,
     shippingDeliveryPolicy,
     setShippingDeliveryPolicy,
     shippingDeliveryPolicyHeaderBg,

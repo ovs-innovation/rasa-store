@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { IoAdd, IoBagAddSharp, IoRemove } from "react-icons/io5";
 import { FiHeart } from "react-icons/fi";
@@ -22,6 +22,11 @@ const ProductCard = ({
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [wishlistActive, setWishlistActive] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const { addItem, updateItemQuantity, inCart, getItem } = useCart();
   const { handleIncreaseQuantity } = useAddToCart();
@@ -38,7 +43,7 @@ const ProductCard = ({
   };
 
   const activeItemId = product._id;
-  const isItemInCart = inCart(activeItemId);
+  const isItemInCart = mounted && inCart(activeItemId);
 
   const handleAddItem = (p) => {
     if (p.stock < 1) return notifyError("Insufficient stock!");
@@ -90,21 +95,11 @@ const ProductCard = ({
     ? product?.variants[0]?.price
     : product?.prices?.price;
   const currentPrice = Number(basePrice) || 0;
-  const discount = product?.isCombination
-    ? product?.variants[0]?.discount
-    : product?.prices?.discount;
   let originalPriceValue = product?.isCombination
     ? product?.variants[0]?.originalPrice
     : product?.prices?.originalPrice;
-  if (!originalPriceValue && discount) {
-    originalPriceValue = currentPrice + (Number(discount) || 0);
-  }
   originalPriceValue = Number(originalPriceValue) || 0;
   const displayPrice = currentPrice > 0 ? currentPrice : originalPriceValue;
-  const hasSale = currentPrice > 0 && originalPriceValue > currentPrice;
-  const discountPercent = hasSale
-    ? Math.round(((originalPriceValue - currentPrice) / originalPriceValue) * 100)
-    : 0;
 
   const isSoldOut = product.stock < 1;
   const title = showingTranslateValue(product?.title);
@@ -128,7 +123,7 @@ const ProductCard = ({
         />
       )}
 
-      <article className="product-card group relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-neutral-800/60 bg-[#0A0A0A] shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all duration-300 hover:border-[#D4AF37]/25 hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)] sm:rounded-2xl">
+      <article className="product-card group relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-neutral-800/60 bg-[#0A0A0A] shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all duration-300 hover:border-[#D4AF37]/25 hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
         {/* Full-bleed image — no side/top gap */}
         <button
           type="button"
@@ -170,12 +165,6 @@ const ProductCard = ({
                 Sold Out
               </span>
             </div>
-          )}
-
-          {!hideDiscount && hasSale && discountPercent > 0 && discountPercent < 100 && (
-            <span className="absolute left-0 top-2 z-20 bg-[#D4AF37] px-2 py-0.5 text-[7px] font-black uppercase tracking-widest text-black sm:top-3 sm:px-2.5 sm:py-1 sm:text-[8px]">
-              -{discountPercent}%
-            </span>
           )}
 
           {!hideWishlistCompare && (
@@ -223,11 +212,6 @@ const ProductCard = ({
               <span className="text-sm font-black leading-none text-white sm:text-base">
                 {currency}{getNumberTwo(Math.max(0, displayPrice))}
               </span>
-              {hasSale && (
-                <span className="text-[9px] font-medium leading-none text-neutral-500 line-through sm:text-[10px]">
-                  {currency}{getNumberTwo(originalPriceValue)}
-                </span>
-              )}
             </div>
 
             {!hidePriceAndAdd && (

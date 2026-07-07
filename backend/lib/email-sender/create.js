@@ -149,6 +149,7 @@ function generateCustomerInformation(doc, invoice) {
 function generateInvoiceTable(doc, invoice) {
   let i;
   const invoiceTableTop = 250;
+  const currencySymbol = invoice?.company_info?.currency || invoice?.currency || "₹";
 
   doc.font("Helvetica-Bold");
 
@@ -174,8 +175,8 @@ function generateInvoiceTable(doc, invoice) {
       item.title.substring(0, 25),
       "",
       item.quantity,
-      formatCurrency(invoice.company_info.currency, item.price),
-      formatCurrency(invoice.company_info.currency, total)
+      formatCurrency(currencySymbol, item.price),
+      formatCurrency(currencySymbol, total)
     );
 
     generateHr(doc, position + 20);
@@ -196,12 +197,12 @@ function generateInvoiceTable(doc, invoice) {
   generateTableRow(
     doc,
     paymentOptionPosition,
-
-    formatCurrency(invoice.company_info.currency, invoice.subTotal),
-    formatCurrency(invoice.company_info.currency, invoice.vat),
-    formatCurrency(invoice.company_info.currency, invoice.shippingCost),
-    formatCurrency(invoice.company_info.currency, invoice.discount),
-    formatCurrency(invoice.company_info.currency, invoice.total)
+ 
+    formatCurrency(currencySymbol, invoice.subTotal),
+    formatCurrency(currencySymbol, invoice.vat),
+    formatCurrency(currencySymbol, invoice.shippingCost),
+    formatCurrency(currencySymbol, invoice.discount),
+    formatCurrency(currencySymbol, invoice.total)
   );
 
   // const vatPosition = subtotalPosition + 20;
@@ -212,7 +213,7 @@ function generateInvoiceTable(doc, invoice) {
   //   '',
   //   'VAT',
   //   '',
-  //   formatCurrency(invoice.company_info.currency, invoice.vat)
+  //   formatCurrency(currencySymbol, invoice.vat)
   // );
   // const shippingPosition = vatPosition + 20;
   // generateTableRow(
@@ -222,7 +223,7 @@ function generateInvoiceTable(doc, invoice) {
   //   '',
   //   'Shipping Cost',
   //   '',
-  //   formatCurrency(invoice.company_info.currency, invoice.shippingCost)
+  //   formatCurrency(currencySymbol, invoice.shippingCost)
   // );
   // const discountPosition = shippingPosition + 20;
   // generateTableRow(
@@ -232,7 +233,7 @@ function generateInvoiceTable(doc, invoice) {
   //   '',
   //   'Discount',
   //   '',
-  //   formatCurrency(invoice.company_info.currency, invoice.discount)
+  //   formatCurrency(currencySymbol, invoice.discount)
   // );
 
   // doc
@@ -251,7 +252,7 @@ function generateInvoiceTable(doc, invoice) {
   //   '',
   //   'Total',
   //   '',
-  //   formatCurrency(invoice.company_info.currency, invoice.total)
+  //   formatCurrency(currencySymbol, invoice.total)
   // );
   // doc.font('Helvetica');
 }

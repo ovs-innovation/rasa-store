@@ -139,13 +139,6 @@ const TermAndConditions = () => {
                             <span>Privacy Policy</span>
                           </Link>
                           <Link 
-                            href="/refund-return-policy"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-store-600 hover:text-store-700 hover:border-store-300 font-medium transition-all"
-                          >
-                            <FiCheckCircle className="w-4 h-4" />
-                            <span>Refund & Return Policy</span>
-                          </Link>
-                          <Link 
                             href="/shipping-delivery-policy"
                             className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-store-600 hover:text-store-700 hover:border-store-300 font-medium transition-all"
                           >

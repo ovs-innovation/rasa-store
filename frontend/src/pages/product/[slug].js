@@ -11,7 +11,6 @@ import {
   FiShare2,
   FiHeart,
   FiShuffle,
-  FiTruck,
 } from "react-icons/fi";
 import { AiFillStar } from "react-icons/ai";
 import {
@@ -35,17 +34,16 @@ import Card from "@components/slug-card/Card";
 import useAddToCart from "@hooks/useAddToCart";
 import { useCart } from "react-use-cart";
 import Loading from "@components/preloader/Loading";
-import ProductCard from "@components/product/ProductCard";
 import VariantList from "@components/variants/VariantList";
+import ColorImagePicker from "@components/variants/ColorImagePicker";
 import { SidebarContext } from "@context/SidebarContext";
 import { UserContext } from "@context/UserContext";
 import AttributeServices from "@services/AttributeServices";
 import ProductServices from "@services/ProductServices";
 import useUtilsFunction from "@hooks/useUtilsFunction";
-import Discount from "@components/common/Discount";
 import useGetSetting from "@hooks/useGetSetting";
 import ProductImageGallery from "@components/product/ProductImageGallery";
-import ProductDetailsSection from "@components/product/ProductDetailsSection";
+import RelatedProductsSection from "@components/product/RelatedProductsSection";
 import LocationPickerDropdown from "@components/location/LocationPickerDropdown";
 import RatingSummary from "@components/reviews/RatingSummary";
 import ReviewFilters from "@components/reviews/ReviewFilters";
@@ -139,8 +137,6 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   const [variantDynamicSections, setVariantDynamicSections] = useState(null);
   const [variantMediaSections, setVariantMediaSections] = useState(null);
   const isUpdatingUrlRef = useRef(false);
-  const [activeFaqIndex, setActiveFaqIndex] = useState(null);
-  const [currentImages, setCurrentImages] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [ratingSummary, setRatingSummary] = useState(null);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -150,7 +146,6 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   const [reviewsRatingFilter, setReviewsRatingFilter] = useState(null);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
-  const [activeTab, setActiveTab] = useState("product-description");
   const [showStickyBottomBar, setShowStickyBottomBar] = useState(false);
   const [expectedDeliveryTime, setExpectedDeliveryTime] = useState(null);
 
@@ -184,16 +179,18 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   // Get product media (images + optional video) - supports up to 5 items
   const productImages = useMemo(() => {
     const media = [];
-
-    // Add images first
+    const seen = new Set();
+    const pushUnique = (url) => {
+      if (url && typeof url === "string" && url.trim() !== "" && !seen.has(url)) {
+        seen.add(url);
+        media.push(url);
+      }
+    };
+    pushUnique(product?.featuredImage);
     if (Array.isArray(product?.image)) {
-      media.push(
-        ...product.image.filter(
-          (img) => img && typeof img === "string" && img.trim() !== ""
-        )
-      );
+      product.image.forEach((img) => pushUnique(img));
     } else if (product?.image) {
-      media.push(product.image);
+      pushUnique(product.image);
     }
 
     // If legacy 'video' field exists, also push it into media array
@@ -205,8 +202,181 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
       media.push(product.video);
     }
 
-    return media.slice(0, 5);
-  }, [product?.image, product?.video]);
+    return media.slice(0, 6);
+  }, [product?.image, product?.video, product?.featuredImage]);
+
+  const colorOptions = useMemo(() => {
+    const apiColors = Array.isArray(product?.colorVariants)
+      ? product.colorVariants
+      : [];
+
+    if (apiColors.length > 0) {
+      return apiColors.map((cv, idx) => {
+        const color = String(cv.color || `Color ${idx + 1}`).trim();
+        const images = Array.isArray(cv.images)
+          ? cv.images.filter((img) => typeof img === "string" && img.trim())
+          : [];
+        const image =
+          cv.thumbnail ||
+          images.find(Boolean) ||
+          productImages[0] ||
+          "";
+
+        const hasStock =
+          typeof cv.hasStock === "boolean"
+            ? cv.hasStock
+            : (product?.variants || []).some(
+                (v) =>
+                  String(v.color || v.colorName || "").trim() === color &&
+                  Number(v.quantity) > 0
+              );
+
+        return { color, label: color, image, images, hasStock };
+      });
+    }
+
+    if (!product?.variants?.length) return [];
+
+    const map = new Map();
+
+    const pushOption = (color, image, images, hasStock) => {
+      const key = String(color || image || "").trim();
+      if (!key || map.has(key)) return;
+      map.set(key, {
+        color: color || key,
+        label: color || "Color",
+        image: image || "",
+        images: images || [],
+        hasStock: Boolean(hasStock),
+      });
+    };
+
+    const isNested = product.variants.some(
+      (v) => v && (Array.isArray(v.sizes) || v.sizes)
+    );
+
+    if (isNested) {
+      product.variants.forEach((colorVar, idx) => {
+        const color = String(
+          colorVar.color || colorVar.colorName || `Color ${idx + 1}`
+        ).trim();
+        const images = Array.isArray(colorVar.images)
+          ? colorVar.images.filter((img) => typeof img === "string" && img.trim())
+          : [];
+        const image =
+          colorVar.thumbnail || images.find(Boolean) || productImages[0] || "";
+        const hasStock = (colorVar.sizes || []).some(
+          (s) => Number(s.quantity ?? s.stock ?? 0) > 0
+        );
+        pushOption(color, image, images, hasStock);
+      });
+      return Array.from(map.values());
+    }
+
+    product.variants.forEach((variant) => {
+      const color = String(
+        variant.color ||
+          variant.colorName ||
+          String(variant.combinationLabel || "").split("/")[0]?.trim() ||
+          ""
+      ).trim();
+      if (!color || map.has(color)) return;
+
+      const images = Array.isArray(variant.images)
+        ? variant.images.filter((img) => typeof img === "string" && img.trim())
+        : [];
+      const image =
+        variant.thumbnail ||
+        images.find(Boolean) ||
+        productImages[0] ||
+        "";
+
+      const hasStock = product.variants.some((v) => {
+        const vColor = String(v.color || v.colorName || "").trim();
+        return vColor === color && Number(v.quantity) > 0;
+      });
+
+      pushOption(color, image, images, hasStock);
+    });
+
+    return Array.from(map.values());
+  }, [product?.colorVariants, product?.variants, productImages]);
+
+  const galleryImages = useMemo(() => {
+    const seen = new Set();
+    const list = [];
+    const push = (url) => {
+      if (url && typeof url === "string" && url.trim() !== "" && !seen.has(url)) {
+        seen.add(url);
+        list.push(url);
+      }
+    };
+
+    const selectedColorName = String(
+      selectVariant?.color || selectVariant?.colorName || selectVa?.color || ""
+    )
+      .trim()
+      .toLowerCase();
+
+    const selectedColorOption = colorOptions.find(
+      (opt) => String(opt.color || "").trim().toLowerCase() === selectedColorName
+    );
+
+    if (selectedColorOption?.images?.length) {
+      selectedColorOption.images.forEach(push);
+    }
+    push(selectedColorOption?.image);
+
+    const variant = selectVariant;
+    if (variant && Object.keys(variant).length > 0) {
+      if (Array.isArray(variant.images)) {
+        variant.images.forEach(push);
+      }
+      push(variant.image);
+      push(variant.thumbnail);
+      if (
+        variant.video &&
+        typeof variant.video === "string" &&
+        variant.video.trim() !== ""
+      ) {
+        push(variant.video);
+      }
+    }
+
+    if (list.length > 0) return list;
+
+    productImages.forEach(push);
+    return list.length > 0 ? list : productImages;
+  }, [selectVariant, selectVa?.color, colorOptions, productImages]);
+
+  const showColorPicker = colorOptions.length > 0;
+
+  const selectableAttributeKeys = useMemo(() => {
+    const sizeKeys = (variantTitle || []).map((a) => a._id);
+    return showColorPicker ? ["color", ...sizeKeys] : sizeKeys;
+  }, [variantTitle, showColorPicker]);
+
+  const displayOriginalPrice = useMemo(() => {
+    if (originalPrice > 0) return originalPrice;
+    const variantOriginal = getNumber(product?.variants?.[0]?.originalPrice ?? 0);
+    if (variantOriginal > 0) return variantOriginal;
+    return getNumber(
+      product?.prices?.originalPrice ?? product?.prices?.price ?? 0
+    );
+  }, [originalPrice, product, getNumber]);
+
+  const displayRelatedProducts = useMemo(() => {
+    const currentId = product?._id;
+    if (!currentId) return [];
+    const seen = new Set();
+    return (relatedProducts || [])
+      .filter((p) => {
+        if (!p?._id || p._id === currentId || seen.has(p._id)) return false;
+        seen.add(p._id);
+        return true;
+      })
+      .slice(0, 12);
+  }, [relatedProducts, product?._id]);
 
   // Keep a sharable URL in sync with current selection (includes query params)
   useEffect(() => {
@@ -220,10 +390,15 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   // Auto-select first available variant on initial load
   useEffect(() => {
     if (!product?.variants || product.variants.length === 0) return;
-    if (!variantTitle || variantTitle.length === 0) return;
+    if (!selectableAttributeKeys || selectableAttributeKeys.length === 0) return;
 
     // If we already have any attribute selected, don't override
-    if (selectVa && Object.keys(selectVa).some((key) => selectVa[key])) return;
+    if (
+      selectVa &&
+      selectableAttributeKeys.some((key) => selectVa[key])
+    ) {
+      return;
+    }
 
     // Pick first variant with stock > 0, otherwise just first variant
     const firstAvailableVariant =
@@ -233,9 +408,9 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     if (!firstAvailableVariant) return;
 
     const initialSelection = {};
-    variantTitle.forEach((att) => {
-      if (firstAvailableVariant[att._id]) {
-        initialSelection[att._id] = firstAvailableVariant[att._id];
+    selectableAttributeKeys.forEach((key) => {
+      if (firstAvailableVariant[key]) {
+        initialSelection[key] = firstAvailableVariant[key];
       }
     });
 
@@ -245,16 +420,47 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     // by the variant-matching effect below.
     setSelectVa(initialSelection);
     setSelectVariant((prev) =>
-      Object.keys(prev || {}).length === 0 ? initialSelection : prev
+      Object.keys(prev || {}).length === 0 ? firstAvailableVariant : prev
     );
-  }, [product?.variants, variantTitle]);
+  }, [product?.variants, selectableAttributeKeys]);
+
+  // Auto-select first color swatch when product has color images
+  useEffect(() => {
+    if (!showColorPicker || colorOptions.length === 0) return;
+    const currentColor =
+      selectVa?.color || selectVariant?.color || selectVariant?.colorName;
+    if (currentColor) return;
+
+    const first = colorOptions[0];
+    if (!first?.color) return;
+
+    const match =
+      product.variants.find(
+        (v) =>
+          (v.color === first.color || v.colorName === first.color) &&
+          Number(v.quantity) > 0
+      ) ||
+      product.variants.find(
+        (v) => v.color === first.color || v.colorName === first.color
+      ) ||
+      product.variants[0];
+
+    if (match) {
+      setSelectVa((prev) => ({
+        ...prev,
+        color: match.color || match.colorName || first.color,
+        ...(match.size ? { size: match.size } : {}),
+      }));
+      setSelectVariant(match);
+    }
+  }, [showColorPicker, colorOptions, product?.variants, selectVa?.color, selectVariant?.color, selectVariant?.colorName]);
 
   useEffect(() => {
     // Trigger when we have variants and some selection
     if (!product?.variants || product.variants.length === 0) return;
     
     // Check if we have any attribute selection
-    const attributeKeys = variantTitle?.map(att => att._id) || [];
+    const attributeKeys = selectableAttributeKeys;
     const hasSelection = value || (selectVa && Object.keys(selectVa).length > 0 && attributeKeys.some(key => selectVa[key]));
     
     if (!hasSelection) {
@@ -264,9 +470,6 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     if (hasSelection) {
       // Merge current selectVa with selectVariant to get complete selection
       const mergedSelection = { ...selectVariant, ...selectVa };
-      
-      // Filter out non-attribute keys for comparison
-      const attributeKeys = variantTitle?.map(att => att._id) || [];
       
       // If we have attribute keys, filter by them; otherwise use all variants
       let result = product?.variants || [];
@@ -356,18 +559,10 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         }
       }
       
-      // Combine variant images with other product-level images
-      const combinedImages = [...variantImages];
-      productImages.forEach(img => {
-        if (img && typeof img === "string" && !combinedImages.includes(img)) {
-          combinedImages.push(img);
-        }
-      });
-      const variantImage = combinedImages.length > 0 
-        ? combinedImages[0]
-        : (productImages[0] || "");
+      const combinedImages =
+        variantImages.length > 0 ? variantImages : [...productImages];
+      const variantImage = combinedImages[0] || productImages[0] || "";
       setActiveImage(variantImage);
-      setCurrentImages(combinedImages);
       
       setStock(result2?.quantity);
       const price = getNumber(result2?.price);
@@ -441,9 +636,6 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
       const firstVariantImage =
         firstVariantImageArr[0] || productImages[0] || "";
       setActiveImage(firstVariantImage);
-      setCurrentImages(
-        firstVariantImageArr.length > 0 ? firstVariantImageArr : productImages
-      );
 
       const rawVariantPrice =
         pricedVariant?.price ?? product?.prices?.price ?? 0;
@@ -539,7 +731,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     selectVariant,
     value,
     productImages,
-    variantTitle,
+    selectableAttributeKeys,
     showingTranslateValue,
     getNumber,
     product?.title,
@@ -547,13 +739,8 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   ]);
 
   useEffect(() => {
-    // Initialize gallery images and active image when product media changes
     const initialImage = productImages[0] || "";
     setActiveImage(initialImage);
-    setCurrentImages((prev) =>
-      prev && prev.length > 0 ? prev : productImages
-    );
-    // Initialize dynamic title and description on mount
     if (!dynamicTitle) {
       setDynamicTitle(showingTranslateValue(product?.title));
     }
@@ -734,8 +921,8 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     // Only trigger if we have variants
     if (!product?.variants || product.variants.length === 0) return;
     
-    // Get attribute keys
-    const attributeKeys = variantTitle?.map(att => att._id) || [];
+    // Get attribute keys (size + color when picture picker is shown)
+    const attributeKeys = selectableAttributeKeys;
     if (attributeKeys.length === 0) return;
     
     // Check if selectVa has any attribute selections
@@ -776,18 +963,10 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         }
       }
       
-      // Combine variant images with other product-level images
-      const combinedImages = [...variantImages];
-      productImages.forEach(img => {
-        if (img && typeof img === "string" && !combinedImages.includes(img)) {
-          combinedImages.push(img);
-        }
-      });
-      const variantImage = combinedImages.length > 0 
-        ? combinedImages[0]
-        : (productImages[0] || "");
+      const combinedImages =
+        variantImages.length > 0 ? variantImages : [...productImages];
+      const variantImage = combinedImages[0] || productImages[0] || "";
       setActiveImage(variantImage);
-      setCurrentImages(combinedImages);
       
       // Update price, stock, etc. immediately
       setStock(matchingVariant?.quantity || 0);
@@ -823,120 +1002,191 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
           : null
       );
     }
-  }, [selectVa, variantTitle, product?.variants, productImages, showingTranslateValue, getNumber, product?.title, product?.description, selectVariant]);
+  }, [selectVa, selectableAttributeKeys, product?.variants, productImages, showingTranslateValue, getNumber, product?.title, product?.description, selectVariant]);
+
+  const handleColorSelect = (colorValue) => {
+    if (!product?.variants?.length) return;
+
+    const targetColor = String(colorValue || "").trim().toLowerCase();
+
+    const matchesColor = (v) => {
+      const vColor = String(v.color || v.colorName || "").trim().toLowerCase();
+      return vColor === targetColor;
+    };
+
+    const currentSize = selectVa?.size || selectVariant?.size;
+    let match = null;
+
+    if (currentSize) {
+      match =
+        product.variants.find(
+          (v) => matchesColor(v) && v.size === currentSize && Number(v.quantity) > 0
+        ) ||
+        product.variants.find(
+          (v) => matchesColor(v) && v.size === currentSize
+        );
+    }
+
+    if (!match) {
+      match =
+        product.variants.find(
+          (v) => matchesColor(v) && Number(v.quantity) > 0
+        ) || product.variants.find((v) => matchesColor(v));
+    }
+
+    const resolvedColor = match?.color || match?.colorName || colorValue;
+
+    const newSelection = {
+      ...selectVa,
+      color: resolvedColor,
+      ...(match?.size ? { size: match.size } : {}),
+    };
+
+    setSelectVa(newSelection);
+    if (match) {
+      setSelectVariant(match);
+    }
+  };
 
   useEffect(() => {
     if (!product?.variants || product.variants.length === 0) return;
 
-    // Get all keys present in the variants
+    const HIDDEN_VARIANT_KEYS = new Set([
+      "_id",
+      "title",
+      "price",
+      "originalPrice",
+      "quantity",
+      "sku",
+      "barcode",
+      "image",
+      "images",
+      "dynamicSections",
+      "mediaSections",
+      "video",
+      "discount",
+      "color",
+      "thumbnail",
+      "combinationlabel",
+      "hoverimage",
+      "colorname",
+      "enabled",
+    ]);
+
+    const isSizeKey = (key) => {
+      const lower = String(key).toLowerCase();
+      return lower === "size" || lower.includes("size");
+    };
+
     const variantKeys = Object.keys(Object.assign({}, ...product.variants));
-    
-    // Filter out standard keys like _id, title, price, originalPrice, quantity, sku, barcode, images, image, etc.
-    const attributeKeys = variantKeys.filter(key => 
-      !["_id", "title", "price", "originalPrice", "quantity", "sku", "barcode", "image", "images", "dynamicSections", "mediaSections", "video", "discount"].includes(key)
-    );
+    const attributeKeys = variantKeys.filter((key) => {
+      const lower = String(key).toLowerCase();
+      if (HIDDEN_VARIANT_KEYS.has(lower)) return false;
+      return isSizeKey(key);
+    });
 
-    // Map each attributeKey to an attribute object (virtual or DB matched)
-    const dynamicVarTitle = attributeKeys.map(key => {
-      // Find matching attribute in database attributes if exists
-      const dbAtt = attributes?.find(att => att._id === key || att.name?.en?.toLowerCase() === key.toLowerCase() || att.title?.en?.toLowerCase() === key.toLowerCase());
-      if (dbAtt) return dbAtt;
+    const dynamicVarTitle = attributeKeys.map((key) => {
+      const values = [
+        ...new Set(product.variants.map((v) => v[key]).filter(Boolean)),
+      ];
 
-      // Otherwise build a virtual one dynamically from the variant values
-      const values = [...new Set(product.variants.map(v => v[key]).filter(Boolean))];
+      const dbAtt = attributes?.find(
+        (att) =>
+          att._id === key ||
+          att.name?.en?.toLowerCase() === key.toLowerCase() ||
+          att.title?.en?.toLowerCase() === key.toLowerCase()
+      );
+      if (dbAtt) {
+        return {
+          ...dbAtt,
+          _id: key,
+          option: "BUTTON",
+          variants: values.map((val) => {
+            const dbVariant = dbAtt.variants?.find(
+              (el) =>
+                el._id === val ||
+                el.name?.en === val ||
+                showingTranslateValue(el.name) === val
+            );
+            return dbVariant
+              ? { ...dbVariant, _id: val }
+              : { _id: val, name: { en: val } };
+          }),
+        };
+      }
+
       return {
         _id: key,
-        name: { en: key.charAt(0).toUpperCase() + key.slice(1) },
-        title: { en: key.charAt(0).toUpperCase() + key.slice(1) },
+        name: { en: "Size" },
+        title: { en: "Size" },
         option: "BUTTON",
-        variants: values.map(val => ({
+        variants: values.map((val) => ({
           _id: val,
-          name: { en: val }
-        }))
+          name: { en: val },
+        })),
       };
     });
 
     setVariantTitle(dynamicVarTitle);
-  }, [product?.variants, attributes]);
+  }, [product?.variants, attributes, showingTranslateValue]);
 
   useEffect(() => {
     setIsLoading(false);
   }, [product]);
 
-  // Scroll spy to update active tab and show/hide sticky bottom bar
+  // Mobile sticky cart bar when buy section scrolls out of view
   useEffect(() => {
     const handleScroll = () => {
-      const sections = [
-        "product-description",
-        "specification",
-        "additional-information",
-        "faq"
-      ];
-      
-      let currentSection = "";
       const isDesktop = window.innerWidth >= 1024;
-      // Desktop: Header (~100px) + Tabs (~60px) + Buffer = ~180px
-      // Mobile: Header (~64px) + Tabs (~60px) + Buffer = ~140px
-      const offset = isDesktop ? 180 : 140;
-      
-      // Check if product-description section is reached to show sticky bottom bar (mobile only)
-      const productDescriptionElement = document.getElementById("product-description");
-      if (productDescriptionElement && !isDesktop) {
-        const rect = productDescriptionElement.getBoundingClientRect();
-        // Show sticky bottom bar when product description section reaches top
-        const shouldShowSticky = rect.top <= offset;
-        setShowStickyBottomBar(shouldShowSticky);
+      const buySection = document.getElementById("product-buy-section");
+      if (buySection && !isDesktop) {
+        const rect = buySection.getBoundingClientRect();
+        setShowStickyBottomBar(rect.bottom < 0);
       } else {
         setShowStickyBottomBar(false);
-      }
-      
-      for (const sectionId of sections) {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          if (rect.top <= offset) {
-            currentSection = sectionId;
-          }
-        }
-      }
-      
-      if (currentSection) {
-        setActiveTab(currentSection);
       }
     };
 
     window.addEventListener("scroll", handleScroll);
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Scroll active tab into view when it changes
-  useEffect(() => {
-    const tabContainer = document.querySelector('.tab-navigation-container');
-    if (!tabContainer || !activeTab) return;
+  const resolveSelectedVariant = () => {
+    if (!product?.variants?.length) return null;
+    if (selectVariant?._id || selectVariant?.sku) return selectVariant;
 
-    const activeButton = tabContainer.querySelector(`[data-tab="${activeTab}"]`);
-    if (activeButton) {
-      const containerWidth = tabContainer.offsetWidth;
-      const buttonLeft = activeButton.offsetLeft;
-      const buttonWidth = activeButton.offsetWidth;
-      
-      const scrollLeft = buttonLeft - (containerWidth / 2) + (buttonWidth / 2);
-      
-      tabContainer.scrollTo({
-        left: scrollLeft,
-        behavior: 'smooth'
-      });
+    const keys = selectableAttributeKeys;
+    if (keys.length === 0) {
+      return product.variants[0];
     }
-  }, [activeTab]);
+
+    const selection = { ...selectVariant, ...selectVa };
+    return (
+      product.variants.find((variant) =>
+        keys.every((key) => {
+          const selected = selection[key];
+          if (!selected) return true;
+          return variant[key] === selected;
+        })
+      ) || null
+    );
+  };
 
   const handleAddToCart = (p) => {
     if (stock <= 0) return notifyError("Insufficient stock");
 
     const hasVariants = product?.variants && product.variants.length > 0;
-    if (
-      hasVariants &&
-      (!selectVariant || Object.keys(selectVariant).length === 0)
-    ) {
+    const activeVariant = resolveSelectedVariant();
+
+    if (hasVariants && selectableAttributeKeys.length > 0) {
+      const allSelected = selectableAttributeKeys.every(
+        (key) => activeVariant?.[key] || selectVa?.[key] || selectVariant?.[key]
+      );
+      if (!allSelected || !activeVariant) {
+        return notifyError("Please select all variants first!");
+      }
+    } else if (hasVariants && !activeVariant) {
       return notifyError("Please select all variants first!");
     }
 
@@ -974,7 +1224,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
               .map((el) => showingTranslateValue(el?.name))
       }`,
       image: activeImage || product.image?.[0] || product.images?.[0],
-      variant: selectVariant,
+      variant: activeVariant || selectVariant,
       price: currentPrice,
       originalPrice: currentOriginalPrice,
     };
@@ -1045,10 +1295,16 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
       // Check if variants need to be selected
       const hasVariants = product?.variants && product.variants.length > 0;
-      if (
-        hasVariants &&
-        (!selectVariant || Object.keys(selectVariant).length === 0)
-      ) {
+      const activeVariant = resolveSelectedVariant();
+
+      if (hasVariants && selectableAttributeKeys.length > 0) {
+        const allSelected = selectableAttributeKeys.every(
+          (key) => activeVariant?.[key] || selectVa?.[key] || selectVariant?.[key]
+        );
+        if (!allSelected || !activeVariant) {
+          return notifyError("Please select all variants first!");
+        }
+      } else if (hasVariants && !activeVariant) {
         return notifyError("Please select all variants first!");
       }
 
@@ -1084,7 +1340,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                 .map((el) => showingTranslateValue(el?.name))
         }`,
         image: activeImage || product.image?.[0],
-        variant: selectVariant || {},
+        variant: activeVariant || selectVariant || {},
         price: currentPrice,
         originalPrice: currentOriginalPrice,
         quantity: minQtyBuy,
@@ -1147,62 +1403,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     }
   };
 
-  // Update images when variant changes - create variant-specific image list
-  const variantImages = useMemo(() => {
-    if (!selectVariant || Object.keys(selectVariant).length === 0) {
-      return productImages;
-    }
-
-    // Get images for selected variant
-    const variantImgs = [];
-    if (Array.isArray(selectVariant?.images) && selectVariant.images.length > 0) {
-      variantImgs.push(...selectVariant.images);
-    } else if (selectVariant?.image) {
-      variantImgs.push(selectVariant.image);
-    }
-
-    // If variant has images, use them; otherwise use all product images
-    return variantImgs.length > 0 ? variantImgs : productImages;
-  }, [selectVariant, productImages]);
-
   const { t } = useTranslation();
-
-  const productFaqs = useMemo(() => {
-    // Handle new listSectionSchema structure (with items array)
-    if (product?.faqs && typeof product.faqs === 'object' && !Array.isArray(product.faqs)) {
-      // New structure: { enabled, icon, title, items: [{ key, value }] }
-      if (product.faqs.items && Array.isArray(product.faqs.items)) {
-        return product.faqs.items
-          .filter(
-            (item) =>
-              item &&
-              (item.key || item.value) &&
-              (item.key?.trim() || item.value?.trim()) &&
-              product.faqs.enabled !== false
-          )
-          .map((item) => ({
-            question: item.key || item.value || "",
-            answer: item.value || item.key || "",
-            answerType: "custom",
-            isVisible: true,
-          }));
-      }
-      return [];
-    }
-    
-    // Handle old array structure (backward compatibility)
-    if (Array.isArray(product?.faqs)) {
-      return product.faqs.filter(
-        (faq) =>
-          faq &&
-          faq?.question &&
-          faq.question.trim() !== "" &&
-          faq?.isVisible !== false
-      );
-    }
-    
-    return [];
-  }, [product?.faqs]);
 
   // category name slug
   const category_name = (showingTranslateValue(product?.category?.name) || "")
@@ -1224,1216 +1425,497 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
   // console.log("discount", discount);
 
-  const handleTabClick = (tabId) => {
-    setActiveTab(tabId);
-    const element = document.getElementById(tabId);
-    if (element) {
-      const rect = element.getBoundingClientRect();
-      // Header is approx 80-100px. Tabs are 50-60px. Total ~140-160px. 
-      // Using 180px provides a safe buffer so the title is clearly visible.
-      const offset = 180; 
-      const targetPosition = window.pageYOffset + rect.top - offset;
-      
-      window.scrollTo({
-        top: targetPosition,
-        behavior: "smooth"
-      });
-    }
-  };
-
   return (
+
     <>
-      <style jsx global>{`
-        /* Breadcrumbs styling */
-        nav.text-sm.text-gray-500 {
-          color: #a3a3a3 !important;
-        }
-        nav.text-sm.text-gray-500 a {
-          color: #d4af37 !important;
-          background: #0f0f0f !important;
-          border: 1px solid #1f1f1f !important;
-          padding: 4px 12px !important;
-          border-radius: 9999px !important;
-          transition: all 0.2s !important;
-        }
-        nav.text-sm.text-gray-500 a:hover {
-          color: #ffffff !important;
-          border-color: #d4af37 !important;
-        }
-        nav.text-sm.text-gray-500 span.text-gray-900 {
-          color: #ffffff !important;
-        }
 
-        /* Main container background overrides */
-        .w-full.rounded-lg.bg-white {
-          background-color: #050505 !important;
-        }
-        
-        /* Gallery Action Buttons */
-        .absolute.left-4.top-4.z-20.flex.flex-col button {
-          background-color: #0f0f0f !important;
-          border-color: #1f1f1f !important;
-          color: #d4d4d4 !important;
-          transition: all 0.2s !important;
-        }
-        .absolute.left-4.top-4.z-20.flex.flex-col button:hover {
-          color: #d4af37 !important;
-          border-color: #d4af37 !important;
-        }
-        
-        /* Add to Cart Button */
-        button.border-store-500 {
-          border-color: #d4af37 !important;
-          color: #d4af37 !important;
-          background-color: transparent !important;
-        }
-        button.border-store-500:hover {
-          background-color: #d4af37 !important;
-          color: #000000 !important;
-        }
-        
-        /* Trust Features Box */
-        .bg-blue-50.border-blue-100 {
-          background-color: #0a0a0a !important;
-          border-color: #1a1a1a !important;
-        }
-        .bg-blue-50.border-blue-100 div.border-blue-200 {
-          border-color: #1a1a1a !important;
-        }
-        .bg-blue-50.border-blue-100 div.bg-white {
-          background-color: #141414 !important;
-          border-color: #262626 !important;
-        }
-        .bg-blue-50.border-blue-100 svg {
-          color: #d4af37 !important;
-        }
-        .bg-blue-50.border-blue-100 p {
-          color: #e5e5e5 !important;
-        }
-        
-        /* Product Details Right Side Header */
-        h1.leading-7.text-lg.md\:text-xl.lg\:text-2xl {
-          color: #ffffff !important;
-          font-weight: 900 !important;
-          letter-spacing: -0.025em !important;
-          text-transform: uppercase !important;
-        }
-        .text-sm.leading-6.text-gray-500 {
-          color: #a3a3a3 !important;
-        }
-        
-        /* Price Container */
-        .bg-gray-50\/50.rounded-2xl {
-          background-color: #0a0a0a !important;
-          border-color: #141414 !important;
-        }
-        .bg-gray-50\/50.rounded-2xl span {
-          color: #ffffff !important;
-        }
-        .bg-gray-50\/50.rounded-2xl .bg-green-100 {
-          background-color: #0f2e1a !important;
-          color: #4ade80 !important;
-          border: 1px solid #166534 !important;
-        }
-        
-        /* Expected Delivery */
-        .mt-4.rounded-md.flex.items-center.text-sm svg {
-          color: #d4af37 !important;
-        }
-        .mt-4.rounded-md.flex.items-center.text-sm span.text-gray-600 {
-          color: #737373 !important;
-        }
-        .mt-4.rounded-md.flex.items-center.text-sm span.text-store-700 {
-          color: #d4af37 !important;
-        }
-        .mt-4.flex.gap-4.items-center .text-gray-500 {
-          color: #a3a3a3 !important;
-        }
-        .mt-4.flex.gap-4.items-center select, 
-        .mt-4.flex.gap-4.items-center button {
-          background-color: #0a0a0a !important;
-          border-color: #1a1a1a !important;
-          color: #ffffff !important;
-        }
-        
-        /* Variant Title & Items */
-        h4.text-sm.font-semibold.text-gray-800 {
-          color: #ffffff !important;
-          text-transform: uppercase !important;
-          font-size: 0.75rem !important;
-          letter-spacing: 0.05em !important;
-        }
-        .text-xs.text-gray-500 {
-          color: #a3a3a3 !important;
-        }
-        
-        /* Variant Option Buttons */
-        .variant-button,
-        button[class*="variant"] {
-          background-color: #0f0f0f !important;
-          border-color: #1f1f1f !important;
-          color: #d4d4d4 !important;
-        }
-        .variant-button:hover,
-        button[class*="variant"]:hover {
-          border-color: #d4af37 !important;
-          color: #ffffff !important;
-        }
-        .variant-button.active,
-        button[class*="variant"][class*="active"],
-        button[class*="variant"][class*="border-store-500"],
-        button[class*="variant"][class*="text-store-600"] {
-          border-color: #d4af37 !important;
-          color: #d4af37 !important;
-          background-color: #d4af3710 !important;
-        }
-        
-        /* Category label */
-        .text-gray-800 {
-          color: #d4d4d4 !important;
-        }
-        button.text-gray-600.underline {
-          color: #d4af37 !important;
-        }
-        button.text-gray-600.underline:hover {
-          color: #ffffff !important;
-        }
-        
-        /* Product Highlights */
-        .border.border-gray-200.rounded-lg.bg-white {
-          background-color: #0a0a0a !important;
-          border-color: #141414 !important;
-        }
-        .border.border-gray-200.rounded-lg.bg-white h2 {
-          color: #ffffff !important;
-        }
-        .border.border-gray-200.rounded-lg.bg-white ul {
-          color: #a3a3a3 !important;
-        }
-        
-        /* Tab Navigation sticky background */
-        .sticky.bg-white\/80 {
-          background-color: #050505e6 !important;
-          border-bottom: 1px solid #141414 !important;
-        }
-        .sticky.bg-white\/80 button {
-          color: #737373 !important;
-        }
-        .sticky.bg-white\/80 button:hover {
-          color: #ffffff !important;
-        }
-        .sticky.bg-white\/80 button.text-store-600 {
-          color: #d4af37 !important;
-        }
-        .sticky.bg-white\/80 span.bg-store-500 {
-          background-color: #d4af37 !important;
-        }
-        
-        /* Description, Specification & Additional Info Boxes */
-        div[id="product-description"],
-        div[id="specification"],
-        div[id="additional-information"] {
-          background-color: #0a0a0a !important;
-          border-color: #141414 !important;
-        }
-        div[id="product-description"] h2,
-        div[id="specification"] h2,
-        div[id="additional-information"] h2 {
-          color: #ffffff !important;
-        }
-        div[id="product-description"] p,
-        div[id="specification"] ul,
-        div[id="additional-information"] ul {
-          color: #a3a3a3 !important;
-        }
-        div[id="additional-information"] .bg-gray-50 {
-          background-color: #0f0f0f !important;
-          border-color: #1a1a1a !important;
-        }
-        div[id="additional-information"] h3.text-store-600 {
-          color: #d4af37 !important;
-          background-color: #141414 !important;
-          border: 1px solid #262626 !important;
-        }
-        
-        /* FAQ Section */
-        div[id="faq"] {
-          background-color: #0a0a0a !important;
-          border-color: #141414 !important;
-        }
-        div[id="faq"] h3 {
-          color: #ffffff !important;
-        }
-        div[id="faq"] span.bg-store-500 {
-          background-color: #d4af37 !important;
-        }
-        div[id="faq"] .border-store-200.bg-store-50\/30 {
-          border-color: #d4af3750 !important;
-          background-color: #0f0f0f !important;
-        }
-        div[id="faq"] .border-gray-50.bg-gray-50\/50 {
-          border-color: #141414 !important;
-          background-color: #050505 !important;
-        }
-        div[id="faq"] .border-gray-50.bg-gray-50\/50:hover {
-          background-color: #0f0f0f !important;
-        }
-        div[id="faq"] button span.text-gray-800 {
-          color: #ffffff !important;
-        }
-        div[id="faq"] button span.text-store-600 {
-          color: #d4af37 !important;
-        }
-        div[id="faq"] .px-6.pb-6.text-gray-600 {
-          color: #a3a3a3 !important;
-          border-top-color: #141414 !important;
-        }
-        
-        /* Manufacturer details & Disclaimer */
-        .mt-8.p-6.bg-white,
-        .mt-2.p-6.bg-white {
-          background-color: #0a0a0a !important;
-          border: 1px solid #141414 !important;
-          border-radius: 0.5rem !important;
-        }
-        .mt-8.p-6.bg-white h3,
-        .mt-2.p-6.bg-white h3 {
-          color: #ffffff !important;
-        }
-        .mt-8.p-6.bg-white p,
-        .mt-8.p-6.bg-white div,
-        .mt-2.p-6.bg-white div {
-          color: #a3a3a3 !important;
-        }
-        
-        /* Sticky Bottom Bar (Mobile) */
-        .fixed.bottom-0.bg-white\/95 {
-          background-color: #0a0a0ae6 !important;
-          border-top: 1px solid #141414 !important;
-        }
-        .fixed.bottom-0.bg-white\/95 h3 {
-          color: #a3a3a3 !important;
-        }
-        .fixed.bottom-0.bg-white\/95 span.text-gray-900 {
-          color: #ffffff !important;
-        }
-        .fixed.bottom-0.bg-white\/95 button.bg-store-600 {
-          background-color: #d4af37 !important;
-          color: #000000 !important;
-        }
-        .fixed.bottom-0.bg-white\/95 button.bg-store-600:hover {
-          background-color: #c29e2e !important;
-        }
-        
-        /* Ratings & Reviews styling overrides */
-        #ratings-section {
-          background-color: #0a0a0a !important;
-          border: 1px solid #141414 !important;
-          border-radius: 1rem !important;
-          padding: 24px !important;
-        }
-        #ratings-section .bg-white {
-          background-color: #0f0f0f !important;
-          border-color: #1a1a1a !important;
-        }
-        #ratings-section .border-gray-100,
-        #ratings-section .border-b {
-          border-color: #1a1a1a !important;
-        }
-        #ratings-section .bg-gray-100 {
-          background-color: #141414 !important;
-        }
-        #ratings-section h2,
-        #ratings-section h3,
-        #ratings-section h4 {
-          color: #ffffff !important;
-        }
-        #ratings-section p,
-        #ratings-section span,
-        #ratings-section label {
-          color: #a3a3a3 !important;
-        }
-        /* Specific text visibility upgrades */
-        #ratings-section .text-gray-900,
-        #ratings-section .text-gray-800,
-        #ratings-section .text-gray-700,
-        #ratings-section span.text-gray-900,
-        #ratings-section span.text-gray-700,
-        #ratings-section p.text-gray-800 {
-          color: #ffffff !important;
-        }
-        #ratings-section span.text-gray-500,
-        #ratings-section span.text-gray-600 {
-          color: #d4d4d4 !important;
-        }
-        /* Hyperlink text visibility */
-        #ratings-section a,
-        #ratings-section a.text-store-600 {
-          color: #d4af37 !important;
-          text-decoration: underline !important;
-          font-weight: 700 !important;
-        }
-        #ratings-section a:hover,
-        #ratings-section a.text-store-600:hover {
-          color: #ffffff !important;
-        }
-        /* Filter buttons styling */
-        #ratings-section button.bg-white,
-        #ratings-section button[class*="bg-white"] {
-          background-color: #0f0f0f !important;
-          border-color: #1a1a1a !important;
-          color: #d4d4d4 !important;
-        }
-        #ratings-section button.bg-white:hover,
-        #ratings-section button[class*="bg-white"]:hover {
-          background-color: #141414 !important;
-          border-color: #d4af37 !important;
-          color: #ffffff !important;
-        }
-        #ratings-section button.bg-yellow-500,
-        #ratings-section button[class*="bg-yellow-500"] {
-          background-color: #d4af37 !important;
-          border-color: #d4af37 !important;
-          color: #000000 !important;
-        }
-        #ratings-section svg.text-store-500,
-        #ratings-section svg.text-yellow-400,
-        #ratings-section svg.text-yellow-500 {
-          color: #d4af37 !important;
-        }
-        #ratings-section .text-emerald-700.bg-emerald-50 {
-          color: #10b981 !important;
-          background-color: #10b98115 !important;
-          border: 1px solid #10b98130 !important;
-        }
-        #ratings-section textarea,
-        #ratings-section select,
-        #ratings-section input {
-          background-color: #050505 !important;
-          border: 1px solid #1a1a1a !important;
-          color: #ffffff !important;
-        }
-        #ratings-section textarea:focus,
-        #ratings-section select:focus,
-        #ratings-section input:focus {
-          border-color: #d4af37 !important;
-          outline: none !important;
-        }
-        #ratings-section button:not(.bg-white):not(.bg-gray-100) {
-          background-color: #d4af37 !important;
-          color: #000000 !important;
-          font-weight: 700 !important;
-        }
-        #ratings-section button:not(.bg-white):not(.bg-gray-100):hover {
-          background-color: #c29e2e !important;
-        }
-        #ratings-section button.bg-gray-100 {
-          background-color: #141414 !important;
-          color: #ffffff !important;
-        }
-        #ratings-section button.bg-gray-100:hover {
-          background-color: #1f1f1f !important;
-        }
-        
-        /* Call Us To Order block */
-        .mt-8.text-gray-700 {
-          color: #a3a3a3 !important;
-        }
-        .mt-8 a.text-store-500 {
-          color: #d4af37 !important;
-        }
-        .mt-8 a.text-store-500:hover {
-          color: #ffffff !important;
-        }
-      `}</style>
       {isLoading ? (
+
         <Loading loading={isLoading} />
+
       ) : (
+
         <Layout
+
           title={dynamicTitle || showingTranslateValue(product?.title)}
+
           description={dynamicDescription || showingTranslateValue(product.description)}
+
         >
-          <div className="lg:px-8 py-4">
-            <div className="mx-auto px-4 lg:px-12 max-w-screen-2xl">
-              <div className="flex items-center pb-6 justify-between gap-4">
-                <nav className="flex items-center space-x-2 text-sm text-gray-500 font-medium">
-                  <Link href="/" className="hover:text-store-600 transition-colors flex items-center">
-                    Home
-                  </Link>
-                  <FiChevronRight className="w-4 h-4 text-gray-400" />
-                  <Link
-                    href={`/search?category=${category_name}&_id=${product?.category?._id}`}
-                    className="hover:text-store-600 transition-colors bg-gray-50 px-3 py-1 rounded-full border border-gray-100"
-                  >
-                    {category_name}
-                  </Link>
-                  <FiChevronRight className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-900 font-semibold truncate max-w-[150px] sm:max-w-xs">
-                    {dynamicTitle || showingTranslateValue(product?.title)}
-                  </span>
-                </nav>
-              </div>
-              <div className="w-full rounded-lg  bg-white">
-                <div className="flex flex-col lg:flex-row gap-10">
-                  <div className="flex-shrink-0 w-full mx-auto md:w-5/12 lg:w-5/12 xl:w-5/12">
-                    <div className="mt-1 lg:mt-2 lg:sticky lg:top-28 lg:space-y-4">
-                      <Discount slug product={product} discount={discount} />
 
-                      {/* Flipkart-style Product Image Gallery with buttons inside */}
-                      <ProductImageGallery
-                        images={currentImages.length > 0 ? currentImages : productImages}
-                        productTitle={
-                          dynamicTitle || showingTranslateValue(product?.title)
-                        }
-                        buttons={
-                          <div className="absolute left-4 top-4 z-20 flex flex-col items-start gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleAddToWishlist(product)}
-                              className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-300 hover:text-red-500 border border-neutral-800/80 hover:border-red-500/30 rounded-full px-3.5 py-1.5 bg-black/60 backdrop-blur-md shadow-lg transition-all"
-                              aria-label="Add to wishlist"
-                            >
-                              <FiHeart className="w-4 h-4" />
-                              <span className="hidden sm:inline">Wishlist</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleAddToCompare(product)}
-                              className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-300 hover:text-purple-400 border border-neutral-800/80 hover:border-purple-400/30 rounded-full px-3.5 py-1.5 bg-black/60 backdrop-blur-md shadow-lg transition-all"
-                              aria-label="Add to compare"
-                            >
-                              <FiShuffle className="w-4 h-4" />
-                              <span className="hidden sm:inline">Compare</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={handleShareCurrentVariant}
-                              className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-neutral-300 hover:text-[#D4AF37] border border-neutral-800/80 hover:border-[#D4AF37]/30 rounded-full px-3.5 py-1.5 bg-black/60 backdrop-blur-md shadow-lg transition-all"
-                              aria-label="Share this product"
-                            >
-                              <FiShare2 className="w-4 h-4" />
-                              <span className="hidden sm:inline">Share</span>
-                            </button>
+          <div className="bg-[#050505] min-h-screen">
+
+            <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-16">
+
+              {/* Breadcrumb — Aisha style */}
+
+              <nav className="text-xs sm:text-sm text-neutral-500 mb-6 lg:mb-8">
+
+                <Link href="/" className="hover:text-[#D4AF37] transition-colors">
+
+                  Home
+
+                </Link>
+
+                <span className="mx-1.5 text-neutral-700">/</span>
+
+                <Link
+
+                  href={`/search?category=${category_name}&_id=${product?.category?._id}`}
+
+                  className="hover:text-[#D4AF37] transition-colors capitalize"
+
+                >
+
+                  {category_name.replace(/-/g, " ") || "Shop"}
+
+                </Link>
+
+                <span className="mx-1.5 text-neutral-700">/</span>
+
+                <span className="text-neutral-300">
+
+                  {dynamicTitle || showingTranslateValue(product?.title)}
+
+                </span>
+
+              </nav>
+
+
+
+              <div className="flex flex-col lg:flex-row lg:gap-10 xl:gap-14">
+
+                {/* Gallery — left, sticky */}
+
+                <div className="w-full lg:w-[55%] xl:w-[58%] lg:sticky lg:top-24 lg:self-start">
+
+                  <ProductImageGallery
+
+                    images={galleryImages}
+
+                    productTitle={dynamicTitle || showingTranslateValue(product?.title)}
+
+                  />
+
+                </div>
+
+
+
+                {/* Product info — right */}
+
+                <div className="w-full lg:w-[45%] xl:w-[42%] mt-8 lg:mt-0" id="product-buy-section">
+
+                  <div className="rounded-xl">
+
+                    {/* Quick actions */}
+
+                    <div className="flex items-center justify-end gap-1 mb-4">
+
+                      <button
+
+                        type="button"
+
+                        onClick={() => handleAddToWishlist(product)}
+
+                        className="p-2.5 text-neutral-400 hover:text-red-400 transition-colors rounded-lg hover:bg-neutral-900/60"
+
+                        aria-label="Wishlist"
+
+                      >
+
+                        <FiHeart className="w-5 h-5" />
+
+                      </button>
+
+                      <button
+
+                        type="button"
+
+                        onClick={() => handleAddToCompare(product)}
+
+                        className="p-2.5 text-neutral-400 hover:text-purple-400 transition-colors rounded-lg hover:bg-neutral-900/60"
+
+                        aria-label="Compare"
+
+                      >
+
+                        <FiShuffle className="w-5 h-5" />
+
+                      </button>
+
+                      <button
+
+                        type="button"
+
+                        onClick={handleShareCurrentVariant}
+
+                        className="p-2.5 text-neutral-400 hover:text-[#D4AF37] transition-colors rounded-lg hover:bg-neutral-900/60"
+
+                        aria-label="Share"
+
+                      >
+
+                        <FiShare2 className="w-5 h-5" />
+
+                      </button>
+
+                    </div>
+
+
+
+                    {product?.badge && (
+
+                      <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-[#D4AF37] mb-2">
+
+                        {product.badge}
+
+                      </span>
+
+                    )}
+
+
+
+                    <h1 className="font-serif text-2xl sm:text-[1.75rem] lg:text-3xl text-white font-medium leading-snug tracking-tight">
+
+                      {dynamicTitle || showingTranslateValue(product?.title)}
+
+                    </h1>
+
+
+
+                    <div className="mt-4">
+
+                      <p className="text-sm text-neutral-500 mb-1">Regular price</p>
+
+                      <p className="text-2xl sm:text-3xl text-white font-medium tracking-tight">
+
+                        {currency}
+
+                        {getNumberTwo(displayOriginalPrice)}
+
+                      </p>
+
+                    </div>
+
+
+
+                    <hr className="my-6 border-neutral-800" />
+
+
+
+                    {showColorPicker && (
+                      <div className="mb-6">
+                        <p className="text-sm text-neutral-400 mb-2">Color</p>
+                        <ColorImagePicker
+                          options={colorOptions}
+                          selectedColor={
+                            selectVa?.color ||
+                            selectVariant?.color ||
+                            selectVariant?.colorName ||
+                            colorOptions[0]?.color ||
+                            ""
+                          }
+                          onSelect={handleColorSelect}
+                        />
+                      </div>
+                    )}
+
+                    {/* Size variants */}
+                    {variantTitle?.length > 0 && (
+                      <div className="space-y-5 mb-6">
+                        {variantTitle.map((a, i) => (
+                          <div key={i + 1}>
+                            <p className="text-sm text-neutral-400 mb-2">
+                              {showingTranslateValue(a?.name)}
+                            </p>
+                            <VariantList
+
+                              att={a._id}
+
+                              lang={lang}
+
+                              option={a.option}
+
+                              setValue={setValue}
+
+                              varTitle={variantTitle}
+
+                              setSelectVa={setSelectVa}
+
+                              variants={product.variants}
+
+                              selectVariant={selectVariant}
+
+                              setSelectVariant={setSelectVariant}
+
+                            />
+
                           </div>
-                        }
-                      />
 
-                      {/* Add to Cart & Buy Now under gallery (Premium Style) */}
-                      <div className="mt-8">
-                        <div className="flex gap-4">
-                          <button
-                            onClick={() => handleAddToCart(product)}
-                            type="button"
-                            className="flex-1 h-14 rounded-xl text-base font-bold flex items-center justify-center border-2 border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black transform hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-sm"
-                          >
-                            Add To Cart
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleBuyNow(product);
-                            }}
-                            type="button"
-                            className="flex-1 h-14 rounded-xl text-base font-bold flex items-center justify-center bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 transform hover:scale-[1.02] active:scale-95 transition-all duration-200 shadow-md hover:shadow-lg lg:animate-pulse-subtle"
-                          >
-                            Buy Now
-                          </button>
-                        </div>
-                        <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-3 font-medium flex items-center justify-center gap-1">
-                          <span className="w-1 h-1 rounded-full bg-green-400" />
-                          Secure & Verified Transaction
+                        ))}
+
+                      </div>
+
+                    )}
+
+
+
+                    {/* Quantity */}
+
+                    <div className="mb-6">
+
+                      <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
+
+                        Quantity
+
+                      </p>
+
+                      <div className="inline-flex items-center border border-neutral-700 h-11 rounded-lg overflow-hidden">
+
+                        <button
+
+                          type="button"
+
+                          onClick={() => setItem(Math.max(1, item - 1))}
+
+                          className="w-11 h-full flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
+
+                          aria-label="Decrease"
+
+                        >
+
+                          <FiMinus className="w-4 h-4" />
+
+                        </button>
+
+                        <span className="w-12 text-center text-white font-medium text-sm">
+
+                          {item}
+
+                        </span>
+
+                        <button
+
+                          type="button"
+
+                          onClick={() => setItem(item + 1)}
+
+                          className="w-11 h-full flex items-center justify-center text-neutral-400 hover:text-white transition-colors"
+
+                          aria-label="Increase"
+
+                        >
+
+                          <FiPlus className="w-4 h-4" />
+
+                        </button>
+
+                      </div>
+
+                    </div>
+
+
+
+                    {/* Add to cart — full width like Aisha */}
+
+                    <button
+
+                      type="button"
+
+                      onClick={() => handleAddToCart(product)}
+
+                      className="w-full h-12 bg-white text-black hover:bg-neutral-200 font-semibold text-sm uppercase tracking-widest transition-colors mb-3 rounded-lg"
+
+                    >
+
+                      Add to Cart
+
+                    </button>
+
+                    <button
+
+                      type="button"
+
+                      onClick={(e) => {
+
+                        e.preventDefault();
+
+                        e.stopPropagation();
+
+                        handleBuyNow(product);
+
+                      }}
+
+                      className="w-full h-12 border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black font-semibold text-sm uppercase tracking-widest transition-colors rounded-lg"
+
+                    >
+
+                      Buy It Now
+
+                    </button>
+
+
+
+                    {stock > 0 && stock <= 10 && (
+
+                      <p className="mt-4 text-sm text-amber-400/90">
+
+                        Hurry, {stock} item{stock !== 1 ? "s" : ""} left in stock!
+
+                      </p>
+
+                    )}
+
+
+
+                    <hr className="my-6 border-neutral-800" />
+
+
+
+                    <div className="text-sm text-neutral-500 space-y-1.5 mb-2">
+
+                      {product.sku && (
+
+                        <p>
+
+                          <span className="text-neutral-600">Sku:</span>{" "}
+
+                          <span className="text-neutral-300">{product.sku}</span>
+
                         </p>
 
+                      )}
 
-{/* Trust Features removed per client request */}
+                      <p>
 
-                      </div>
+                        <span className="text-neutral-600">Available:</span>{" "}
+
+                        <span className={stock > 0 ? "text-emerald-500" : "text-red-400"}>
+
+                          {stock > 0 ? "Available" : "Out of stock"}
+
+                        </span>
+
+                      </p>
+
                     </div>
+
                   </div>
 
-                  
-
-                  <div className="w-full lg:w-7/12 relative min-w-0">
-                    <div className="flex flex-col md:flex-row lg:flex-row xl:flex-row">
-                      <div className="xl:pr-6 md:pr-6 w-full">
-                        <div className="mb-6">
-                          <h1 className="leading-7 text-lg md:text-xl lg:text-2xl mb-1 font-semibold font-serif text-gray-800">
-                            {dynamicTitle || showingTranslateValue(product?.title)}
-                          </h1>
-
-
-                          {/* Ratings removed per client request */}
-
-                          {/* <p className="uppercase font-serif font-medium text-gray-500 text-sm">
-                            SKU :{" "}
-                            <span className="font-bold text-gray-600">
-                              {product.sku}
-                            </span>
-                          </p>
-                          {product?.hsnCode && (
-                            <p className="uppercase font-serif font-medium text-gray-500 text-sm mt-1">
-                              HSN :{" "}
-                              <span className="font-bold text-gray-600">
-                                {product.hsnCode}
-                              </span>
-                            </p>
-                          )} */}
-                          <div className="text-sm leading-6 text-gray-500 md:leading-7 whitespace-pre-line">
-                            {(() => {
-                              const descriptionText = dynamicDescription || showingTranslateValue(product?.description);
-                              const lines = (descriptionText || "").split(/\r?\n/).filter(Boolean);
-                              const displayText = isReadMore
-                                ? lines.slice(0, 4).join("\n")
-                                : (descriptionText || "");
-                              const textLength = lines.length || 0;
-
-                              return (
-                                <>
-                                  {displayText}
-                                  {textLength > 4 && (
-                                    <>
-                                      <br />
-                                      <span
-                                        onClick={() => setIsReadMore(!isReadMore)}
-                                        className="read-or-hide cursor-pointer text-store-600 hover:text-store-700"
-                                      >
-                                        {isReadMore ? t("moreInfo") : t("showLess")}
-                                      </span>
-                                    </>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </div>
-
-                          <div className="relative">
-                            <Stock stock={stock} />
-                          </div>
-
-                         
-                        </div>
-                        <div className="bg-gray-50/50 rounded-2xl p-6 mb-8 border border-gray-100">
-                          <Price
-                            price={
-                              price > 0
-                                ? price
-                                : getNumber(
-                                    (product?.variants?.[0]?.price ??
-                                      product?.prices?.price) || 0
-                                  )
-                            }
-                            product={product}
-                            currency={currency}
-                            discount={discount || product?.prices?.discount || 0}
-                            originalPrice={
-                              originalPrice > 0
-                                ? originalPrice
-                                : getNumber(
-                                    (product?.variants?.[0]?.originalPrice ??
-                                      product?.prices?.originalPrice ??
-                                      product?.variants?.[0]?.price ??
-                                      product?.prices?.price) || 0
-                                  )
-                            }
-                            showTaxLabel
-                          />
-                          
-                          {discount > 0 && (
-                            <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold ring-1 ring-green-200">
-                              <span className="animate-bounce-short mr-1">🔥</span> Special Discount Applied
-                            </div>
-                          )}
-
-                        </div>
-
-                        {/* Flipkart-style Variant Selection */}
-                        <div className="mb-6 space-y-4">
-                          {variantTitle?.map((a, i) => (
-                            <div key={i + 1} className="pb-3">
-                              <div className="flex items-center mb-2">
-                                <h4 className="text-sm font-semibold text-gray-800 mr-2">
-                                  {showingTranslateValue(a?.name)}:
-                                </h4>
-                                {selectVariant[a._id] && (
-                                  <span className="text-xs text-gray-500">
-                                    {
-                                      showingTranslateValue(
-                                        a?.variants?.find(v => v._id === selectVariant[a._id])?.name
-                                      )
-                                    }
-                                  </span>
-                                )}
-                              </div>
-                              <div className="max-w-full">
-                                <VariantList
-                                  att={a._id}
-                                  lang={lang}
-                                  option={a.option}
-                                  setValue={setValue}
-                                  varTitle={variantTitle}
-                                  setSelectVa={setSelectVa}
-                                  variants={product.variants}
-                                  selectVariant={selectVariant}
-                                  setSelectVariant={setSelectVariant}
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <div>
-                          
-                          <div className="flex flex-col mt-4">
-                            <span className="font-serif font-semibold py-1 text-sm d-block">
-                              <span className="text-gray-800">
-                                {t("category")}:
-                              </span>{" "}
-                              <Link
-                                href={`/search?category=${category_name}&_id=${product?.category?._id}`}
-                              >
-                                <button
-                                  type="button"
-                                  className="text-gray-600 font-serif font-medium underline ml-2 hover:text-teal-600"
-                                  onClick={() => setIsLoading(!isLoading)}
-                                >
-                                  {category_name}
-                                </button>
-                              </Link>
-                            </span>
-                            <Tags product={product} />
-                          </div>
-
-                        
-
-                          <div className="mt-8">
-                            <p className="text-xs sm:text-sm text-gray-700 font-medium">
-                              Call Us To Order By Mobile Number :{" "}
-                              <a 
-                                href={`tel:${(storeCustomizationSetting?.navbar?.phone || storeCustomizationSetting?.footer?.bottom_contact || globalSetting?.contact || "+0044235234").replace(/\s+/g, '')}`}
-                                className="text-store-500 font-semibold hover:text-store-600 hover:underline"
-                              >
-                                {storeCustomizationSetting?.navbar?.phone || storeCustomizationSetting?.footer?.bottom_contact || globalSetting?.contact || "+0044235234"}
-                              </a>
-                            </p>
-                          </div>
-                          {/* Delivery time / location picker removed per client request */}
-                          {/* social share
-                          <div className="mt-2">
-                              <h3 className="text-base font-semibold mb-1 font-serif">
-                              {t("shareYourSocial")}
-                            </h3>
-                              <p className="font-sans text-sm text-gray-500">
-                              {t("shareYourSocialText")}
-                            </p>
-                            <ul className="flex mt-4">
-                              <li className="flex items-center text-center border border-gray-100 rounded-full hover:bg-store-500  mr-2 transition ease-in-out duration-500">
-                                <FacebookShareButton
-                                  url={
-                                    shareUrl ||
-                                    (typeof window !== "undefined"
-                                      ? window.location.href
-                                      : `https://Rasa Store-store-nine.vercel.app/product/${router.query.slug}`)
-                                  }
-                                  quote=""
-                                >
-                                  <FacebookIcon size={32} round />
-                                </FacebookShareButton>
-                              </li>
-                              <li className="flex items-center text-center border border-gray-100 rounded-full hover:bg-store-500  mr-2 transition ease-in-out duration-500">
-                                <TwitterShareButton
-                                  url={
-                                    shareUrl ||
-                                    (typeof window !== "undefined"
-                                      ? window.location.href
-                                      : `https://Rasa Store-store-nine.vercel.app/product/${router.query.slug}`)
-                                  }
-                                  quote=""
-                                >
-                                  <TwitterIcon size={32} round />
-                                </TwitterShareButton>
-                              </li>
-                              <li className="flex items-center text-center border border-gray-100 rounded-full hover:bg-store-500  mr-2 transition ease-in-out duration-500">
-                                <a
-                                  href={`https://www.instagram.com/?url=${
-                                    shareUrl ||
-                                    (typeof window !== "undefined"
-                                      ? window.location.href
-                                      : `https://Rasa Store-store-nine.vercel.app/product/${router.query.slug}`)
-                                  }`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center justify-center w-full h-full"
-                                  aria-label="Share on Instagram"
-                                >
-                                  <FaInstagram size={32} style={{ color: '#E4405F' }} />
-                                </a>
-                              </li>
-                              <li className="flex items-center text-center border border-gray-100 rounded-full hover:bg-store-500  mr-2 transition ease-in-out duration-500">
-                                <WhatsappShareButton
-                                  url={
-                                    shareUrl ||
-                                    (typeof window !== "undefined"
-                                      ? window.location.href
-                                      : `https://Rasa Store-store-nine.vercel.app/product/${router.query.slug}`)
-                                  }
-                                  quote=""
-                                >
-                                  <WhatsappIcon size={32} round />
-                                </WhatsappShareButton>
-                              </li>
-                              <li className="flex items-center text-center border border-gray-100 rounded-full hover:bg-store-500  mr-2 transition ease-in-out duration-500">
-                                <LinkedinShareButton
-                                  url={
-                                    shareUrl ||
-                                    (typeof window !== "undefined"
-                                      ? window.location.href
-                                      : `https://Rasa Store-store-nine.vercel.app/product/${router.query.slug}`)
-                                  }
-                                  quote=""
-                                >
-                                  <LinkedinIcon size={32} round />
-                                </LinkedinShareButton>
-                              </li>
-                            </ul>
-                          </div> */}
-
-
-                          {/* Product Highlights Section */}
-                          {product?.productHighlights?.enabled !== false && product?.productHighlights?.items?.length > 0 && (
-                            <div className="mt-8 border border-gray-200 rounded-lg p-6 bg-white">
-                              <div className="flex items-center gap-3 mb-4">
-                                {product.productHighlights.icon && (
-                                  <img src={product.productHighlights.icon} alt="" className="w-10 h-10" />
-                                )}
-                                <h2 className="text-xl font-semibold text-gray-800">
-                                  {product.productHighlights.title || "Product Highlights"}
-                                </h2>
-                              </div>
-                              <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 text-justify">
-                                {product.productHighlights.items.map((item, idx) => (
-                                  <li key={idx} className="leading-relaxed">
-                                    {item}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          {/* Premium Tab Navigation */}
-                          <div className="sticky top-16 lg:top-[80px] z-40 bg-white/80 backdrop-blur-md mt-12 mb-8 py-1 border-b border-gray-100 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)]">
-                            <div className="max-w-screen-2xl mx-auto px-4 lg:px-12">
-                              <div className="flex gap-6 overflow-x-auto tab-navigation-container">
-                                {product?.productDescription?.enabled !== false && (
-                                  <button
-                                    data-tab="product-description"
-                                    onClick={() => handleTabClick("product-description")}
-                                    className={`relative py-4 text-sm font-bold transition-all whitespace-nowrap ${
-                                      activeTab === "product-description"
-                                        ? "text-store-600"
-                                        : "text-gray-400 hover:text-gray-600"
-                                    }`}
-                                  >
-                                    Description
-                                    {activeTab === "product-description" && (
-                                      <span className="absolute bottom-0 left-0 w-full h-1 bg-store-500 rounded-full" />
-                                    )}
-                                  </button>
-                                )}
-                                {product?.dynamicSections?.some(s => s?.name?.toLowerCase().includes("specification")) && (
-                                  <button
-                                    data-tab="specification"
-                                    onClick={() => handleTabClick("specification")}
-                                    className={`relative py-4 text-sm font-bold transition-all whitespace-nowrap ${
-                                      activeTab === "specification"
-                                        ? "text-store-600"
-                                        : "text-gray-400 hover:text-gray-600"
-                                    }`}
-                                  >
-                                    Specification
-                                    {activeTab === "specification" && (
-                                      <span className="absolute bottom-0 left-0 w-full h-1 bg-store-500 rounded-full" />
-                                    )}
-                                  </button>
-                                )}
-                                {productFaqs.length > 0 && (
-                                  <button
-                                    data-tab="faq"
-                                    onClick={() => handleTabClick("faq")}
-                                    className={`relative py-4 text-sm font-bold transition-all whitespace-nowrap ${
-                                      activeTab === "faq"
-                                        ? "text-store-600"
-                                        : "text-gray-400 hover:text-gray-600"
-                                    }`}
-                                  >
-                                    FAQs
-                                    {activeTab === "faq" && (
-                                      <span className="absolute bottom-0 left-0 w-full h-1 bg-store-500 rounded-full" />
-                                    )}
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Product Description Section */}
-                          {product?.productDescription?.enabled !== false && product?.productDescription?.description && (
-                            <div id="product-description" className="mt-8 border border-gray-200 rounded-lg p-6 bg-white">
-                              <div className="flex items-center gap-3 mb-4">
-                                {product.productDescription.icon && (
-                                  <img src={product.productDescription.icon} alt="" className="w-10 h-10" />
-                                )}
-                                <h2 className="text-xl font-semibold text-gray-800">
-                                  {product.productDescription.title || "Product Description"} of {dynamicTitle || showingTranslateValue(product?.title)}
-                                </h2>
-                              </div>
-                              <p className="text-sm text-gray-600 leading-relaxed text-justify">
-                                {product.productDescription.description}
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Specification Section */}
-                          {product?.dynamicSections?.some(s => s?.name?.toLowerCase().includes("specification")) && (
-                            <div id="specification" className="mt-8 border border-gray-200 rounded-lg p-6 bg-white">
-                              {product.dynamicSections
-                                .filter(s => s?.name?.toLowerCase().includes("specification"))
-                                .map((section, idx) => (
-                                  <div key={idx} className="mb-6">
-                                    <div className="flex items-center gap-3 mb-4">
-                                      <h2 className="text-xl font-semibold text-gray-800">
-                                        {section.name} of {dynamicTitle || showingTranslateValue(product?.title)}
-                                      </h2>
-                                    </div>
-                                    <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 text-justify">
-                                      {section.subsections
-                                        ?.filter(sub => sub?.type !== "paragraph" && (sub?.key || sub?.value))
-                                        .map((sub, subIdx) => (
-                                          <li key={subIdx}>
-                                            <strong>{sub.key || sub.title}:</strong> {sub.value || sub.content}
-                                          </li>
-                                        ))}
-                                    </ul>
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-
-                          {/* Additional Information Section */}
-                          {product?.additionalInformation?.enabled !== false && product?.additionalInformation?.subsections?.length > 0 && (
-                            <div id="additional-information" className="mt-8 border border-gray-200 rounded-lg p-6 bg-white">
-                              <div className="flex items-center gap-3 mb-4">
-                                {product.additionalInformation.icon && (
-                                  <img src={product.additionalInformation.icon} alt="" className="w-10 h-10" />
-                                )}
-                                <h2 className="text-xl font-semibold text-gray-800">
-                                  {product.additionalInformation.title || "Additional Information"}
-                                </h2>
-                              </div>
-                              <div className="space-y-6">
-                                {product.additionalInformation.subsections.map((subsection, idx) => (
-                                  <div key={idx} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                                    <h3 className="inline-block px-3 py-1 mb-3 text-sm font-semibold text-store-600 bg-store-50 rounded-full">
-                                      {subsection.label}
-                                    </h3>
-                                    <ul className="list-disc list-inside space-y-2 text-sm text-gray-600 text-justify">
-                                      {subsection.items.map((item, itemIdx) => (
-                                        <li key={itemIdx} className="leading-relaxed">
-                                          {item}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Product Details Section (Dynamic & Media) */}
-                          <ProductDetailsSection
-                            dynamicSections={variantDynamicSections || product?.dynamicSections}
-                            mediaSections={variantMediaSections || product?.mediaSections}
-                            selectedAttributes={selectVa || selectVariant || {}}
-                            isVariantSpecific={!!variantDynamicSections}
-                          />
-
-
-                          {/* Modern FAQ Section */}
-                          {productFaqs.length > 0 && (
-                            <div id="faq" className="mt-12 border border-gray-100 rounded-[2rem] p-8 bg-white shadow-sm">
-                              <h3 className="text-2xl font-bold text-gray-900 mb-8 flex items-center gap-3">
-                                <span className="w-2 h-8 bg-store-500 rounded-full" />
-                                {product?.faqs?.title || (product?.faqTitle && product.faqTitle.trim().length
-                                  ? product.faqTitle
-                                  : t("frequentlyAskedQuestions") ||
-                                    "Common Questions")}
-                              </h3>
-                              <div className="space-y-4">
-                                {productFaqs.map((faq, index) => {
-                                  const isOpen = activeFaqIndex === index;
-                                  return (
-                                    <div key={`${faq.question}-${index}`} className={`rounded-2xl border transition-all duration-300 ${isOpen ? 'border-store-200 bg-store-50/30' : 'border-gray-50 bg-gray-50/50 hover:bg-gray-100/50'}`}>
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          setActiveFaqIndex(isOpen ? null : index)
-                                        }
-                                        className="w-full flex items-center justify-between text-left px-6 py-5 focus:outline-none"
-                                      >
-                                        <span className="text-base font-bold text-gray-800 pr-4">
-                                          {faq.question}
-                                        </span>
-                                        <span className={`transition-transform duration-300 ${isOpen ? 'rotate-180 text-store-600' : 'text-gray-400'}`}>
-                                          <FiChevronDown className="w-5 h-5" />
-                                        </span>
-                                      </button>
-                                      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                                        <div className="px-6 pb-6 text-sm text-gray-600 leading-relaxed border-t border-store-100/50 pt-4">
-                                          {faq.answerType === "yes" || faq.answerType === "no"
-                                            ? faq.answer
-                                            : faq.answer || faq.customAnswer || ""}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                          
-                          {/* Manufacturer Details Section */}
-                          {product?.manufacturerDetails?.enabled !== false && product?.manufacturerDetails?.items?.length > 0 && (
-                            <div className="mt-8 p-6 bg-white">
-                              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                                {product?.manufacturerDetails?.title || "Manufacturer details"}
-                              </h3>
-                              <div className="space-y-2 text-sm text-gray-600 text-justify">
-                                {product.manufacturerDetails.items.map((item, idx) => (
-                                  <p key={idx} className="leading-relaxed">
-                                    {item}
-                                  </p>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Disclaimer Section */}
-                          {product?.disclaimer?.enabled !== false && product?.disclaimer?.description && (
-                            <div className="mt-2 p-6 bg-white">
-                              <h3 className="text-lg font-bold text-gray-900 mb-4">
-                                {product?.disclaimer?.title || "Disclaimer"}
-                              </h3>
-                              <div className="text-sm text-gray-600 leading-relaxed text-justify">
-                                <p className="leading-relaxed">
-                                  {typeof product.disclaimer.description === 'object' && product.disclaimer.description !== null
-                                    ? showingTranslateValue(product.disclaimer.description)
-                                    : product.disclaimer.description}
-                                </p>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Contact Section */}
-                          {/* <div className="mt-4 p-6 bg-white">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">
-                              In case of any issues, contact us:
-                            </h3>
-                            <div className="space-y-2 text-sm text-gray-600">
-                              {(() => {
-                                // Try storeCustomizationSetting first, then fallback to globalSetting
-                                // Get email - handle both translated object and plain string
-                                const emailRaw = storeCustomizationSetting?.contact_us?.email_box_email || globalSetting?.email;
-                                const email = emailRaw 
-                                  ? (typeof emailRaw === 'object' && emailRaw !== null && !Array.isArray(emailRaw) ? showingTranslateValue(emailRaw) : (typeof emailRaw === 'string' ? emailRaw : ""))
-                                  : "";
-                                
-                                // Get phone - handle both translated object and plain string
-                                const phoneRaw = storeCustomizationSetting?.contact_us?.call_box_phone || globalSetting?.contact;
-                                const phone = phoneRaw 
-                                  ? (typeof phoneRaw === 'object' && phoneRaw !== null && !Array.isArray(phoneRaw) ? showingTranslateValue(phoneRaw) : (typeof phoneRaw === 'string' ? phoneRaw : ""))
-                                  : "";
-                                
-                                // Get address - handle both translated object and plain string
-                                const addressRaw = storeCustomizationSetting?.contact_us?.address_box_address_one || globalSetting?.address;
-                                const address = addressRaw 
-                                  ? (typeof addressRaw === 'object' && addressRaw !== null && !Array.isArray(addressRaw) ? showingTranslateValue(addressRaw) : (typeof addressRaw === 'string' ? addressRaw : ""))
-                                  : "";
-                                
-                                return (
-                                  <>
-                                    {(email || phone) ? (
-                                      <p className="leading-relaxed">
-                                        {email && (
-                                          <a href={`mailto:${email}`} className="text-blue-600 hover:text-blue-800">
-                                            {email}
-                                          </a>
-                                        )}
-                                        {email && phone && " | "}
-                                        {phone && (
-                                          <a href={`tel:${phone}`} className="text-blue-600 hover:text-blue-800">
-                                            {phone}
-                                          </a>
-                                        )}
-                                      </p>
-                                    ) : null}
-                                    {address ? (
-                                      <p className="leading-relaxed">
-                                        Address: {address}
-                                      </p>
-                                    ) : null}
-                                  </>
-                                );
-                              })()}
-                            </div>
-                          </div> */}
-
-                          {/* Enhanced Sticky Bottom Bar (Mobile only) */}
-                          {showStickyBottomBar && (
-                            <div className="fixed bottom-0 left-0 right-0 z-[60] bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-[0_-8px_20px_rgba(0,0,0,0.05)] lg:hidden transition-all duration-300 slide-up">
-                              <div className="max-w-screen-2xl mx-auto px-5 py-4">
-                                <div className="flex items-center justify-between gap-6">
-                                  <div className="flex-1 min-w-0">
-                                    <h3 className="text-xs font-bold text-gray-500 truncate mb-1.5 uppercase tracking-wider">
-                                      {dynamicTitle || showingTranslateValue(product?.title)}
-                                    </h3>
-                                    <div className="flex items-baseline gap-2">
-                                      <span className="text-xl font-black text-gray-900 tracking-tight">
-                                        {currency}
-                                        {getNumberTwo(
-                                          price > 0 ? price : getNumber((product?.variants?.[0]?.price ?? product?.prices?.price) || 0)
-                                        )}
-                                      </span>
-                                      {discount > 0 && (
-                                        <span className="text-xs font-bold text-green-600">
-                                          ({discount}% OFF)
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <button
-                                    onClick={() => handleAddToCart(product)}
-                                    type="button"
-                                    className="flex-shrink-0 h-14 px-8 rounded-2xl text-sm font-black uppercase tracking-widest flex items-center justify-center bg-store-600 text-white active:scale-95 transition-all shadow-lg shadow-store-100"
-                                  >
-                                    Add To Cart
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-
-                          {/* Reviews removed per client request */}
-
-                         
-                        </div>
-
-                          
-                      </div>
-
-                      {/* shipping description card */}
-                      {/* <div className="w-full xl:w-5/12 lg:w-6/12 md:w-5/12">
-                        <div
-                          className={`mt-6 md:mt-0 lg:mt-0 bg-gray-50 border border-gray-100 p-4 lg:p-8 rounded-lg`}
-                        >
-                          <Card />
-                        </div>
-                      </div> */}
-                    </div>
-                  </div>
                 </div>
+
               </div>
 
-              {/* Variant Specification Section */}
-              {/* {product?.variants && product.variants.length > 0 && (
-                <div className="mt-8 pt-8">
-                  <VariantSpecification
-                    variants={product.variants}
-                    variantTitle={variantTitle}
-                    attributes={attributes}
-                    onVariantSelect={(variant) => {
-                      setSelectVariant(variant);
-                      setSelectVa(variant);
-                      const variantImages = Array.isArray(variant?.images) 
-                        ? variant.images 
-                        : (variant?.image ? [variant.image] : []);
-                      setActiveImage(variantImages[0] || productImages[0] || "");
-                      setStock(variant?.quantity || 0);
-                      const price = getNumber(variant?.price);
-                      const originalPrice = getNumber(variant?.originalPrice);
-                      const discountPercentage = getNumber(
-                        ((originalPrice - price) / originalPrice) * 100
-                      );
-                      setDiscount(getNumber(discountPercentage));
-                      setPrice(price);
-                      setOriginalPrice(originalPrice);
-                      
-                      // Update dynamic title and description - variant first, then product
-                      const variantTitleText = showingTranslateValue(variant?.title);
-                      const variantDescText = showingTranslateValue(variant?.description);
-                      setDynamicTitle(variantTitleText || showingTranslateValue(product?.title));
-                      setDynamicDescription(variantDescText || showingTranslateValue(product?.description));
-                    }}
-                    selectedVariant={selectVariant}
-                  />
-                </div>
-              )} */}
-
-             
-
-              {/* related products */}
-              {relatedProducts?.length >= 2 && (
-                <div className="pt-10 lg:pt-20 lg:pb-10">
-                  <h3 className="leading-7 text-lg lg:text-xl mb-3 font-semibold font-serif hover:text-gray-600">
-                    {t("Related Products")}
-                  </h3>
-                  <div className="flex">
-                    <div className="w-full">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 2xl:grid-cols-6 gap-2 md:gap-3 lg:gap-3">
-                        {relatedProducts?.slice(1, 13).map((product, i) => (
-                          <ProductCard
-                            key={product._id}
-                            product={product}
-                            attributes={attributes}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
+
+            <RelatedProductsSection
+              products={displayRelatedProducts}
+              attributes={attributes}
+              title="You may also like"
+            />
+
+
+
+            {/* Mobile sticky bar */}
+
+            {showStickyBottomBar && (
+
+              <div className="fixed bottom-0 left-0 right-0 z-[60] bg-[#0A0A0A]/95 backdrop-blur-md border-t border-neutral-800 lg:hidden">
+
+                <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+
+                  <div className="min-w-0">
+
+                    <p className="text-[10px] text-neutral-500 truncate uppercase tracking-wider">
+
+                      {dynamicTitle || showingTranslateValue(product?.title)}
+
+                    </p>
+
+                    <p className="text-lg font-semibold text-white">
+
+                      {currency}
+
+                      {getNumberTwo(displayOriginalPrice)}
+
+                    </p>
+
+                  </div>
+
+                  <button
+
+                    type="button"
+
+                    onClick={() => handleAddToCart(product)}
+
+                    className="shrink-0 h-11 px-6 bg-white text-black text-xs font-bold uppercase tracking-wider rounded-lg"
+
+                  >
+
+                    Add to Cart
+
+                  </button>
+
+                </div>
+
+              </div>
+
+            )}
+
           </div>
+
         </Layout>
+
       )}
+
     </>
+
   );
+
 };
 
-// you can use getServerSideProps alternative for getStaticProps and getStaticPaths
 
 export const getServerSideProps = async (context) => {
   const { slug } = context.params;
 
-  const [data, attributes] = await Promise.all([
+  const [data, attributes, storeData] = await Promise.all([
     ProductServices.getShowingStoreProducts({
       category: "",
       slug: slug,
     }),
-
     AttributeServices.getShowingAttributes({}),
+    ProductServices.getShowingStoreProducts({}),
   ]);
-  let product = {};
 
-  if (slug) {
-    product = data?.products?.find((p) => p.slug === slug);
-  }
+  const product = slug
+    ? data?.products?.find((p) => p.slug === slug) || {}
+    : {};
+  const currentId = product?._id;
+
+  const mergeUnique = (...lists) => {
+    const seen = new Set();
+    const merged = [];
+    lists.flat().forEach((p) => {
+      if (!p?._id || p._id === currentId || seen.has(String(p._id))) return;
+      seen.add(String(p._id));
+      merged.push(p);
+    });
+    return merged.slice(0, 12);
+  };
+
+  const relatedProducts = mergeUnique(
+    data?.relatedProducts,
+    storeData?.popularProducts,
+    storeData?.bestSellingProducts,
+    storeData?.discountedProducts,
+    storeData?.products
+  );
 
   return {
     props: {
       product,
       attributes,
-      relatedProducts: data?.relatedProducts,
+      relatedProducts,
     },
   };
 };

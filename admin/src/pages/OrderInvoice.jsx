@@ -1,19 +1,16 @@
-import { useParams, useHistory } from "react-router-dom";
+import { useParams, useHistory, useLocation } from "react-router-dom";
 import ReactToPrint from "react-to-print";
-import React, { useContext, useRef, useState } from "react";
+import React, { useContext, useRef, useState, useEffect } from "react";
 import { FiPrinter, FiMail, FiArrowLeft } from "react-icons/fi";
 import { IoCloudDownloadOutline } from "react-icons/io5";
 import { Button } from "@windmill/react-ui";
-import { WindmillContext } from "@windmill/react-ui";
 import { useTranslation } from "react-i18next";
-import { PDFDownloadLink } from "@react-pdf/renderer";
 
 //internal import
 import useAsync from "@/hooks/useAsync";
 import useError from "@/hooks/useError";
 import { notifyError, notifySuccess } from "@/utils/toast";
 import { AdminContext } from "@/context/AdminContext";
-import { SidebarContext } from "@/context/SidebarContext";
 import OrderServices from "@/services/OrderServices";
 import InvoiceLayout from "@/components/invoice/InvoiceLayout";
 import Loading from "@/components/preloader/Loading";
@@ -21,18 +18,18 @@ import PageTitle from "@/components/Typography/PageTitle";
 import spinnerLoadingImage from "@/assets/img/spinner.gif";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
 import useDisableForDemo from "@/hooks/useDisableForDemo";
-import InvoiceForDownload from "@/components/invoice/InvoiceForDownload";
 import SelectStatus from "@/components/form/selectOption/SelectStatus";
+import { downloadInvoicePdf } from "@/utils/downloadInvoicePdf";
 
 const OrderInvoice = () => {
   const { t } = useTranslation();
-  const { mode } = useContext(WindmillContext);
   const { state } = useContext(AdminContext);
-  const { adminInfo } = state;
   const { id } = useParams();
   const history = useHistory();
+  const location = useLocation();
   const printRef = useRef();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const { data, loading, error } = useAsync(() =>
     OrderServices.getOrderById(id)
@@ -41,21 +38,65 @@ const OrderInvoice = () => {
   const { handleErrorNotification } = useError();
   const { handleDisableForDemo } = useDisableForDemo();
 
-  // console.log("data", data);
-
   const { currency, globalSetting, showDateFormat, getNumberTwo } =
     useUtilsFunction();
 
-  const handleEmailInvoice = async (inv) => {
-    // console.log("inv", inv);
-    if (handleDisableForDemo()) {
-      return; // Exit the function if the feature is disabled
+  const handleDownloadPdf = async () => {
+    if (!printRef.current || pdfLoading) return;
+    setPdfLoading(true);
+    try {
+      await downloadInvoicePdf(
+        printRef.current,
+        `Invoice-${data?.invoice || id}`
+      );
+      notifySuccess("Invoice downloaded");
+    } catch (err) {
+      notifyError(err?.message || "Failed to download invoice");
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("download") !== "1" || !data || loading) {
+      return;
     }
 
-    // if (adminInfo?.role !== "Super Admin")
-    //   return notifyError(
-    //     "You don't have permission to sent email of this order!"
-    //   );
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      if (!printRef.current || cancelled) return;
+
+      setPdfLoading(true);
+      try {
+        await downloadInvoicePdf(
+          printRef.current,
+          `Invoice-${data?.invoice || id}`
+        );
+        if (!cancelled) notifySuccess("Invoice downloaded");
+      } catch (err) {
+        if (!cancelled) {
+          notifyError(err?.message || "Failed to download invoice");
+        }
+      } finally {
+        if (!cancelled) {
+          setPdfLoading(false);
+          history.replace(`/order/${id}`);
+        }
+      }
+    }, 600);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [data, loading, location.search, id, history]);
+
+  const handleEmailInvoice = async (inv) => {
+    if (handleDisableForDemo()) {
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const updatedData = {
@@ -72,9 +113,7 @@ const OrderInvoice = () => {
           from_email: globalSetting?.from_email,
         },
       };
-      // console.log("updatedData", updatedData);
 
-      // return setIsSubmitting(false);
       const res = await OrderServices.sendEmailInvoiceToCustomer(updatedData);
       notifySuccess(res.message);
       setIsSubmitting(false);
@@ -93,124 +132,91 @@ const OrderInvoice = () => {
           className="p-0 text-store-500 hover:text-store-600 h-auto"
         >
           <FiArrowLeft className="w-5 h-5 mr-1" />
-          <span className="text-sm font-bold uppercase tracking-wider">{t("Back")}</span>
+          <span className="text-sm font-bold uppercase tracking-wider">
+            {t("Back")}
+          </span>
         </Button>
       </div>
 
-      <PageTitle> {t("InvoicePageTittle")} </PageTitle>
+      <PageTitle>{t("InvoicePageTittle")}</PageTitle>
 
-      <div
-        ref={printRef}
-        className="bg-white dark:bg-gray-800 mb-4 p-6 lg:p-8 rounded-xl shadow-sm overflow-hidden"
-      >
-        {!loading && !error && (
-          <div className="mb-8 flex md:flex-row flex-col items-center justify-between border-b pb-4 border-gray-100">
-            <PDFDownloadLink
-              document={
-                <InvoiceForDownload
-                  data={data}
-                  currency={currency}
-                  globalSetting={globalSetting}
-                  getNumberTwo={getNumberTwo}
-                  logo={globalSetting?.logo}
-                />
-              }
-              fileName="Invoice"
+      {loading ? (
+        <Loading loading={loading} />
+      ) : error ? (
+        <span className="text-center mx-auto text-red-500">{error}</span>
+      ) : (
+        <div className="max-w-screen-2xl mx-auto pb-10">
+          <div className="mb-8 flex md:flex-row flex-col items-center justify-between gap-4">
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={pdfLoading}
+              className="flex items-center justify-center bg-[#D4AF37] text-black transition-all text-sm font-bold h-10 py-2 px-6 rounded-full hover:bg-[#bfa032] shadow-md cursor-pointer disabled:opacity-60"
             >
-              {({ blob, url, loading, error }) =>
-                loading ? (
-                  "Loading..."
-                ) : (
-                  <button className="flex items-center text-sm leading-5 transition-colors duration-150 font-medium focus:outline-none px-5 py-2 rounded-md text-white bg-store-500 border border-transparent active:bg-store-600 hover:bg-store-600  w-auto cursor-pointer">
-                    Download Invoice
-                    <span className="ml-2 text-base">
-                      <IoCloudDownloadOutline />
-                    </span>
-                  </button>
-                )
-              }
-            </PDFDownloadLink>
+              {pdfLoading ? "Preparing..." : "Download Invoice"}
+              <IoCloudDownloadOutline className="ml-2" />
+            </button>
 
-            <div className="flex md:mt-0 mt-3 gap-4 md:w-auto w-full">
+            <div className="flex md:mt-0 mt-3 gap-3 md:w-auto w-full flex-wrap">
               {globalSetting?.email_to_customer && (
                 <div className="flex justify-end md:w-auto w-full">
                   {isSubmitting ? (
-                    <Button
-                      disabled={true}
-                      type="button"
-                      className="text-sm h-10 leading-4 inline-flex items-center cursor-pointer transition ease-in-out duration-300 font-semibold font-serif text-center justify-center border-0 border-transparent rounded-md focus-visible:outline-none focus:outline-none text-white px-2 ml-4 md:px-4 lg:px-6 py-4 md:py-3.5 lg:py-4 hover:text-white bg-store-400 hover:bg-store-500"
-                    >
+                    <Button disabled type="button" className="h-10 px-6">
                       <img
                         src={spinnerLoadingImage}
                         alt="Loading"
                         width={20}
                         height={10}
-                      />{" "}
+                      />
                       <span className="font-serif ml-2 font-light">
-                        {" "}
                         Processing
                       </span>
                     </Button>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => handleEmailInvoice(data)}
-                      className="flex items-center text-sm leading-5 transition-colors duration-150 font-medium focus:outline-none px-5 py-2 rounded-md text-white bg-teal-500 border border-transparent active:bg-teal-600 hover:bg-teal-600  md:w-auto w-full h-10 justify-center"
+                      className="flex items-center text-sm font-medium px-5 py-2 rounded-full text-white bg-teal-500 hover:bg-teal-600 h-10 justify-center"
                     >
                       Email Invoice
-                      <span className="ml-2">
-                        <FiMail />
-                      </span>
+                      <FiMail className="ml-2" />
                     </button>
                   )}
                 </div>
               )}
 
-              <div className="flex justify-end md:w-auto w-full h-10">
-                <ReactToPrint
-                  trigger={() => (
-                    <button className="flex items-center text-sm leading-5 transition-colors duration-150 font-medium focus:outline-none px-5 py-2 rounded-md text-white bg-indigo-500 border border-transparent active:bg-indigo-600 hover:bg-indigo-600  md:w-auto w-full h-10 justify-center">
-                      Print Invoice
-                      <span className="ml-2">
-                        <FiPrinter />
-                      </span>
-                    </button>
-                  )}
-                  content={() => printRef.current}
-                />
-              </div>
+              <ReactToPrint
+                trigger={() => (
+                  <button
+                    type="button"
+                    className="flex items-center text-sm font-medium px-5 py-2 rounded-full text-white bg-indigo-500 hover:bg-indigo-600 h-10 justify-center"
+                  >
+                    Print Invoice
+                    <FiPrinter className="ml-2" />
+                  </button>
+                )}
+                content={() => printRef.current}
+              />
 
-              <div className="flex items-center gap-4">
-                 <div className="text-xs font-extrabold text-gray-400 uppercase tracking-[0.1em] mr-1 text-gray-500">Status:</div>
-                 <div className="w-48">
-                    <SelectStatus id={id} order={data} />
-                 </div>
+              <div className="flex items-center gap-3">
+                <div className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
+                  Status:
+                </div>
+                <div className="w-48">
+                  <SelectStatus id={id} order={data} />
+                </div>
               </div>
             </div>
           </div>
-        )}
 
-        {loading ? (
-          <Loading loading={loading} />
-        ) : error ? (
-          <span className="text-center mx-auto text-red-500">{error}</span>
-        ) : (
-          <>
-            {data?.refund?.reason && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
-                <h3 className="text-red-800 font-bold text-lg mb-1">Refund Requested</h3>
-                <p className="text-red-700"><strong>Reason:</strong> {data.refund.reason}</p>
-                {data.refund.note && <p className="text-red-700"><strong>Note:</strong> {data.refund.note}</p>}
-              </div>
-            )}
-            <InvoiceLayout
-              data={data}
-              currency={currency}
-              globalSetting={globalSetting}
-              getNumberTwo={getNumberTwo}
-              printRef={printRef} />
-          </>
-        )}
-      </div>
+          <InvoiceLayout
+            data={data}
+            printRef={printRef}
+            currency={currency}
+            getNumberTwo={getNumberTwo}
+          />
+        </div>
+      )}
     </>
   );
 };

@@ -8,12 +8,13 @@ import {
   TableContainer,
   TableHeader,
 } from "@windmill/react-ui";
-import { useContext, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FiPlus, FiTrash2 } from "react-icons/fi";
 
 import AnimatedContent from "@/components/common/AnimatedContent";
 import CheckBox from "@/components/form/others/CheckBox";
+import SwitchToggle from "@/components/form/switch/SwitchToggle";
 import MainDrawer from "@/components/drawer/MainDrawer";
 import BrandDrawer from "@/components/drawer/BrandDrawer";
 import PageTitle from "@/components/Typography/PageTitle";
@@ -25,6 +26,8 @@ import useAsync from "@/hooks/useAsync";
 import useToggleDrawer from "@/hooks/useToggleDrawer";
 import { SidebarContext } from "@/context/SidebarContext";
 import BrandServices from "@/services/BrandServices";
+import SettingServices from "@/services/SettingServices";
+import { notifyError, notifySuccess } from "@/utils/toast";
 
 const Brands = () => {
   const { toggleDrawer } = useContext(SidebarContext);
@@ -43,7 +46,54 @@ const Brands = () => {
   const [isCheckAll, setIsCheckAll] = useState(false);
   const [isCheck, setIsCheck] = useState([]);
   const [searchText, setSearchText] = useState("");
+  const [homepageSectionEnabled, setHomepageSectionEnabled] = useState(true);
+  const [savingHomepageSetting, setSavingHomepageSetting] = useState(false);
   const formRef = useRef(null);
+
+  useEffect(() => {
+    SettingServices.getStoreCustomizationSetting()
+      .then((res) => {
+        const setting =
+          res?.setting && typeof res.setting === "object" && !res?.rasaHomepage
+            ? res.setting
+            : res;
+        const enabled = setting?.rasaHomepage?.brandsSectionEnabled;
+        setHomepageSectionEnabled(enabled !== false);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleHomepageSectionToggle = async (checked) => {
+    setHomepageSectionEnabled(checked);
+    setSavingHomepageSetting(true);
+    try {
+      const res = await SettingServices.getStoreCustomizationSetting();
+      const baseSetting =
+        res?.setting && typeof res.setting === "object" && !res?.rasaHomepage
+          ? res.setting
+          : res || {};
+      await SettingServices.updateStoreCustomizationSetting({
+        name: "storeCustomizationSetting",
+        setting: {
+          ...baseSetting,
+          rasaHomepage: {
+            ...(baseSetting.rasaHomepage || {}),
+            brandsSectionEnabled: checked,
+          },
+        },
+      });
+      notifySuccess(
+        checked
+          ? "Brands section will show on homepage"
+          : "Brands section hidden from homepage"
+      );
+    } catch (err) {
+      setHomepageSectionEnabled(!checked);
+      notifyError(err?.response?.data?.message || "Failed to update homepage setting");
+    } finally {
+      setSavingHomepageSetting(false);
+    }
+  };
 
   const filteredBrands = useMemo(() => {
     if (!searchText) return data;
@@ -83,6 +133,28 @@ const Brands = () => {
       </MainDrawer>
 
       <AnimatedContent>
+        <Card className="min-w-0 shadow-xs overflow-hidden bg-white dark:bg-gray-800 mb-5">
+          <CardBody>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-800 dark:text-gray-100">
+                  Homepage Brands Section
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Turn off to hide the entire Shop By Brand block on the storefront homepage.
+                </p>
+              </div>
+              <SwitchToggle
+                processOption={homepageSectionEnabled}
+                handleProcess={handleHomepageSectionToggle}
+              />
+            </div>
+            {savingHomepageSetting && (
+              <p className="text-xs text-teal-600 mt-2">Saving...</p>
+            )}
+          </CardBody>
+        </Card>
+
         <Card className="min-w-0 shadow-xs overflow-hidden bg-white dark:bg-gray-800 mb-5">
           <CardBody>
             <div className="flex flex-col md:flex-row gap-4">
@@ -161,6 +233,7 @@ const Brands = () => {
                 <TableCell className="text-center">
                   {t("BrandFeatured")}
                 </TableCell>
+                <TableCell className="text-center">Homepage</TableCell>
                 <TableCell className="text-center">{t("Published")}</TableCell>
                 <TableCell className="text-right">{t("AAction")}</TableCell>
               </tr>

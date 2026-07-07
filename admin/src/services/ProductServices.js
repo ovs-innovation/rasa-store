@@ -33,6 +33,9 @@ const ProductServices = {
   updateProduct: async (id, body) => {
     return requests.patch(`/products/${id}`, body);
   },
+  updateProductStock: async (id, stock) => {
+    return requests.patch(`/products/${id}/stock`, { stock });
+  },
   updateManyProducts: async (body) => {
     return requests.patch("/products/update/many", body);
   },

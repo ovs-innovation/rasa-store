@@ -6,7 +6,6 @@ const Customer = require('./models/Customer');
 const Order = require('./models/Order');
 const Product = require('./models/Product');
 const Coupon = require('./models/Coupon');
-const Refund = require('./models/Refund');
 const Admin = require('./models/Admin');
 
 connectDB().then(async () => {
@@ -34,10 +33,6 @@ connectDB().then(async () => {
   // Shiprocket Orders
   const srOrder = await Order.findOne({'shiprocket.order_id': { $exists: true, $ne: null }}).lean();
   console.log('Shiprocket Order Exists:', !!srOrder);
-  
-  // Refunded Orders
-  const refundedOrder = await Order.findOne({status: 'Refunded'}).lean();
-  console.log('Refunded Order Exists:', !!refundedOrder);
 
   // Products
   const productCount = await Product.countDocuments();

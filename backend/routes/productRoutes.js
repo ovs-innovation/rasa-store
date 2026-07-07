@@ -14,6 +14,7 @@ const {
   getProductById,
   getProductBySlug,
   updateProduct,
+  updateProductStock,
   updateManyProducts,
   updateStatus,
   deleteProduct,
@@ -71,6 +72,9 @@ router.get("/", getAllProducts);
 
 //get a product by slug
 router.get("/product/:slug", getProductBySlug);
+
+//update product stock only
+router.patch("/:id/stock", isAuth, isAdmin, updateProductStock);
 
 //update a product
 router.patch("/:id", isAuth, isAdmin, updateProduct);

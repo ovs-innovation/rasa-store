@@ -1,6 +1,5 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useCart } from "react-use-cart";
 import { FiHome, FiUser, FiShoppingCart, FiAlignLeft, FiHeart } from "react-icons/fi";
 import { IoSearchOutline, IoLockClosedOutline } from "react-icons/io5";
@@ -8,13 +7,13 @@ import { useRouter } from "next/router";
 import useTranslation from "next-translate/useTranslation";
 
 //internal imports
-import { getUserSession } from "@lib/auth";
 import { SidebarContext } from "@context/SidebarContext";
+import { UserContext } from "@context/UserContext";
 import CategoryDrawer from "@components/drawer/CategoryDrawer";
 import useGetSetting from "@hooks/useGetSetting";
 import useWishlist from "@hooks/useWishlist";
-import LocationButton from "@components/location/LocationButton";
 import SearchSuggestions from "@components/search/SearchSuggestions";
+import { pickBrandLogo } from "@utils/brandAssets";
 const MobileFooter = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -22,12 +21,18 @@ const MobileFooter = () => {
   const [showSignDropdown, setShowSignDropdown] = useState(false);
   const searchInputRef = useRef(null);
   const { toggleCategoryDrawer, showSearch, setShowSearch, toggleCartDrawer } = useContext(SidebarContext);
+  const { state: userState } = useContext(UserContext);
   const { totalUniqueItems } = useCart();
-  const userInfo = getUserSession();
+  const userInfo = userState?.userInfo;
   const router = useRouter();
   const { t } = useTranslation("common");
-  const { storeCustomizationSetting } = useGetSetting();
+  const { storeCustomizationSetting, globalSetting } = useGetSetting();
   const storeColor = storeCustomizationSetting?.theme?.color || "green";
+  const brandLogo = pickBrandLogo(
+    storeCustomizationSetting?.seo?.favicon,
+    globalSetting?.logo,
+    storeCustomizationSetting?.navbar?.logo
+  );
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -86,10 +91,10 @@ const MobileFooter = () => {
     <>
       {/* Drawer lives off-canvas; keep it mounted without forcing page layout/scroll */}
       <CategoryDrawer />
-      <footer className="lg:hidden fixed z-[60] top-0 bg-[#050505]/95 backdrop-blur-md w-full h-16 px-3 sm:px-4 border-b border-neutral-900/60 shadow-md">
-        <div className="grid h-full w-full grid-cols-[auto_1fr_auto] items-center gap-2">
-          {/* Left — menu + logo */}
-          <div className="flex items-center gap-1.5 shrink-0">
+      <footer className="lg:hidden fixed z-[60] top-0 bg-[#050505]/95 backdrop-blur-md w-full h-16 px-2.5 sm:px-4 border-b border-neutral-900/60 shadow-md">
+        <div className="flex h-full w-full items-center justify-between gap-1.5">
+          {/* Left — menu + logo (logo always reserved) */}
+          <div className="flex items-center gap-1 shrink-0">
             <button
               aria-label="Menu"
               onClick={toggleCategoryDrawer}
@@ -99,29 +104,27 @@ const MobileFooter = () => {
             </button>
             <Link
               href="/"
-              className="flex items-center justify-center"
+              className="flex h-10 w-10 shrink-0 items-center justify-center sm:h-11 sm:w-11"
               rel="noreferrer"
               aria-label={t("Home") || "Home"}
             >
-              <div className="relative w-10 h-10">
-                <Image
-                  src="/rasaLogo.png"
-                  alt="The Rasa Store"
-                  fill
-                  className="object-contain"
-                  sizes="40px"
-                  priority
-                />
-              </div>
+              <img
+                src={brandLogo}
+                alt="The Rasa Store"
+                width={44}
+                height={44}
+                className="h-10 w-10 object-contain select-none sm:h-11 sm:w-11"
+                draggable={false}
+              />
             </Link>
           </div>
 
-          {/* Center — search */}
+          {/* Center — full search pill on wider phones, icon-only on narrow screens */}
           <button
             type="button"
             onClick={openSearch}
             aria-label="Search products"
-            className={`mx-auto flex h-9 w-full max-w-[210px] items-center gap-2 rounded-full border px-3 text-left transition-all ${
+            className={`hidden min-[400px]:flex h-9 min-w-0 flex-1 max-w-[190px] items-center gap-2 rounded-full border px-3 text-left transition-all ${
               showSearch
                 ? "border-[#D4AF37]/60 bg-[#111] text-white"
                 : "border-neutral-800 bg-[#0d0d0d] text-neutral-500 hover:border-neutral-700"
@@ -130,9 +133,17 @@ const MobileFooter = () => {
             <IoSearchOutline className="shrink-0 text-base text-neutral-400" />
             <span className="truncate text-[11px] font-medium">Search sneakers, bags...</span>
           </button>
+          <button
+            type="button"
+            onClick={openSearch}
+            aria-label="Search products"
+            className="flex min-[400px]:hidden items-center justify-center p-1.5 text-neutral-400 hover:text-white transition-colors"
+          >
+            <IoSearchOutline className="w-5 h-5" />
+          </button>
 
           {/* Right — cart + account */}
-          <div className="flex items-center justify-end gap-2 shrink-0">
+          <div className="flex items-center justify-end gap-1.5 shrink-0">
             <button
               type="button"
               onClick={toggleCartDrawer}

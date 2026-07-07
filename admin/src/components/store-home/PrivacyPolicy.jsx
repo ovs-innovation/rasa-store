@@ -26,12 +26,6 @@ const PrivacyPolicy = ({
   termsConditionsHeaderBg,
   termsConditionsTextEdit,
   setTermsConditionsTextEdit,
-  refundReturnPolicy,
-  setRefundReturnPolicy,
-  refundReturnPolicyHeaderBg,
-  setRefundReturnPolicyHeaderBg,
-  refundReturnPolicyTextEdit,
-  setRefundReturnPolicyTextEdit,
   shippingDeliveryPolicy,
   setShippingDeliveryPolicy,
   shippingDeliveryPolicyHeaderBg,
@@ -228,88 +222,6 @@ const PrivacyPolicy = ({
                   wrapperClassName="demo-wrapper"
                   editorClassName="demo-editor"
                   onEditorStateChange={setTermsConditionsTextEdit}
-                  editorStyle={{
-                    border: "1px solid #F1F1F1",
-                    padding: "0 15px",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <hr className="md:mb-12 mb-3" />
-
-        <div className="xl:px-10 flex-grow scrollbar-hide w-full max-h-full">
-          <div className="inline-flex md:text-base text-sm mb-3 text-gray-500 dark:text-gray-400">
-            <strong>Refund & Return Policy</strong>
-          </div>
-          <hr className="md:mb-10 mb-3" />
-
-          <div className="grid md:grid-cols-5 sm:grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 md:mb-6 mb-3">
-            <label className="block md:text-sm md:col-span-1 sm:col-span-2 text-xs font-semibold text-gray-600 dark:text-gray-400 md:mb-1">
-              {t("EnableThisBlock")}
-            </label>
-            <div className="sm:col-span-4">
-              <SwitchToggle
-                title=""
-                handleProcess={setRefundReturnPolicy}
-                processOption={refundReturnPolicy}
-                name={refundReturnPolicy}
-              />
-            </div>
-          </div>
-
-          <div
-            style={{
-              height: refundReturnPolicy ? "auto" : 0,
-              transition: "all 0.5s",
-              visibility: !refundReturnPolicy ? "hidden" : "visible",
-              opacity: !refundReturnPolicy ? "0" : "1",
-            }}
-          >
-            <div className="grid md:grid-cols-5 sm:grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 md:mb-6 mb-3">
-              <label className="block md:text-sm md:col-span-1 sm:col-span-2 text-xs font-semibold text-gray-600 dark:text-gray-400 md:mb-1">
-                {t("PageHeaderBg")}
-              </label>
-              <div className="sm:col-span-4">
-                <Uploader
-                  imageUrl={refundReturnPolicyHeaderBg}
-                  setImageUrl={setRefundReturnPolicyHeaderBg}
-                  targetWidth={1920}
-                  targetHeight={373}
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-5 sm:grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 md:mb-6 mb-3">
-              <label className="block md:text-sm md:col-span-1 sm:col-span-2 text-xs font-semibold text-gray-600 dark:text-gray-400 md:mb-1">
-                {t("PageTitle")}
-              </label>
-              <div className="sm:col-span-4">
-                <InputAreaTwo
-                  register={register}
-                  label="Page Title"
-                  name="refund_return_page_title"
-                  type="text"
-                  placeholder={t("PageTitle")}
-                />
-                <Error errorName={errors.refund_return_page_title} />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-5 sm:grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 md:mb-6 mb-3">
-              <label className="block md:text-sm md:col-span-1 sm:col-span-2 text-xs font-semibold text-gray-600 dark:text-gray-400 md:mb-1">
-                {t("PageText")}
-              </label>
-              <div className="sm:col-span-4">
-                <Editor
-                  editorState={
-                    refundReturnPolicyTextEdit ? refundReturnPolicyTextEdit : null
-                  }
-                  wrapperClassName="demo-wrapper"
-                  editorClassName="demo-editor"
-                  onEditorStateChange={setRefundReturnPolicyTextEdit}
                   editorStyle={{
                     border: "1px solid #F1F1F1",
                     padding: "0 15px",

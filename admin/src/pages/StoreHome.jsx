@@ -207,12 +207,6 @@ const StoreHome = () => {
     setTextEdit,
     termsConditionsTextEdit,
     setTermsConditionsTextEdit,
-    refundReturnPolicy,
-    setRefundReturnPolicy,
-    refundReturnPolicyHeaderBg,
-    setRefundReturnPolicyHeaderBg,
-    refundReturnPolicyTextEdit,
-    setRefundReturnPolicyTextEdit,
     shippingDeliveryPolicy,
     setShippingDeliveryPolicy,
     shippingDeliveryPolicyHeaderBg,
@@ -473,18 +467,7 @@ const StoreHome = () => {
               Dashboard Settings
             </Link>
           </li>
-          <li>
-            <Link
-              to={"/store/customization?storeTab=seo-settings"}
-              className={`inline-block px-6 py-4 text-sm font-bold rounded-2xl transition-all duration-200 ${
-                tabName === "seo-settings"
-                  ? "bg-[#004f56] dark:bg-emerald-600 text-white shadow-lg scale-105"
-                  : "bg-[#d0eaec] dark:bg-gray-700 text-[#004f56] dark:text-emerald-400 hover:bg-[#c2e4e6] dark:hover:bg-gray-600"
-              } text-center min-w-[120px]`}
-            >
-              SEO Settings
-            </Link>
-          </li>
+
           <li>
             <Link
               to={"/store/customization?storeTab=theme-setting"}
@@ -759,12 +742,6 @@ const StoreHome = () => {
                   termsConditionsHeaderBg={termsConditionsHeaderBg}
                   termsConditionsTextEdit={termsConditionsTextEdit}
                   setTermsConditionsTextEdit={setTermsConditionsTextEdit}
-                  refundReturnPolicy={refundReturnPolicy}
-                  setRefundReturnPolicy={setRefundReturnPolicy}
-                  refundReturnPolicyHeaderBg={refundReturnPolicyHeaderBg}
-                  setRefundReturnPolicyHeaderBg={setRefundReturnPolicyHeaderBg}
-                  refundReturnPolicyTextEdit={refundReturnPolicyTextEdit}
-                  setRefundReturnPolicyTextEdit={setRefundReturnPolicyTextEdit}
                   shippingDeliveryPolicy={shippingDeliveryPolicy}
                   setShippingDeliveryPolicy={setShippingDeliveryPolicy}
                   shippingDeliveryPolicyHeaderBg={shippingDeliveryPolicyHeaderBg}
@@ -895,24 +872,7 @@ const StoreHome = () => {
         )}
         {/************* TabPanel 9 END*************/}
 
-        {tabName === "seo-settings" && (
-          <AnimatedContent>
-            <div className="sm:container md:p-8 p-4 w-full mx-auto bg-white dark:bg-gray-800 dark:text-gray-200 rounded-2xl shadow-sm border border-[#e5e7eb]">
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <SeoSetting
-                  isSave={isSave}
-                  errors={errors}
-                  register={register}
-                  favicon={favicon}
-                  setFavicon={setFavicon}
-                  metaImg={metaImg}
-                  setMetaImg={setMetaImg}
-                  isSubmitting={isSubmitting}
-                />
-              </form>
-            </div>
-          </AnimatedContent>
-        )}
+
         {tabName === "theme-setting" && (
           <AnimatedContent>
             <div className="sm:container md:p-8 p-4 w-full mx-auto bg-white dark:bg-gray-800 dark:text-gray-200 rounded-2xl shadow-sm border border-[#e5e7eb] dark:border-gray-700">

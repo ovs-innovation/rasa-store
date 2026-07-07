@@ -1,7 +1,7 @@
 import combinate from "combinate";
 import { useContext, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useLocation } from "react-router-dom";
+import { useLocation, useHistory } from "react-router-dom";
 import swal from "sweetalert";
 
 //internal import
@@ -23,9 +23,20 @@ const generateVariantSku = (baseSku, index) => {
 
 const normalizeImageList = (val) => {
   if (!val) return [];
-  if (Array.isArray(val)) return val.filter((item) => typeof item === "string" && item);
-  if (typeof val === "string" && val.trim()) return [val];
-  return [];
+  const source = Array.isArray(val)
+    ? val
+    : typeof val === "string" && val.trim()
+    ? [val]
+    : [];
+  return source
+    .flat(Infinity)
+    .filter((item) => typeof item === "string" && item.trim())
+    .map((item) => item.trim());
+};
+
+const pickFirstImageUrl = (value) => {
+  const list = normalizeImageList(value);
+  return list[0] || "";
 };
 
 const mapStatusForForm = (status) => {
@@ -92,8 +103,13 @@ const ensureVariantsHaveSku = (variantList, baseSku) =>
     };
   });
 
+const isStandaloneProductPage = (pathname = "") =>
+  pathname === "/products/add" || /^\/products\/edit\//.test(pathname);
+
 const useProductSubmit = (id) => {
   const location = useLocation();
+  const history = useHistory();
+  const standaloneProductPage = isStandaloneProductPage(location.pathname);
   const { isDrawerOpen, closeDrawer, setIsUpdate, lang } =
     useContext(SidebarContext);
 
@@ -139,6 +155,7 @@ const useProductSubmit = (id) => {
   const [language, setLanguage] = useState("en");
   const [openModal, setOpenModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [productLoading, setProductLoading] = useState(Boolean(id));
   const [slug, setSlug] = useState("");
   const [brand, setBrand] = useState(null);
   const [dynamicSections, setDynamicSections] = useState([]);
@@ -384,6 +401,15 @@ const useProductSubmit = (id) => {
         baseSkuValue
       );
 
+      const galleryImages = normalizeImageList(imageUrl);
+      const resolvedFeaturedImage =
+        pickFirstImageUrl(featuredImage) || galleryImages[0] || "";
+      const resolvedHoverImage =
+        pickFirstImageUrl(hoverImage) ||
+        galleryImages[1] ||
+        galleryImages[0] ||
+        "";
+
       const productData = {
         productId: productId,
         sku: data.sku || "",
@@ -413,8 +439,8 @@ const useProductSubmit = (id) => {
         categories: selectedCategory.map((item) => item._id),
         category: defaultCategory[0]._id,
 
-        image: imageUrl,
-        thumbnail: thumbnailUrl,
+        image: galleryImages,
+        thumbnail: pickFirstImageUrl(thumbnailUrl) || galleryImages[0] || "",
         stock: finalStock,
         tag: Array.isArray(tag) ? tag : tag ? [tag] : [],
 
@@ -422,9 +448,9 @@ const useProductSubmit = (id) => {
         productType: data.productType || "",
         metaTitle: data.metaTitle || "",
         metaDescription: data.metaDescription || "",
-        seoImage: seoImage || "",
-        featuredImage: featuredImage || "",
-        hoverImage: hoverImage || "",
+        seoImage: pickFirstImageUrl(seoImage) || resolvedFeaturedImage,
+        featuredImage: resolvedFeaturedImage,
+        hoverImage: resolvedHoverImage,
         video: video || "",
         badge: badge || "",
         status: mapStatusForApi(data.status || "Published"),
@@ -482,7 +508,12 @@ const useProductSubmit = (id) => {
           tapValue === "Combination" ||
           (tapValue !== "Combination" && !isCombination)
         ) {
-          closeDrawer();
+          if (standaloneProductPage) {
+            setIsSubmitting(false);
+            history.push("/products");
+          } else {
+            closeDrawer();
+          }
         }
       } else {
         const res = await ProductServices.addProduct(productData);
@@ -573,7 +604,11 @@ const useProductSubmit = (id) => {
           (tapValue !== "Combination" && !isCombination)
         ) {
           setIsSubmitting(false);
-          closeDrawer();
+          if (standaloneProductPage) {
+            history.push("/products");
+          } else {
+            closeDrawer();
+          }
         }
       }
     } catch (err) {
@@ -587,7 +622,7 @@ const useProductSubmit = (id) => {
   };
 
   useEffect(() => {
-    if (!isDrawerOpen) {
+    if (!isDrawerOpen && !standaloneProductPage) {
       setSlug("");
       setLanguage(lang);
       setValue("language", language);
@@ -664,13 +699,15 @@ const useProductSubmit = (id) => {
       setFaqSection({ enabled: true, icon: "", title: "FAQ", items: [] });
 
       setUpdatedId();
+      setProductLoading(false);
       return;
-    } else {
+    } else if (isDrawerOpen) {
       handleProductTap("Basic Info", true);
     }
 
     if (id) {
       setIsBasicComplete(true);
+      setProductLoading(true);
       (async () => {
         try {
           const res = await ProductServices.getProductById(id);
@@ -777,8 +814,12 @@ const useProductSubmit = (id) => {
           }
         } catch (err) {
           notifyError(err?.response?.data?.message || err?.message);
+        } finally {
+          setProductLoading(false);
         }
       })();
+    } else {
+      setProductLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -786,6 +827,7 @@ const useProductSubmit = (id) => {
     setValue,
     isDrawerOpen,
     location.pathname,
+    standaloneProductPage,
     clearErrors,
     language,
     lang,
@@ -1653,6 +1695,7 @@ const useProductSubmit = (id) => {
     onCloseModal,
     isBulkUpdate,
     isSubmitting,
+    productLoading,
     tapValue,
     setTapValue,
     resetRefTwo,

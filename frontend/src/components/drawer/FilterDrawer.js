@@ -13,8 +13,6 @@ const FilterDrawer = ({
   setPriceRange,
   selectedCategories,
   setSelectedCategories,
-  selectedRating,
-  setSelectedRating,
   selectedDiscount,
   setSelectedDiscount,
   onClearAll,
@@ -45,8 +43,6 @@ const FilterDrawer = ({
             setPriceRange={setPriceRange}
             selectedCategories={selectedCategories}
             setSelectedCategories={setSelectedCategories}
-            selectedRating={selectedRating}
-            setSelectedRating={setSelectedRating}
             selectedDiscount={selectedDiscount}
             setSelectedDiscount={setSelectedDiscount}
             onClearAll={onClearAll}

@@ -445,12 +445,6 @@ const Header = () => {
                                     handleNotificationStatusChange(value._id)
                                   }
                                 >
-                                  <Avatar
-                                    className="mr-2 md:block bg-gray-50 border border-gray-200"
-                                    src={resolveCloudinaryUrl(value.image) || "/favicon-transparent.png"}
-                                    alt="image"
-                                  />
-
                                   <div className="notification-content">
                                     <h6 className="font-medium text-gray-500">
                                       {/* {`${cusName} ${priceText}`} */}

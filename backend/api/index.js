@@ -26,7 +26,6 @@ const reviewRoutes = require("../routes/reviewRoutes");
 const faqRoutes = require("../routes/faqRoutes");
 const testimonialRoutes = require("../routes/testimonialRoutes");
 const locationRoutes = require("../routes/locationRoutes");
-const refundRoutes = require("../routes/refundRoutes");
 const pushNotificationRoutes = require("../routes/pushNotificationRoutes");
 const customerNotificationRoutes = require("../routes/customerNotificationRoutes");
 const webhookRoutes = require("../routes/webhookRoutes");
@@ -38,10 +37,12 @@ const { isAuth, isAdmin } = require("../config/auth");
 // } = require("../lib/notification/setting");
 
 connectDB().catch((err) => {
-  console.error("⚠️  MongoDB connection failed — server will still start but DB operations will fail.", err.message);
+  console.error(
+    "⚠️  MongoDB connection failed — server will still start but DB operations will fail.",
+    err.message,
+  );
 });
 const app = express();
-
 
 // We are using this for the express-rate-limit middleware
 // See: https://github.com/nfriedly/express-rate-limit
@@ -63,14 +64,25 @@ const allowedOrigins = process.env.FRONTEND_URL
       "exp://192.168.1.6:8081",
       "exp://192.168.1.6:8082",
     ].filter(Boolean)
-  : ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:4100", "http://127.0.0.1:4100", "http://localhost:5055", "*"];
+  : [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://localhost:4100",
+      "http://127.0.0.1:4100",
+      "http://localhost:5055",
+      "*",
+    ];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes('*') || allowedOrigins.some(o => origin.startsWith(o))) {
+    if (
+      !origin ||
+      allowedOrigins.includes("*") ||
+      allowedOrigins.some((o) => origin.startsWith(o))
+    ) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
@@ -81,10 +93,12 @@ app.use(cors(corsOptions));
 
 app.use(express.json({ limit: "10mb" })); // Increased for review images
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  crossOriginEmbedderPolicy: false,
-}));
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+  }),
+);
 
 //root route
 app.get("/", (req, res) => {
@@ -95,7 +109,14 @@ app.get("/", (req, res) => {
 // Example: http://localhost:8090/o/69819e2bff190a2118afe968  ->  http://localhost:3000/order/69819e2bff190a2118afe968
 
 app.get("/o/:id", (req, res) => {
-  const frontendBaseUrl = (process.env.FRONTEND_URL || process.env.STORE_URL || "http://localhost:3000").split(',')[0].trim().replace(/\/+$/, "");
+  const frontendBaseUrl = (
+    process.env.FRONTEND_URL ||
+    process.env.STORE_URL ||
+    "http://localhost:3000"
+  )
+    .split(",")[0]
+    .trim()
+    .replace(/\/+$/, "");
   return res.redirect(302, `${frontendBaseUrl}/order/${req.params.id}`);
 });
 
@@ -117,7 +138,6 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/faqs", faqRoutes);
 app.use("/api/testimonials", testimonialRoutes);
 app.use("/api/location", locationRoutes);
-app.use("/api/refund", refundRoutes);
 app.use("/api/push-notification", pushNotificationRoutes);
 app.use("/api/customer-notifications", customerNotificationRoutes);
 app.use("/api/webhooks", webhookRoutes);
@@ -135,7 +155,7 @@ app.use((err, req, res, next) => {
 app.use("/static", express.static(path.join(__dirname, "../public")));
 
 // Serve uploaded files (static uploads)
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // 404 Handler for undefined routes
 app.use((req, res) => {
@@ -157,11 +177,10 @@ server.on("error", (err) => {
       `\nPort ${PORT} is already in use. Stop the other backend process first:\n` +
         `  netstat -ano | findstr :${PORT}\n` +
         `  taskkill /PID <pid> /F\n` +
-        `Then run: npm run dev\n`
+        `Then run: npm run dev\n`,
     );
     process.exit(1);
   }
   console.error("Server error:", err);
   process.exit(1);
 });
-

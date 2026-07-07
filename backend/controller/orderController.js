@@ -279,9 +279,6 @@ const getOrderById = async (req, res) => {
 };
 
 const { ORDER_STATUS, VALID_TRANSITIONS } = require("../utils/orderStatus");
-const {
-  sendRefundCompletedNotifications,
-} = require("../lib/order-refund-notifications");
 const Setting = require("../models/Setting");
 const { sendEmail } = require("../lib/email-sender/sender");
 const { sendSMS } = require("../lib/sms-sender/sender");
@@ -416,19 +413,6 @@ const updateOrder = async (req, res) => {
           console.error("[order] status notification failed:", err.message || err);
         }
       })();
-    }
-
-    if (
-      status === "Refunded" &&
-      previousStatus !== "Refunded" &&
-      !order.refundEmailSent
-    ) {
-      sendRefundCompletedNotifications(updatedOrder).catch((err) => {
-        console.error(
-          `[refund] Notification failed for order ${updatedOrder._id}:`,
-          err.message || err
-        );
-      });
     }
 
     res.status(200).send({
@@ -581,7 +565,6 @@ const getDashboardCount = async (req, res) => {
 
     const totalAcceptedOrder = await Order.countDocuments({ status: "Accepted" });
     const totalOutForDeliveryOrder = await Order.countDocuments({ status: "OutForDelivery" });
-    const totalRefundedOrder = await Order.countDocuments({ status: "Refunded" });
     const totalFailedOrder = await Order.countDocuments({ status: "Failed" });
 
     res.send({
@@ -592,7 +575,6 @@ const getDashboardCount = async (req, res) => {
       totalCancelOrder: totalCancelOrder[0]?.count || 0,
       totalAcceptedOrder,
       totalOutForDeliveryOrder,
-      totalRefundedOrder,
       totalFailedOrder,
       totalCustomer,
       totalProduct,

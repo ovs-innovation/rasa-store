@@ -1,5 +1,4 @@
 import {
-  Card,
   Button,
   Pagination,
   Table,
@@ -10,10 +9,8 @@ import {
 } from "@windmill/react-ui";
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { FiUsers, FiSearch, FiChevronDown, FiPlus, FiArrowRight } from "react-icons/fi";
+import { FiSearch } from "react-icons/fi";
 
-//internal import
-import UploadMany from "@/components/common/UploadMany";
 import CustomerTable from "@/components/customer/CustomerTable";
 import TableLoading from "@/components/preloader/TableLoading";
 import NotFound from "@/components/table/NotFound";
@@ -29,9 +26,6 @@ const Customers = () => {
     CustomerServices.getCustomerStatistics
   );
 
-  const [signUpPeriod, setSignUpPeriod] = useState("today");
-  const [activeCriteria, setActiveCriteria] = useState("login");
-  const [inactiveCriteria, setInactiveCriteria] = useState("noLogin");
   const [filterType, setFilterType] = useState("all");
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,20 +35,13 @@ const Customers = () => {
     userRef,
     searchUser,
     dataTable,
-    serviceData,
-    filename,
-    isDisabled,
     setSearchUser,
     totalResults,
     resultsPerPage,
     handleSubmitUser,
-    handleSelectFile,
     handleChangePage,
-    handleUploadMultiple,
-    handleRemoveSelectFile,
   } = useFilter(data);
 
-  // Fetch customers based on filter AND search
   useEffect(() => {
     const fetchCustomers = async () => {
       setLoading(true);
@@ -64,7 +51,7 @@ const Customers = () => {
           filterType: filterType === "all" ? "" : filterType,
           searchText: searchUser,
         });
-        setData(response);
+        setData(Array.isArray(response) ? response : []);
       } catch (err) {
         setError(err.message || "Failed to fetch customers");
       } finally {
@@ -76,7 +63,7 @@ const Customers = () => {
   }, [filterType, searchUser]);
 
   const { t } = useTranslation();
-  
+
   const handleResetField = () => {
     setSearchUser("");
     if (userRef.current) userRef.current.value = "";
@@ -84,154 +71,104 @@ const Customers = () => {
   };
 
   return (
-    <div className="bg-[#f8fafc] dark:bg-gray-900 min-h-screen pb-10">
-      <AnimatedContent>
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 px-1 pt-2">
-          <div>
-            <PageTitle>{t("CustomersPage")}</PageTitle>
-            <p className="text-sm text-gray-500 dark:text-gray-400 -mt-2">
-              View and manage your platform's customer base
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-             <UploadMany
-              title="Customers"
-              filename={filename}
-              exportData={data}
-              isDisabled={isDisabled}
-              handleSelectFile={handleSelectFile}
-              handleRemoveSelectFile={handleRemoveSelectFile}
-              handleUploadMultiple={handleUploadMultiple}
-            />
-          </div>
-        </div>
+    <>
+      <PageTitle>{t("CustomersPage")}</PageTitle>
 
-        {/* Customer Statistics Cards */}
+      <AnimatedContent>
         <CustomerOverview
           statistics={customerStatistics}
           loading={loadingStatistics}
-          signUpPeriod={signUpPeriod}
-          setSignUpPeriod={setSignUpPeriod}
-          activeCriteria={activeCriteria}
-          setActiveCriteria={setActiveCriteria}
-          inactiveCriteria={inactiveCriteria}
-          setInactiveCriteria={setInactiveCriteria}
+          filterType={filterType}
+          onFilterChange={setFilterType}
         />
 
-        {/* Filter/Search Bar */}
-        <div className="bg-white dark:bg-gray-800 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 dark:border-gray-700/50 p-6 mb-8">
-            <form
-              onSubmit={handleSubmitUser}
-              className="flex flex-col lg:flex-row gap-5 items-center"
-            >
-              <div className="w-full lg:flex-1 relative group">
-                <FiSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-teal-500 transition-colors" />
-                <input
-                  ref={userRef}
-                  type="search"
-                  name="search"
-                  placeholder="Search customers by name, email or mobile..."
-                  className="w-full pl-12 pr-6 py-4 text-sm font-medium border-0 bg-gray-50 dark:bg-gray-700/50 rounded-2xl focus:ring-2 focus:ring-teal-500/20 dark:text-gray-200 transition-all outline-none"
-                />
-              </div>
-
-              <div className="w-full lg:w-72">
-                <div className="relative">
-                  <select
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    className="w-full pl-6 pr-12 py-4 text-sm font-semibold bg-gray-50 dark:bg-gray-700/50 rounded-2xl border-0 focus:ring-2 focus:ring-teal-500/20 dark:text-gray-200 appearance-none cursor-pointer outline-none transition-all"
-                  >
-                    <option value="all">All Customer Types</option>
-                    <option value="newSignUpsToday">New Sign-ups (Today)</option>
-                    <option value="newSignUpsThisMonth">New Sign-ups (Month)</option>
-                    <option value="activeByLogin">Active (Last Login)</option>
-                    <option value="activeByOrder">Active (Recent Order)</option>
-                    <option value="inactiveByNoLogin">Inactive (No Login)</option>
-                    <option value="inactiveByNoOrder">Inactive (No Order)</option>
-                  </select>
-                  <FiChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 w-full lg:w-auto">
-                <Button 
-                  type="submit" 
-                  className="h-[52px] px-8 bg-teal-600 hover:bg-teal-700 text-white rounded-2xl font-bold shadow-lg shadow-teal-600/20 flex-1 lg:flex-none transition-all active:scale-95"
-                >
-                  Apply Filters
-                </Button>
-
-                <Button
-                  layout="outline"
-                  onClick={handleResetField}
-                  type="reset"
-                  className="h-[52px] px-8 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-2xl font-bold transition-all active:scale-95"
-                >
-                  Reset
-                </Button>
-              </div>
-            </form>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm mb-6">
+          <form
+            onSubmit={handleSubmitUser}
+            className="flex flex-col sm:flex-row gap-3 p-4"
+          >
+            <div className="relative flex-1">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                ref={userRef}
+                type="search"
+                name="search"
+                placeholder="Search by name, email or phone..."
+                className="w-full h-11 pl-10 pr-4 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none focus:border-[#D4AF37]/50"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" className="h-11 px-6 rounded-xl bg-teal-600 hover:bg-teal-700">
+                Search
+              </Button>
+              <Button
+                layout="outline"
+                type="button"
+                onClick={handleResetField}
+                className="h-11 px-6 rounded-xl dark:bg-gray-700"
+              >
+                Reset
+              </Button>
+            </div>
+          </form>
         </div>
 
-        {/* Table Content */}
-        <div className="bg-white dark:bg-gray-800 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100/50 dark:border-gray-700/50 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden">
           {loading ? (
-            <div className="p-8">
-              <TableLoading row={10} col={7} width={160} height={20} />
+            <div className="p-6">
+              <TableLoading row={8} col={5} width={140} height={18} />
             </div>
           ) : error ? (
-            <div className="py-20 text-center">
-              <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
-                <FiPlus className="rotate-45 text-2xl" />
-              </div>
-              <p className="text-red-500 font-bold">{error}</p>
-              <button 
+            <div className="py-16 text-center">
+              <p className="text-red-500 font-medium">{error}</p>
+              <button
+                type="button"
                 onClick={() => window.location.reload()}
-                className="mt-4 text-sm font-bold text-teal-600 hover:underline"
+                className="mt-3 text-sm text-teal-600 hover:underline"
               >
-                Try refreshing the page
+                Refresh page
               </button>
             </div>
-          ) : dataTable?.length !== 0 ? (
+          ) : dataTable?.length ? (
             <>
-              <TableContainer className="border-0 shadow-none">
+              <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Showing <span className="font-semibold text-gray-800 dark:text-gray-200">{dataTable.length}</span> customers
+                </p>
+              </div>
+
+              <TableContainer className="border-0 shadow-none mb-0">
                 <Table>
-                  <TableHeader className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
+                  <TableHeader>
                     <tr>
-                      <TableCell className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] py-5 pl-6">{t("CustomersId")}</TableCell>
-                      <TableCell className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] py-5">{t("CustomersJoiningDate")}</TableCell>
-                      <TableCell className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] py-5">{t("CustomersName")}</TableCell>
-                      <TableCell className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] py-5">{t("CustomersEmail")}</TableCell>
-                      <TableCell className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] py-5">Role</TableCell>
-                      <TableCell className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] py-5 text-center">{t("CustomersPhone")}</TableCell>
-                      <TableCell className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] py-5 text-right pr-6">
-                        {t("CustomersActions")}
-                      </TableCell>
+                      <TableCell>Customer</TableCell>
+                      <TableCell>Joined</TableCell>
+                      <TableCell>Phone</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell className="text-right">Actions</TableCell>
                     </tr>
                   </TableHeader>
                   <CustomerTable customers={dataTable} />
                 </Table>
               </TableContainer>
-              
-              <div className="px-6 py-5 border-t border-gray-100 dark:border-gray-700">
+
+              <TableFooter className="border-t border-gray-100 dark:border-gray-700">
                 <Pagination
                   totalResults={totalResults}
                   resultsPerPage={resultsPerPage}
                   onChange={handleChangePage}
-                  label="Table navigation"
+                  label="Customer navigation"
                 />
-              </div>
+              </TableFooter>
             </>
           ) : (
-            <div className="py-24">
-              <NotFound title="No customers found matching your criteria." />
+            <div className="py-20">
+              <NotFound title="No customers found." />
             </div>
           )}
         </div>
       </AnimatedContent>
-    </div>
+    </>
   );
 };
 

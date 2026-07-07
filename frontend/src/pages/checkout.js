@@ -46,6 +46,7 @@ const Checkout = () => {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const formRef = useRef(null);
+  const [isPaymentDropdownOpen, setIsPaymentDropdownOpen] = useState(false);
   const [portalReady, setPortalReady] = useState(false);
   const [addressForm, setAddressForm] = useState({
     name: "",
@@ -469,13 +470,13 @@ const Checkout = () => {
           h3.text-gray-900,
           p.text-gray-900,
           span.text-gray-900,
+          span.text-gray-800,
           p.text-base.font-bold {
             color: #ffffff !important;
           }
           p.text-gray-500,
           span.text-gray-500,
-          span.text-gray-600,
-          span.text-gray-700 {
+          span.text-gray-600 {
             color: #a3a3a3 !important;
           }
           
@@ -527,13 +528,13 @@ const Checkout = () => {
                         storeCustomizationSetting?.checkout?.personal_details
                       )}
                     </h2>
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 sm:p-6">
+                    <div className="bg-[#0D0D0D] border border-neutral-800 rounded-2xl p-4 sm:p-6">
                       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
-                        <h3 className="text-sm font-medium text-gray-900">Select Delivery Address</h3>
+                        <h3 className="text-sm font-medium text-white">Select Delivery Address</h3>
                         <button
                           type="button"
                           onClick={handleAddAddress}
-                          className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-store-500 hover:bg-store-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-store-500 w-full sm:w-auto shrink-0"
+                          className="inline-flex items-center justify-center px-3 py-1.5 border border-[#D4AF37]/40 text-xs font-semibold rounded-full text-[#D4AF37] hover:bg-[#D4AF37] hover:text-black transition-all focus:outline-none w-full sm:w-auto shrink-0"
                         >
                           <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -569,10 +570,10 @@ const Checkout = () => {
                                   setValue("country", address.country || "India");
                                   setValue("zipCode", address.zipCode || "");
                                 }}
-                                className={`border-2 rounded-lg p-3 sm:p-4 cursor-pointer transition-all ${
+                                className={`border rounded-xl p-3 sm:p-4 cursor-pointer transition-all ${
                                   isSelected
-                                    ? ' border-gray-200 ring-2 ring-store-300'
-                                    : 'border-gray-200 bg-white hover:border-store-300 hover:shadow-sm'
+                                    ? 'border-[#D4AF37] bg-[#121212] ring-2 ring-[#D4AF37]/10'
+                                    : 'border-neutral-800 bg-[#0F0F0F] hover:border-neutral-700 hover:shadow-sm'
                                 }`}
                               >
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -603,7 +604,7 @@ const Checkout = () => {
                                     <div className="flex-1">
                                       {isSelected && (
                                         <div className="flex items-center gap-2 mb-2">
-                                          <span className="px-2.5 py-1 text-xs font-semibold uppercase tracking-wide bg-blue-50 text-gray-700 rounded-full">
+                                          <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20 rounded-full">
                                             DELIVER TO
                                           </span>
                                         </div>
@@ -744,7 +745,7 @@ const Checkout = () => {
             </div>
 
             <div className="w-full lg:w-2/5 flex flex-col self-start mt-8 lg:mt-0 lg:sticky lg:top-28 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto min-w-0">
-              <div className="border p-4 sm:p-5 lg:px-8 lg:py-8 rounded-lg bg-white">
+              <div className="border border-neutral-800 p-4 sm:p-5 lg:px-8 lg:py-8 rounded-2xl bg-[#0D0D0D]">
                 <h2 className="font-semibold font-serif text-lg pb-4">
                   {showingTranslateValue(
                     storeCustomizationSetting?.checkout?.order_summary
@@ -755,33 +756,33 @@ const Checkout = () => {
                 <div className="flex items-center mt-4 py-4 lg:py-4 text-sm w-full font-semibold text-gray-500 last:border-b-0 last:text-base last:pb-0">
                     <form className="w-full">
                       {couponInfo.couponCode ? (
-                        <div className="relative bg-emerald-50 border-2 border-dashed border-emerald-400 rounded-lg p-5 w-full overflow-hidden shadow-sm">
+                        <div className="relative bg-[#d4af37]/5 border-2 border-dashed border-[#d4af37]/30 rounded-lg p-5 w-full overflow-hidden shadow-sm">
                           {/* Cutouts for coupon effect */}
-                          <div className="absolute top-1/2 -left-3 transform -translate-y-1/2 w-6 h-6 bg-white rounded-full border-r-2 border-dashed border-emerald-400 z-10"></div>
-                          <div className="absolute top-1/2 -right-3 transform -translate-y-1/2 w-6 h-6 bg-white rounded-full border-l-2 border-dashed border-emerald-400 z-10"></div>
+                          <div className="absolute top-1/2 -left-3 transform -translate-y-1/2 w-6 h-6 bg-[#0D0D0D] rounded-full border-r-2 border-dashed border-[#d4af37]/30 z-10"></div>
+                          <div className="absolute top-1/2 -right-3 transform -translate-y-1/2 w-6 h-6 bg-[#0D0D0D] rounded-full border-l-2 border-dashed border-[#d4af37]/30 z-10"></div>
                           
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex flex-col gap-1">
-                              <span className="text-xs uppercase font-bold tracking-widest text-emerald-600 flex items-center gap-1">
+                              <span className="text-xs uppercase font-bold tracking-widest text-[#d4af37] flex items-center gap-1">
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" /></svg>
                                 Coupon Applied
                               </span>
-                              <span className="text-xl sm:text-2xl font-black text-emerald-800 tracking-widest uppercase font-serif">
+                              <span className="text-xl sm:text-2xl font-black text-[#d4af37] tracking-widest uppercase font-serif">
                                 {couponInfo.couponCode}
                               </span>
                             </div>
-                            <div className="bg-emerald-500 text-white p-1.5 rounded-full shadow-sm mt-1">
+                            <div className="bg-[#d4af37] text-black p-1.5 rounded-full shadow-sm mt-1">
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                               </svg>
                             </div>
                           </div>
                           
-                          <div className="border-t-2 border-dashed border-emerald-200 my-4 relative"></div>
+                          <div className="border-t-2 border-dashed border-[#d4af37]/20 my-4 relative"></div>
                           
                           <div className="flex justify-between items-center">
-                            <div className="text-sm text-emerald-800 font-medium">
-                              You save <span className="font-bold text-lg text-emerald-600">{currency}{discountAmount.toFixed(2)}</span>
+                            <div className="text-sm text-gray-300 font-medium">
+                              You save <span className="font-bold text-lg text-[#d4af37]">{currency}{discountAmount.toFixed(2)}</span>
                             </div>
                             
                             <div className="flex items-center gap-3">
@@ -792,11 +793,11 @@ const Checkout = () => {
                               >
                                 Remove
                               </button>
-                              <span className="text-emerald-300">|</span>
+                              <span className="text-[#d4af37]/30">|</span>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveCoupon()}
-                                className="text-xs font-bold text-emerald-600 hover:text-emerald-800 transition-colors uppercase tracking-wider"
+                                className="text-xs font-bold text-[#d4af37] hover:text-[#bfa032] transition-colors uppercase tracking-wider"
                               >
                                 Change
                               </button>
@@ -975,50 +976,89 @@ const Checkout = () => {
                 </div>
 
                 {/* Payment Method and Place Order Section */}
-                <div className="mt-6 bg-gray-50 rounded-lg p-4">
+                <div className="mt-6 bg-[#0F0F0F] border border-neutral-800 rounded-xl p-4">
                   {/* Payment Method Selection */}
                   <div className="mb-4">
-                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-white rounded-lg p-3 border border-gray-200">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
-                          <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <div className="relative">
-                            <select
-                              {...register("paymentMethod", {
-                                required: "Payment Method is required!",
-                              })}
-                              className="w-full px-2 py-1 pr-8 bg-transparent border-none focus:ring-0 focus:outline-none text-sm font-medium text-store-600 cursor-pointer appearance-none"
-                              defaultValue=""
-                            >
-                              <option value="" disabled>
-                                Pay using
-                              </option>
-                              {storeSetting?.cod_status && (
-                                <option value="Cash">
-                                  Cash on Delivery
-                                </option>
-                              )}
-                              {storeSetting?.razorpay_status && (
-                                <option value="RazorPay">
-                                  UPI / RazorPay
-                                </option>
-                              )}
-                            </select>
-                            <div className="absolute inset-y-0 right-0 flex items-center pointer-events-none">
-                              <svg className="w-4 h-4 text-store-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                              </svg>
-                            </div>
+                    {/* Hidden input to register with react-hook-form */}
+                    <input
+                      type="hidden"
+                      {...register("paymentMethod", {
+                        required: "Payment Method is required!",
+                      })}
+                    />
+                    
+                    <div className="relative">
+                      {/* Main Select Trigger Button */}
+                      <button
+                        type="button"
+                        onClick={() => setIsPaymentDropdownOpen(!isPaymentDropdownOpen)}
+                        className="w-full flex items-center justify-between gap-3 bg-[#050505] rounded-xl p-3 border border-neutral-800 hover:border-neutral-700 transition-all text-left"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="w-10 h-10 bg-[#0D0D0D] rounded-lg flex items-center justify-center shrink-0 border border-neutral-800">
+                            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                          </div>
+                          <div className="flex-grow">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Pay using</p>
+                            <p className="text-sm font-semibold text-[#D4AF37]">
+                              {selectedPaymentMethod === 'Cash' 
+                                ? 'Cash on Delivery' 
+                                : selectedPaymentMethod === 'RazorPay' 
+                                  ? 'UPI / RazorPay' 
+                                  : 'Select Payment Method'}
+                            </p>
                           </div>
                         </div>
-                      </div>
-                      {selectedPaymentMethod && (
-                        <div className="text-sm font-medium text-gray-700 shrink-0">
-                          {selectedPaymentMethod === 'Cash' ? 'COD' : selectedPaymentMethod === 'RazorPay' ? 'UPI' : ''}
+                        <div className="text-gray-400 shrink-0">
+                          <svg className={`w-4 h-4 text-[#D4AF37] transition-transform duration-200 ${isPaymentDropdownOpen ? 'transform rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </button>
+
+                      {/* Dropdown Options Menu */}
+                      {isPaymentDropdownOpen && (
+                        <div className="absolute z-[100] left-0 right-0 mt-2 bg-[#0D0D0D] border border-neutral-800 rounded-xl overflow-hidden shadow-2xl">
+                          {storeSetting?.cod_status && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setValue("paymentMethod", "Cash", { shouldValidate: true });
+                                setIsPaymentDropdownOpen(false);
+                              }}
+                              className={`w-full px-4 py-3 text-left text-sm font-semibold flex items-center justify-between transition-colors ${
+                                selectedPaymentMethod === 'Cash'
+                                  ? 'bg-[#D4AF37]/10 text-[#D4AF37]'
+                                  : 'text-white hover:bg-neutral-900'
+                              }`}
+                            >
+                              <span>Cash on Delivery</span>
+                              {selectedPaymentMethod === 'Cash' && (
+                                <span className="text-[#D4AF37] font-bold">✓</span>
+                              )}
+                            </button>
+                          )}
+                          {storeSetting?.razorpay_status && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setValue("paymentMethod", "RazorPay", { shouldValidate: true });
+                                setIsPaymentDropdownOpen(false);
+                              }}
+                              className={`w-full px-4 py-3 text-left text-sm font-semibold flex items-center justify-between transition-colors ${
+                                selectedPaymentMethod === 'RazorPay'
+                                  ? 'bg-[#D4AF37]/10 text-[#D4AF37]'
+                                  : 'text-white hover:bg-neutral-900'
+                              }`}
+                            >
+                              <span>UPI / RazorPay</span>
+                              {selectedPaymentMethod === 'RazorPay' && (
+                                <span className="text-[#D4AF37] font-bold">✓</span>
+                              )}
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1040,10 +1080,10 @@ const Checkout = () => {
                       }
                     }}
                     disabled={isEmpty || isCheckoutSubmit || !agreeToTerms}
-                    className={`w-full py-4 rounded-lg text-base font-semibold text-white transition-all ${
+                    className={`w-full py-4 rounded-full text-base font-bold uppercase tracking-wider transition-all duration-200 ${
                       isEmpty || isCheckoutSubmit || !agreeToTerms
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-store-500 hover:bg-store-600 shadow-md hover:shadow-lg'
+                        ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed border border-neutral-700'
+                        : 'bg-[#D4AF37] text-black hover:bg-[#bfa032] shadow-md hover:shadow-lg'
                     }`}
                   >
                     {isCheckoutSubmit ? (
@@ -1075,13 +1115,13 @@ const Checkout = () => {
                       onChange={(e) => setAgreeToTerms(e.target.checked)}
                       className="mt-1 h-4 w-4 text-store-600 focus:ring-store-500 border-gray-300 rounded cursor-pointer"
                     />
-                    <label htmlFor="agreeToTerms" className="text-xs sm:text-sm text-gray-900 font-semibold cursor-pointer leading-relaxed">
+                    <label htmlFor="agreeToTerms" className="text-xs sm:text-sm text-gray-300 font-medium cursor-pointer leading-relaxed">
                       By placing the order, you agree to our{" "}
-                      <Link href="/terms" className="text-store-700 hover:text-store-800 hover:underline font-bold">
+                      <Link href="/terms" className="text-[#D4AF37] hover:text-[#bfa032] hover:underline font-bold">
                         Terms & Conditions
                       </Link>
                       {" "}and{" "}
-                      <Link href="/privacy" className="text-store-700 hover:text-store-800 hover:underline font-bold">
+                      <Link href="/privacy" className="text-[#D4AF37] hover:text-[#bfa032] hover:underline font-bold">
                         Privacy Policy
                       </Link>
                     </label>
@@ -1104,10 +1144,10 @@ const Checkout = () => {
           
           {/* Modal Panel - full screen on mobile, below header on desktop */}
           <div className="absolute right-0 w-full sm:max-w-md lg:max-w-lg flex flex-col top-16 h-[calc(100dvh-4rem)] lg:top-[148px] lg:h-[calc(100dvh-148px)]">
-            <div className="flex flex-col flex-1 min-h-0 bg-white shadow-xl">
+            <div className="flex flex-col flex-1 min-h-0 bg-[#0D0D0D] border-l border-neutral-900 shadow-xl text-white">
               {/* Header */}
-              <div className="flex-shrink-0 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900 pr-2">
+              <div className="flex-shrink-0 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-neutral-800 bg-[#0A0A0A]">
+                <h3 className="text-base sm:text-lg font-semibold text-white pr-2">
                   {editingAddress ? "Edit Shipping Address" : "Add Shipping Address"}
                 </h3>
                 <button
@@ -1144,7 +1184,7 @@ const Checkout = () => {
                       type="button"
                       onClick={handleUseCurrentLocation}
                       disabled={isLocationLoading}
-                      className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg font-semibold text-sm hover:bg-emerald-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/30 rounded-lg font-semibold text-sm hover:bg-[#D4AF37]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLocationLoading ? (
                         <FiLoader className="animate-spin" size={18} />
@@ -1156,7 +1196,7 @@ const Checkout = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       Full Name
                     </label>
                     <input
@@ -1171,7 +1211,7 @@ const Checkout = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       Street Address
                     </label>
                     <textarea
@@ -1187,7 +1227,7 @@ const Checkout = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
                         City
                       </label>
                       <input
@@ -1202,7 +1242,7 @@ const Checkout = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
                         State/Province
                       </label>
                       <input
@@ -1218,7 +1258,7 @@ const Checkout = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       ZIP/Postal Code
                     </label>
                     <input
@@ -1233,7 +1273,7 @@ const Checkout = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
                       Phone Number
                     </label>
                     <input
@@ -1249,7 +1289,7 @@ const Checkout = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-300 mb-1">
                         Address Type
                       </label>
                       <select
@@ -1272,7 +1312,7 @@ const Checkout = () => {
                         onChange={handleAddressChange}
                         className="h-4 w-4 text-store-600 focus:ring-store-500 border-gray-300 rounded"
                       />
-                      <label className="ml-2 block text-sm text-gray-700">
+                      <label className="ml-2 block text-sm text-gray-300">
                         Set as default address
                       </label>
                     </div>
@@ -1281,23 +1321,23 @@ const Checkout = () => {
                 </div>
 
                 {/* Footer Buttons - always visible */}
-                <div className="flex-shrink-0 border-t border-gray-200 px-4 sm:px-6 py-3 sm:py-4 bg-white pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:space-x-3 sm:gap-0">
-                  <button
-                    type="button"
-                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-store-500"
-                    onClick={() => setShowAddressModal(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2.5 border border-transparent rounded-md text-sm font-medium text-white bg-store-500 hover:bg-store-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-store-500"
-                  >
-                    {editingAddress ? "Update Address" : "Save Address"}
-                  </button>
-                </div>
-                </div>
+                <div className="flex-shrink-0 border-t border-neutral-800 px-4 sm:px-6 py-3 sm:py-4 bg-[#0A0A0A] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                 <div className="flex flex-col-reverse gap-2 sm:flex-row sm:space-x-3 sm:gap-0">
+                   <button
+                     type="button"
+                     className="flex-1 px-4 py-2.5 border border-neutral-800 rounded-full text-sm font-medium text-gray-300 bg-transparent hover:bg-neutral-900 focus:outline-none"
+                     onClick={() => setShowAddressModal(false)}
+                   >
+                     Cancel
+                   </button>
+                   <button
+                     type="submit"
+                     className="flex-1 px-4 py-2.5 border border-transparent rounded-full text-sm font-bold text-black bg-[#D4AF37] hover:bg-[#bfa032] focus:outline-none"
+                   >
+                     {editingAddress ? "Update Address" : "Save Address"}
+                   </button>
+                 </div>
+                 </div>
               </form>
             </div>
           </div>

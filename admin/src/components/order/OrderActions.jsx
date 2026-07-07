@@ -3,23 +3,18 @@ import { createPortal } from "react-dom";
 import { Button } from "@windmill/react-ui";
 import { FiMoreVertical } from "react-icons/fi";
 import { IoCloudDownloadOutline } from "react-icons/io5";
-import { PDFDownloadLink } from "@react-pdf/renderer";
 
 // internal imports
 import { notifyError, notifySuccess } from "@/utils/toast";
 import ShiprocketServices from "@/services/ShiprocketServices";
 import OrderServices from "@/services/OrderServices";
 import { Link } from "react-router-dom";
-import useUtilsFunction from "@/hooks/useUtilsFunction";
-import InvoiceForDownload from "@/components/invoice/InvoiceForDownload";
 
 const OrderActions = ({ order }) => {
   const [open, setOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
   const menuRef = useRef(null);
-
-  const { currency, globalSetting, getNumberTwo } = useUtilsFunction();
 
   const toggleMenu = (e) => {
     e.stopPropagation();
@@ -125,33 +120,14 @@ const OrderActions = ({ order }) => {
           className="absolute z-[9999] mt-2 w-44 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-md shadow-lg text-sm"
           style={{ top: `${dropdownPos.top}px`, left: `${dropdownPos.left}px` }}
         >
-          <PDFDownloadLink
-            document={
-              <InvoiceForDownload
-                data={order}
-                currency={currency}
-                globalSetting={globalSetting}
-                getNumberTwo={getNumberTwo}
-                logo={globalSetting?.logo}
-              />
-            }
-            fileName={`Invoice-${order?.invoice || order?._id}`}
+          <Link
+            to={`/order/${order._id}?download=1`}
             className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between text-gray-700 dark:text-gray-300 no-underline"
-            style={{ textDecoration: 'none' }}
+            onClick={() => setOpen(false)}
           >
-            {({ blob, url, loading, error }) =>
-              loading ? (
-                <span className="flex items-center justify-between w-full">
-                  <span>Loading...</span>
-                </span>
-              ) : (
-                <span className="flex items-center justify-between w-full">
-                  <span>Download Invoice</span>
-                  <IoCloudDownloadOutline />
-                </span>
-              )
-            }
-          </PDFDownloadLink>
+            <span>Download Invoice</span>
+            <IoCloudDownloadOutline />
+          </Link>
           <Link
             to={`/order/${order._id}`}
             className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 block text-gray-700 dark:text-gray-300"

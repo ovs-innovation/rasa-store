@@ -8,7 +8,6 @@ const {
   addRazorpayOrder,
   createOrderByRazorPay,
   sendEmailInvoiceToCustomer,
-  requestRefund,
 } = require("../controller/customerOrderController");
 
 const { emailVerificationLimit } = require("../lib/email-sender/sender");
@@ -31,9 +30,6 @@ router.get("/:id", isAuth, getOrderById);
 
 //get all order by a user
 router.get("/", isAuth, getOrderCustomer);
-
-//request refund for an order
-router.put("/refund/:id", isAuth, requestRefund);
 
 //#send email invoice to customer
 router.post(

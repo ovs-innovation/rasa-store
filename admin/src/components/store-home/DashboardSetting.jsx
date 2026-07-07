@@ -75,6 +75,19 @@ const DashboardSetting = ({ isSave, errors, register, isSubmitting }) => {
           />
           <Error errorName={errors.invoice_message_last} />
         </div>
+        <div className="col-span-12">
+          <label className="block md:text-sm md:col-span-1 sm:col-span-2 text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+            Invoice Custom Message (Shown on invoice receipt)
+          </label>
+          <InputAreaTwo
+            register={register}
+            label="Invoice Custom Message"
+            name="invoice_greeting_message"
+            type="text"
+            placeholder="E.g. Yay! Your order has been placed successfully! 🌸 We are preparing your package..."
+          />
+          <Error errorName={errors.invoice_greeting_message} />
+        </div>
         <div className="col-span-4">
           <label className="block md:text-sm md:col-span-1 sm:col-span-2 text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
             {t("PrintButton")}

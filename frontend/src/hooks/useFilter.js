@@ -11,7 +11,6 @@ const useFilter = (data, allCategories = []) => {
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 100000 });
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedRating, setSelectedRating] = useState(0);
   const [selectedDiscount, setSelectedDiscount] = useState(0);
   const { showingTranslateValue } = useUtilsFunction();
 
@@ -66,11 +65,13 @@ const useFilter = (data, allCategories = []) => {
     if (selectedBrands.length > 0) {
       services = services.filter((product) => {
         const pBrand = product.brand?._id || product.brand;
+        const brandSlug = (product.brand?.slug || "").toLowerCase().trim();
         const rawBrandName = product.brandName || (product.brand && typeof product.brand.name === 'object' ? showingTranslateValue(product.brand.name) : product.brand?.name) || "";
         const brandName = typeof rawBrandName === 'string' ? rawBrandName.toLowerCase().trim() : "";
         return selectedBrands.some(selectedId => {
           const selId = selectedId.toLowerCase().trim();
-          return (pBrand && pBrand.toString().toLowerCase() === selId) || 
+          return (pBrand && pBrand.toString().toLowerCase() === selId) ||
+                 (brandSlug && brandSlug === selId) ||
                  (brandName && (brandName.includes(selId) || selId.includes(brandName)));
         });
       });
@@ -122,13 +123,6 @@ const useFilter = (data, allCategories = []) => {
         product.prices?.price >= priceRange.min &&
         product.prices?.price <= priceRange.max
     );
-
-    // Filter by Rating
-    if (selectedRating > 0) {
-      services = services.filter(
-        (product) => (product.averageRating || 0) >= selectedRating
-      );
-    }
 
     // Filter by Discount
     if (selectedDiscount > 0) {
@@ -185,7 +179,6 @@ const useFilter = (data, allCategories = []) => {
     selectedBrands,
     priceRange,
     selectedCategories,
-    selectedRating,
     selectedDiscount,
     searchQuery,
   ]);
@@ -202,8 +195,6 @@ const useFilter = (data, allCategories = []) => {
     setPriceRange,
     selectedCategories,
     setSelectedCategories,
-    selectedRating,
-    setSelectedRating,
     selectedDiscount,
     setSelectedDiscount,
   };

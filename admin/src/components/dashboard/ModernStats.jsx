@@ -2,24 +2,11 @@ import React from "react";
 import {
   FiShoppingCart,
   FiUsers,
-  FiFileText,
-  FiTruck,
-  FiHome,
-  FiXCircle,
-  FiRefreshCw,
   FiCreditCard,
-  FiActivity,
   FiPackage,
 } from "react-icons/fi";
 import dayjs from "dayjs";
-import isBetween from "dayjs/plugin/isBetween";
-import isToday from "dayjs/plugin/isToday";
-import isYesterday from "dayjs/plugin/isYesterday";
 import CardItem from "@/components/dashboard/CardItem";
-
-dayjs.extend(isBetween);
-dayjs.extend(isToday);
-dayjs.extend(isYesterday);
 
 const ModernStats = ({ dashboardOrderCount, timeFilter, setTimeFilter, dashboardOrderAmount }) => {
   const filteredOrders = dashboardOrderAmount?.ordersData?.filter(order => {
@@ -29,9 +16,6 @@ const ModernStats = ({ dashboardOrderCount, timeFilter, setTimeFilter, dashboard
     return true;
   }) || [];
 
-  const getStatusCount = (status) => filteredOrders.filter(o => o.status === status).length;
-
-  // Top summary cards — same as Orders page style
   const topCards = [
     {
       title: "Total Sales",
@@ -39,57 +23,31 @@ const ModernStats = ({ dashboardOrderCount, timeFilter, setTimeFilter, dashboard
       quantity: dashboardOrderAmount?.totalAmount || 0,
       className: "text-emerald-600 bg-emerald-100",
       isAmount: true,
-      link: "/orders"
+      link: "/orders",
     },
     {
       title: "Total Orders",
       Icon: FiShoppingCart,
-      quantity: timeFilter === 'year' ? (dashboardOrderCount?.totalOrder || 0) : filteredOrders.length,
+      quantity:
+        timeFilter === "year"
+          ? dashboardOrderCount?.totalOrder || 0
+          : filteredOrders.length,
       className: "text-orange-600 bg-orange-100",
-      link: "/orders"
+      link: "/orders",
     },
     {
       title: "Total Customers",
       Icon: FiUsers,
       quantity: dashboardOrderCount?.totalCustomer || 0,
       className: "text-purple-600 bg-purple-100",
-      link: "/customers"
+      link: "/customers",
     },
     {
       title: "Total Products",
       Icon: FiPackage,
       quantity: dashboardOrderCount?.totalProduct || 0,
       className: "text-blue-600 bg-blue-100",
-      link: "/products"
-    },
-    {
-      title: "Pending Orders",
-      Icon: FiRefreshCw,
-      quantity: timeFilter === 'year' ? (dashboardOrderCount?.totalPendingOrder?.count || 0) : getStatusCount("Pending"),
-      amount: timeFilter === 'year' ? (dashboardOrderCount?.totalPendingOrder?.total || 0) : null,
-      className: "text-yellow-600 bg-yellow-100",
-      link: "/orders/pending"
-    },
-    {
-      title: "Processing",
-      Icon: FiTruck,
-      quantity: timeFilter === 'year' ? (dashboardOrderCount?.totalProcessingOrder || 0) : getStatusCount("Processing"),
-      className: "text-teal-600 bg-teal-100",
-      link: "/orders/processing"
-    },
-    {
-      title: "Delivered",
-      Icon: FiHome,
-      quantity: timeFilter === 'year' ? (dashboardOrderCount?.totalDeliveredOrder || 0) : getStatusCount("Delivered"),
-      className: "text-green-600 bg-green-100",
-      link: "/orders/delivered"
-    },
-    {
-      title: "Cancelled",
-      Icon: FiXCircle,
-      quantity: timeFilter === 'year' ? (dashboardOrderCount?.totalCancelOrder || 0) : getStatusCount("Cancel"),
-      className: "text-red-600 bg-red-100",
-      link: "/orders/canceled"
+      link: "/products",
     },
   ];
 

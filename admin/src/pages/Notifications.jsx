@@ -1,5 +1,4 @@
 import {
-  Avatar,
   Badge,
   Button,
   Card,
@@ -258,12 +257,6 @@ const Notifications = () => {
                                   handleNotificationStatusChange(value._id)
                                 }
                               >
-                                <Avatar
-                                  className="mr-2 md:block hidden bg-gray-50 border border-gray-200"
-                                  src={value.image}
-                                  alt="image"
-                                />
-
                                 <div className="notification-content">
                                   <div className="md:inline-block hidden">
                                     <h6 className="font-medium text-gray-500">

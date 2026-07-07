@@ -11,6 +11,7 @@ import {
 import { useContext, useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { FiEdit, FiSearch, FiAlertTriangle, FiPackage, FiDownload, FiChevronDown, FiX } from "react-icons/fi";
+import { Link } from "react-router-dom";
 
 // internal import
 import ProductServices from "@/services/ProductServices";
@@ -21,9 +22,6 @@ import AnimatedContent from "@/components/common/AnimatedContent";
 import PageTitle from "@/components/Typography/PageTitle";
 import { SidebarContext } from "@/context/SidebarContext";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
-import useToggleDrawer from "@/hooks/useToggleDrawer";
-import MainDrawer from "@/components/drawer/MainDrawer";
-import ProductDrawer from "@/components/drawer/ProductDrawer";
 
 const STOCK_THRESHOLD = 10;
 const RESULTS_PER_PAGE = 20;
@@ -32,7 +30,6 @@ const LowStock = () => {
   const { t } = useTranslation();
   const { lang, setIsUpdate, isUpdate } = useContext(SidebarContext);
   const { showingTranslateValue } = useUtilsFunction();
-  const { serviceId, handleUpdate } = useToggleDrawer();
 
   // local search / filter state
   const [searchInput, setSearchInput] = useState("");
@@ -136,10 +133,6 @@ const LowStock = () => {
       <PageTitle>{t("Low Stock")}</PageTitle>
       <AnimatedContent>
       {/* Drawer for editing */}
-      <MainDrawer>
-        <ProductDrawer id={serviceId} />
-      </MainDrawer>
-
       {/* Page Header */}
       <div className="flex items-center gap-3 mb-6 mt-1">
         <div className="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center shadow-md shadow-orange-200">
@@ -309,13 +302,13 @@ const LowStock = () => {
                       {stockBadge(p.stock ?? 0)}
                     </TableCell>
                     <TableCell className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleUpdate(p._id)}
+                      <Link
+                        to={`/products/edit/${p._id}`}
                         title="Edit product"
                         className="h-9 w-9 inline-flex items-center justify-center bg-white dark:bg-gray-800 border border-teal-200 dark:border-teal-900/50 text-teal-600 dark:text-teal-400 rounded-xl hover:bg-teal-600 dark:hover:bg-teal-500 hover:text-white dark:hover:text-white hover:border-teal-600 dark:hover:border-teal-500 transition-all shadow-sm"
                       >
                         <FiEdit size={14} />
-                      </button>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}

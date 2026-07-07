@@ -29,6 +29,14 @@ const ReviewServices = {
   deleteReview: async (reviewId) => {
     return requests.delete(`/reviews/${reviewId}`);
   },
+
+  createReview: async (body) => {
+    return requests.post("/reviews/admin", body);
+  },
+
+  updateReview: async (reviewId, body) => {
+    return requests.put(`/reviews/admin/${reviewId}`, body);
+  },
 };
 
 export default ReviewServices;

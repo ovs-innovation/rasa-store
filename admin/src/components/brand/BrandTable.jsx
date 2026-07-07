@@ -70,6 +70,9 @@ const BrandTable = ({
             <TableCell className="text-center capitalize">
               {brand?.isFeatured ? "Yes" : "No"}
             </TableCell>
+            <TableCell className="text-center capitalize">
+              {brand?.showOnHomepage === false ? "No" : "Yes"}
+            </TableCell>
             <TableCell className="text-center">
               <ShowHideButton id={brand._id} status={brand.status} />
             </TableCell>

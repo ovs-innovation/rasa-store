@@ -310,12 +310,12 @@ export const storeCustomization = {
       de: " Interactively grow empowered for process-centric total linkage.",
     },
     call_box_title: {
-      en: "Call Us ",
-      de: "Rufen Sie uns an",
+      en: "WhatsApp Us",
+      de: "WhatsApp uns",
     },
     call_box_phone: {
-      en: "029-00124667",
-      de: "029-00124667",
+      en: "9731308713",
+      de: "9731308713",
     },
     call_box_text: {
       en: "Distinctively disseminate focused solutions clicks-and-mortar ministate. ",
@@ -641,6 +641,10 @@ export const storeCustomization = {
       en: "Your order have been received !",
       de: "Ihre Bestellung ist eingegangen!",
     },
+    invoice_greeting_message: {
+      en: "Yay! Your order has been placed successfully! 🌸 We are already preparing your package with extra love and care. We'll notify you as soon as it ships! 💖✨",
+      de: "Yay! Ihre Bestellung wurde erfolgreich aufgegeben!",
+    },
     print_button: {
       en: "Print Invoice",
       de: "Rechnung Drucken",
@@ -842,8 +846,8 @@ export const storeCustomization = {
       de: "Lieferung per Nachnahme möglich",
     },
     card_description_four: {
-      en: "7 Days returns money back guarantee",
-      de: "7 Tage Geld-zurück-Garantie",
+      en: "",
+      de: "",
     },
     card_description_five: {
       en: "Warranty not available for this item",

@@ -7,9 +7,19 @@ import {
   TableHeader,
   TableBody,
   TableRow,
+  Button,
 } from "@windmill/react-ui";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { FiEdit, FiSearch, FiPackage, FiX, FiBox, FiAlertTriangle, FiXCircle } from "react-icons/fi";
+import {
+  FiEdit,
+  FiSearch,
+  FiPackage,
+  FiX,
+  FiBox,
+  FiAlertTriangle,
+  FiXCircle,
+  FiSave,
+} from "react-icons/fi";
 import { Link } from "react-router-dom";
 
 import ProductServices from "@/services/ProductServices";
@@ -20,17 +30,13 @@ import AnimatedContent from "@/components/common/AnimatedContent";
 import PageTitle from "@/components/Typography/PageTitle";
 import { SidebarContext } from "@/context/SidebarContext";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
-import useToggleDrawer from "@/hooks/useToggleDrawer";
-import MainDrawer from "@/components/drawer/MainDrawer";
-import ProductDrawer from "@/components/drawer/ProductDrawer";
 
 const STOCK_THRESHOLD = 10;
 const RESULTS_PER_PAGE = 20;
 
 const StockOverview = () => {
-  const { isUpdate } = useContext(SidebarContext);
+  const { isUpdate, setIsUpdate, showAlert } = useContext(SidebarContext);
   const { showingTranslateValue } = useUtilsFunction();
-  const { serviceId, handleUpdate } = useToggleDrawer();
 
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,6 +46,8 @@ const StockOverview = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [brands, setBrands] = useState([]);
+  const [stockDrafts, setStockDrafts] = useState({});
+  const [savingId, setSavingId] = useState("");
 
   useEffect(() => {
     BrandServices.getAllBrands().then(setBrands).catch(() => {});
@@ -60,6 +68,11 @@ const StockOverview = () => {
         });
         setData(res);
         setError("");
+        const drafts = {};
+        (res?.products || []).forEach((product) => {
+          drafts[product._id] = String(product.stock ?? 0);
+        });
+        setStockDrafts(drafts);
       } catch (err) {
         setError(err.message || "Failed to load inventory");
       } finally {
@@ -90,26 +103,88 @@ const StockOverview = () => {
 
   const stockBadge = (stock) => {
     if (stock === 0)
-      return <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-600 border border-red-100">Out of stock</span>;
+      return (
+        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-600 border border-red-100">
+          Out of stock
+        </span>
+      );
     if (stock <= STOCK_THRESHOLD)
-      return <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-100">Low · {stock}</span>;
-    return <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">{stock} units</span>;
+      return (
+        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-100">
+          Low · {stock}
+        </span>
+      );
+    return (
+      <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+        {stock} units
+      </span>
+    );
+  };
+
+  const handleStockDraftChange = (productId, value) => {
+    setStockDrafts((prev) => ({ ...prev, [productId]: value }));
+  };
+
+  const handleSaveStock = async (product) => {
+    const draftValue = stockDrafts[product._id];
+    const nextStock = Number(draftValue);
+
+    if (Number.isNaN(nextStock) || nextStock < 0) {
+      showAlert("Enter a valid stock quantity.", "error");
+      return;
+    }
+
+    setSavingId(product._id);
+    try {
+      await ProductServices.updateProductStock(product._id, nextStock);
+      showAlert("Stock updated successfully!", "success");
+      setIsUpdate(true);
+    } catch (err) {
+      showAlert(
+        err?.response?.data?.message || err?.message || "Failed to update stock",
+        "error"
+      );
+    } finally {
+      setSavingId("");
+    }
   };
 
   return (
     <>
-      <PageTitle>Stock Overview</PageTitle>
+      <PageTitle>Stock Management</PageTitle>
       <AnimatedContent>
-        <MainDrawer>
-          <ProductDrawer id={serviceId} />
-        </MainDrawer>
-
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-6">
           {[
-            { label: "Total Products", value: stats.total, icon: FiBox, iconBg: "bg-teal-100 dark:bg-teal-900/30", iconColor: "text-teal-600" },
-            { label: "In Stock", value: stats.inStock, icon: FiPackage, iconBg: "bg-emerald-100 dark:bg-emerald-900/30", iconColor: "text-emerald-600" },
-            { label: "Low Stock", value: stats.lowStock, icon: FiAlertTriangle, iconBg: "bg-orange-100 dark:bg-orange-900/30", iconColor: "text-orange-600", link: "/inventory/low-stock" },
-            { label: "Out of Stock", value: stats.outOfStock, icon: FiXCircle, iconBg: "bg-red-100 dark:bg-red-900/30", iconColor: "text-red-600", link: "/inventory/out-of-stock" },
+            {
+              label: "Total Products",
+              value: stats.total,
+              icon: FiBox,
+              iconBg: "bg-teal-100 dark:bg-teal-900/30",
+              iconColor: "text-teal-600",
+            },
+            {
+              label: "In Stock",
+              value: stats.inStock,
+              icon: FiPackage,
+              iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
+              iconColor: "text-emerald-600",
+            },
+            {
+              label: "Low Stock",
+              value: stats.lowStock,
+              icon: FiAlertTriangle,
+              iconBg: "bg-orange-100 dark:bg-orange-900/30",
+              iconColor: "text-orange-600",
+              link: "/inventory/low-stock",
+            },
+            {
+              label: "Out of Stock",
+              value: stats.outOfStock,
+              icon: FiXCircle,
+              iconBg: "bg-red-100 dark:bg-red-900/30",
+              iconColor: "text-red-600",
+              link: "/inventory/out-of-stock",
+            },
           ].map((card) => (
             <div
               key={card.label}
@@ -117,15 +192,24 @@ const StockOverview = () => {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{card.label}</p>
-                  <p className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-1">{loading ? "—" : card.value}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    {card.label}
+                  </p>
+                  <p className="text-3xl font-bold text-gray-800 dark:text-gray-100 mt-1">
+                    {loading ? "—" : card.value}
+                  </p>
                   {card.link && (
-                    <Link to={card.link} className="text-xs font-semibold text-teal-600 hover:underline mt-1 inline-block">
+                    <Link
+                      to={card.link}
+                      className="text-xs font-semibold text-teal-600 hover:underline mt-1 inline-block"
+                    >
                       View all →
                     </Link>
                   )}
                 </div>
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${card.iconBg}`}>
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center ${card.iconBg}`}
+                >
                   <card.icon className={`w-6 h-6 ${card.iconColor}`} />
                 </div>
               </div>
@@ -155,21 +239,34 @@ const StockOverview = () => {
                 </div>
                 <select
                   value={brandFilter}
-                  onChange={(e) => { setBrandFilter(e.target.value); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setBrandFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="h-11 px-3 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm"
                 >
                   <option value="">All Brands</option>
                   {brands?.map((b) => (
-                    <option key={b._id} value={b._id}>{formatText(b.name)}</option>
+                    <option key={b._id} value={b._id}>
+                      {formatText(b.name)}
+                    </option>
                   ))}
                 </select>
-                <button type="submit" className="h-11 px-5 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700">
+                <button
+                  type="submit"
+                  className="h-11 px-5 bg-teal-600 text-white text-sm font-semibold rounded-xl hover:bg-teal-700"
+                >
                   Search
                 </button>
                 {(searchQuery || brandFilter) && (
                   <button
                     type="button"
-                    onClick={() => { setSearchInput(""); setSearchQuery(""); setBrandFilter(""); setCurrentPage(1); }}
+                    onClick={() => {
+                      setSearchInput("");
+                      setSearchQuery("");
+                      setBrandFilter("");
+                      setCurrentPage(1);
+                    }}
                     className="h-11 px-4 text-sm font-semibold text-gray-500 flex items-center gap-1"
                   >
                     <FiX size={14} /> Reset
@@ -180,7 +277,9 @@ const StockOverview = () => {
           </div>
 
           {loading ? (
-            <div className="p-8"><TableLoading row={6} col={5} width={180} height={20} /></div>
+            <div className="p-8">
+              <TableLoading row={6} col={5} width={180} height={20} />
+            </div>
           ) : error ? (
             <div className="p-10 text-center text-red-500">{error}</div>
           ) : products.length > 0 ? (
@@ -190,45 +289,96 @@ const StockOverview = () => {
                   <tr className="bg-gray-50/70 dark:bg-gray-900/50 text-[10px] font-extrabold uppercase tracking-widest text-gray-500">
                     <TableCell className="py-4 px-6">Product</TableCell>
                     <TableCell className="py-4 px-6">Brand</TableCell>
-                    <TableCell className="py-4 px-6 text-center">Stock</TableCell>
+                    <TableCell className="py-4 px-6 text-center">Current Stock</TableCell>
+                    <TableCell className="py-4 px-6 text-center">Update Stock</TableCell>
                     <TableCell className="py-4 px-6 text-center">Action</TableCell>
                   </tr>
                 </TableHeader>
                 <TableBody>
-                  {products.map((p) => (
-                    <TableRow key={p._id} className="hover:bg-gray-50/60 dark:hover:bg-gray-700/50">
-                      <TableCell className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-xl bg-gray-50 border overflow-hidden shrink-0">
-                            {p.image?.[0] ? (
-                              <img src={p.image[0]} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <FiPackage className="text-gray-300 w-5 h-5" />
-                              </div>
-                            )}
+                  {products.map((p) => {
+                    const hasVariants =
+                      p.isCombination &&
+                      Array.isArray(p.variants) &&
+                      p.variants.length > 0;
+
+                    return (
+                      <TableRow
+                        key={p._id}
+                        className="hover:bg-gray-50/60 dark:hover:bg-gray-700/50"
+                      >
+                        <TableCell className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-xl bg-gray-50 border overflow-hidden shrink-0">
+                              {p.image?.[0] ? (
+                                <img
+                                  src={p.image[0]}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <FiPackage className="text-gray-300 w-5 h-5" />
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate max-w-[220px]">
+                                {showingTranslateValue(p.title)}
+                              </p>
+                              {p.sku && (
+                                <p className="text-[11px] text-gray-400 font-mono">
+                                  SKU: {p.sku}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate max-w-[220px]">
-                              {showingTranslateValue(p.title)}
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-sm text-gray-500">
+                          {formatText(p.brand?.name)}
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-center">
+                          {stockBadge(p.stock ?? 0)}
+                        </TableCell>
+                        <TableCell className="px-6 py-4">
+                          {hasVariants ? (
+                            <p className="text-xs text-center text-gray-500">
+                              Variant stock — edit from product page
                             </p>
-                            {p.sku && <p className="text-[11px] text-gray-400 font-mono">SKU: {p.sku}</p>}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6 py-4 text-sm text-gray-500">{formatText(p.brand?.name)}</TableCell>
-                      <TableCell className="px-6 py-4 text-center">{stockBadge(p.stock ?? 0)}</TableCell>
-                      <TableCell className="px-6 py-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdate(p._id)}
-                          className="h-9 w-9 inline-flex items-center justify-center border border-teal-200 text-teal-600 rounded-xl hover:bg-teal-600 hover:text-white transition-all"
-                        >
-                          <FiEdit size={14} />
-                        </button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          ) : (
+                            <div className="flex items-center justify-center gap-2">
+                              <input
+                                type="number"
+                                min="0"
+                                value={stockDrafts[p._id] ?? String(p.stock ?? 0)}
+                                onChange={(e) =>
+                                  handleStockDraftChange(p._id, e.target.value)
+                                }
+                                className="w-24 h-10 text-center rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm"
+                              />
+                              <Button
+                                size="small"
+                                disabled={savingId === p._id}
+                                onClick={() => handleSaveStock(p)}
+                                className="h-10 px-3"
+                              >
+                                <FiSave className="mr-1" />
+                                {savingId === p._id ? "Saving..." : "Save"}
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="px-6 py-4 text-center">
+                          <Link
+                            to={`/products/edit/${p._id}`}
+                            className="h-9 w-9 inline-flex items-center justify-center border border-teal-200 text-teal-600 rounded-xl hover:bg-teal-600 hover:text-white transition-all"
+                            title="Edit product"
+                          >
+                            <FiEdit size={14} />
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
               <TableFooter className="px-6 py-4">
@@ -243,7 +393,9 @@ const StockOverview = () => {
               </TableFooter>
             </TableContainer>
           ) : (
-            <div className="p-10"><NotFound title="No products found." /></div>
+            <div className="p-10">
+              <NotFound title="No products found." />
+            </div>
           )}
         </div>
       </AnimatedContent>

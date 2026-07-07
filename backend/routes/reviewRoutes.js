@@ -7,11 +7,19 @@ const {
   markReviewHelpful,
   deleteReview,
   getAllReviews,
+  adminCreateReview,
+  adminUpdateReview,
 } = require("../controller/reviewController");
 const { isAuth } = require("../config/auth");
 
 // Admin: Get all reviews
 router.get("/admin/all", isAuth, getAllReviews);
+
+// Admin: Create review
+router.post("/admin", isAuth, adminCreateReview);
+
+// Admin: Update review
+router.put("/admin/:reviewId", isAuth, adminUpdateReview);
 
 // Create or update a review for a product
 router.post("/", isAuth, createOrUpdateReview);

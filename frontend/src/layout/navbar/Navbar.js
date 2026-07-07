@@ -5,15 +5,14 @@ import { useRouter } from "next/router";
 import { useCart } from "react-use-cart";
 import { IoSearchOutline } from "react-icons/io5";
 import { FiShoppingCart, FiHeart } from "react-icons/fi";
-import { useQuery } from "@tanstack/react-query";
 
-import { getUserSession } from "@lib/auth";
 import useWishlist from "@hooks/useWishlist";
 import useGetSetting from "@hooks/useGetSetting";
+import useShopCategories from "@hooks/useShopCategories";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import CartDrawer from "@components/drawer/CartDrawer";
 import { SidebarContext } from "@context/SidebarContext";
-import CategoryServices from "@services/CategoryServices";
+import { UserContext } from "@context/UserContext";
 import SearchSuggestions from "@components/search/SearchSuggestions";
 import LowerCategoryNavbar from "./LowerCategoryNavbar";
 import CustomerNotificationBell from "@components/notification/CustomerNotificationBell";
@@ -35,44 +34,14 @@ const NavbarLogo = () => {
 const Navbar = () => {
   const { showingTranslateValue } = useUtilsFunction();
   const router = useRouter();
-  const { data: categoriesData } = useQuery({
-    queryKey: ["category"],
-    queryFn: async () => await CategoryServices.getShowingCategory(),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-
-  const getLevel1Categories = (categories) => {
-    if (!categories || !Array.isArray(categories) || categories.length === 0) return [];
-
-    const homeRoot = categories.find(
-      (cat) =>
-        cat.id === "Root" ||
-        showingTranslateValue(cat?.name)?.toLowerCase() === "home"
-    );
-
-    let topLevel = homeRoot?.children?.length ? homeRoot.children : categories;
-    const finalCategories = [];
-    topLevel.forEach((cat) => {
-      finalCategories.push(cat);
-    });
-    return finalCategories;
-  };
-
-  const NAVBAR_ALLOWED = ["footwear", "bags"];
-  const allCategories = getLevel1Categories(categoriesData);
-  // Only show top-level categories whose slug exactly matches footwear or bags
-  const categories = allCategories.filter((cat) => {
-    const slug = (cat?.slug || "").toLowerCase();
-    const name = (showingTranslateValue ? showingTranslateValue(cat?.name) : (cat?.name?.en || cat?.name || "")).toLowerCase();
-    return NAVBAR_ALLOWED.some((allowed) => slug === allowed || name === allowed || slug.startsWith(allowed) && !slug.includes("-"));
-  }).slice(0, 2);
+  const { navItems: categories } = useShopCategories();
 
   const { toggleCartDrawer } = useContext(SidebarContext);
+  const { state: userState } = useContext(UserContext);
   const { totalUniqueItems } = useCart();
   const { count: wishlistCount } = useWishlist();
-  const userInfo = getUserSession();
   const [mounted, setMounted] = useState(false);
+  const userInfo = mounted ? userState?.userInfo : null;
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -174,7 +143,7 @@ const Navbar = () => {
                 aria-label="Wishlist"
               >
                 <FiHeart className="text-xl" />
-                {wishlistCount > 0 && (
+                {mounted && wishlistCount > 0 && (
                   <span className="absolute top-1 right-1 min-w-[16px] h-4 text-[8px] font-black text-black bg-[#D4AF37] rounded-none border border-black flex items-center justify-center px-1">
                     {wishlistCount}
                   </span>
@@ -187,7 +156,7 @@ const Navbar = () => {
                 aria-label="Cart"
               >
                 <FiShoppingCart className="text-xl" />
-                {totalUniqueItems > 0 && (
+                {mounted && totalUniqueItems > 0 && (
                   <span className="absolute top-1 right-1 min-w-[16px] h-4 text-[8px] font-black text-black bg-[#D4AF37] rounded-none border border-black flex items-center justify-center px-1">
                     {totalUniqueItems}
                   </span>

@@ -12,6 +12,7 @@ const ChildCategory = lazy(() => import("@/pages/ChildCategory"));
 const Staff = lazy(() => import("@/pages/Staff"));
 const Customers = lazy(() => import("@/pages/Customers"));
 const AddProduct = lazy(() => import("@/pages/AddProduct"));
+const EditProduct = lazy(() => import("@/pages/EditProduct"));
 const NewItemRequest = lazy(() => import("@/pages/NewItemRequest"));
 const ProductBulkImport = lazy(() => import("@/pages/ProductBulkImport"));
 const ProductBulkExport = lazy(() => import("@/pages/ProductBulkExport"));
@@ -45,7 +46,6 @@ const BusinessSettings = lazy(() => import("@/pages/settings/BusinessSettings"))
 const PaymentSettings = lazy(() => import("@/pages/settings/PaymentSettings"));
 const VendorSettings = lazy(() => import("@/pages/settings/VendorSettings"));
 const OrderSettings = lazy(() => import("@/pages/settings/OrderSettings"));
-const RefundSettings = lazy(() => import("@/pages/settings/RefundSettings"));
 // const DeliveryManSettings = lazy(() => import("@/pages/settings/DeliveryManSettings"));
 
 const Faqs = lazy(() => import("@/pages/Faqs"));
@@ -106,14 +106,6 @@ const routes = [
     component: OrdersByStatus,
   },
   {
-    path: "/orders/refunded",
-    component: OrdersByStatus,
-  },
-  {
-    path: "/orders/refund-requested",
-    component: OrdersByStatus,
-  },
-  {
     path: "/orders/offline-payments",
     component: OrdersByStatus,
   },
@@ -124,6 +116,10 @@ const routes = [
   {
     path: "/products/add",
     component: AddProduct,
+  },
+  {
+    path: "/products/edit/:id",
+    component: EditProduct,
   },
   {
     path: "/products/new-request",
@@ -262,7 +258,6 @@ const routes = [
   { path: "/settings/payment", component: PaymentSettings },
   { path: "/settings/retailer", component: VendorSettings },
   { path: "/settings/order", component: OrderSettings },
-  { path: "/settings/refund", component: RefundSettings },
   { path: "/settings/taxes", component: Taxes },
   // { path: "/settings/delivery-man", component: DeliveryManSettings },
   {
@@ -286,42 +281,6 @@ const routes = [
     component: RasaHomepage,
   },
   {
-    path: "/homepage/hero",
-    component: RasaHomepage,
-  },
-  {
-    path: "/homepage/brands",
-    component: RasaHomepage,
-  },
-  {
-    path: "/homepage/instagram",
-    component: RasaHomepage,
-  },
-  {
-    path: "/homepage/trending",
-    component: RasaHomepage,
-  },
-  {
-    path: "/homepage/new-arrivals",
-    component: RasaHomepage,
-  },
-  {
-    path: "/homepage/categories",
-    component: RasaHomepage,
-  },
-  {
-    path: "/homepage/reviews",
-    component: RasaHomepage,
-  },
-  {
-    path: "/homepage/footer",
-    component: RasaHomepage,
-  },
-  {
-    path: "/homepage/order",
-    component: RasaHomepage,
-  },
-  {
     path: "/edit-profile",
     component: EditProfile,
   },
@@ -332,41 +291,17 @@ const routes = [
 ];
 
 const routeAccessList = [
-  // {
-  //   label: "Root",
-  //   value: "/",
-  // },
   { label: "Dashboard", value: "dashboard" },
   { label: "Products", value: "products" },
-  { label: "Brands", value: "brands" },
   { label: "Categories", value: "categories" },
-  { label: "Attributes", value: "attributes" },
-  { label: "Coupons", value: "coupons" },
   { label: "Customers", value: "customers" },
   { label: "Orders", value: "orders" },
-  { label: "Inventory", value: "inventory" },
   { label: "Homepage Manager", value: "homepage" },
-  { label: "Staff", value: "our-staff" },
   { label: "Settings", value: "settings" },
-  { label: "Languages", value: "languages" },
-  { label: "Currencies", value: "currencies" },
-  { label: "ViewStore", value: "store" },
-  { label: "StoreCustomization", value: "customization" },
-  { label: "StoreSettings", value: "store-settings" },
   { label: "Product Details", value: "product" },
   { label: "Order Invoice", value: "order" },
   { label: "Edit Profile", value: "edit-profile" },
-  {
-    label: "Customer Order",
-    value: "customer-order",
-  },
-  { label: "Notification", value: "notifications" },
-  { label: "Coming Soon", value: "coming-soon" },
-  { label: "Reviews", value: "reviews" },
-  { label: "FAQs", value: "faqs" },
-  { label: "Push Notification", value: "push-notification" },
-
-  { label: "Testimonials", value: "testimonials" },
+  { label: "Customer Order", value: "customer-order" },
 ];
 
 export { routeAccessList, routes };

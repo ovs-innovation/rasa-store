@@ -1,9 +1,7 @@
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import dynamic from "next/dynamic";
 import { useRef, useEffect, useState } from "react";
-import { IoCloudDownloadOutline, IoPrintOutline, IoCopyOutline } from "react-icons/io5";
-import { FiTruck, FiExternalLink } from "react-icons/fi";
-import { notifySuccess } from "@utils/toast";
+import dynamic from "next/dynamic";
+import { IoCloudDownloadOutline } from "react-icons/io5";
+import { notifyError, notifySuccess } from "@utils/toast";
 import ReactToPrint from "react-to-print";
 import { useQuery } from "@tanstack/react-query";
 import Cookies from "js-cookie";
@@ -15,11 +13,10 @@ import useGetSetting from "@hooks/useGetSetting";
 import Invoice from "@components/invoice/Invoice";
 import Loading from "@components/preloader/Loading";
 import OrderServices from "@services/OrderServices";
-import RefundServices from "@services/RefundServices";
 import useUtilsFunction from "@hooks/useUtilsFunction";
-import InvoiceForDownload from "@components/invoice/InvoiceForDownload";
 import OrderTracking from "@components/order/OrderTracking";
 import { setToken } from "@services/httpServices";
+import { downloadInvoicePdf } from "@utils/downloadInvoicePdf";
 const Order = ({ params }) => {
   const printRef = useRef();
   const orderId = params.id;
@@ -35,35 +32,25 @@ const Order = ({ params }) => {
     }
   }, []);
 
-  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
-  const [refundReasons, setRefundReasons] = useState([]);
-  const [refundMode, setRefundMode] = useState(false);
-  const [selectedReason, setSelectedReason] = useState("");
-  const [refundNote, setRefundNote] = useState("");
-
+  const [isMounted, setIsMounted] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   useEffect(() => {
-    RefundServices.getRefundData().then((res) => {
-      if (res && res.reasons) {
-        setRefundReasons(res.reasons.filter((r) => r.status?.toLowerCase() === "show"));
-      }
-      if (res && res.refundMode !== undefined) {
-        setRefundMode(res.refundMode);
-      }
-    });
+    setIsMounted(true);
   }, []);
 
-  const handleRefundSubmit = async () => {
-    if (!selectedReason) return notifyError("Please select a reason");
+  const handleDownloadPdf = async () => {
+    if (!printRef.current || pdfLoading) return;
+    setPdfLoading(true);
     try {
-      const res = await OrderServices.requestRefund(orderId, {
-        reason: selectedReason,
-        note: refundNote,
-      });
-      notifySuccess(res.message);
-      setIsRefundModalOpen(false);
-      window.location.reload();
+      await downloadInvoicePdf(
+        printRef.current,
+        `Invoice-${data?.invoice || orderId}`
+      );
+      notifySuccess("Invoice downloaded");
     } catch (err) {
-      notifyError(err?.response?.data?.message || err.message);
+      notifyError(err?.message || "Failed to download invoice");
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -83,6 +70,12 @@ const Order = ({ params }) => {
 
   return (
     <Layout title="Invoice" description="order confirmation page">
+      <style jsx global>{`
+        body {
+          background-color: #050505 !important;
+          color: #ffffff !important;
+        }
+      `}</style>
       {isLoading ? (
         <Loading loading={isLoading} />
       ) : error ? (
@@ -91,12 +84,12 @@ const Order = ({ params }) => {
         </h2>
       ) : (
         <div className="max-w-screen-2xl mx-auto py-10 px-3 sm:px-6">
-          <div className="bg-store-100 rounded-md mb-5 px-4 py-3">
-            <label>
+          <div className="bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#D4AF37] rounded-2xl mb-5 px-4 py-3">
+            <label className="text-sm font-semibold">
               {showingTranslateValue(
                 storeCustomizationSetting?.dashboard?.invoice_message_first
               )}{" "}
-              <span className="font-bold text-store-600">
+              <span className="font-extrabold text-white">
                 {data?.user_info?.name},
               </span>{" "}
               {showingTranslateValue(
@@ -104,46 +97,26 @@ const Order = ({ params }) => {
               )}
             </label>
           </div>
-          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-8">
+          <div className="w-full">
             <div className="flex flex-wrap gap-3 mb-8">
-
-
-               {data.trackingNumber && (
-                 <>
-                   <button 
-                     onClick={() => router.push(`/user/track-order?id=${data._id}`)}
-                     className="flex items-center justify-center bg-blue-500 text-white transition-all font-serif text-sm font-semibold h-10 py-2 px-5 rounded-md hover:bg-blue-600 shadow-sm"
-                   >
-                     Track Shipment <FiTruck className="ml-2" />
-                   </button>
-                   
-                   <button 
-                     onClick={() => handleCopyTracking(data.trackingNumber)}
-                     className="flex items-center justify-center bg-gray-100 text-gray-700 transition-all font-serif text-sm font-semibold h-10 py-2 px-5 rounded-md hover:bg-gray-200 shadow-sm"
-                   >
-                     Copy AWB <IoCopyOutline className="ml-2" />
-                   </button>
-
-                   {data.trackingUrl && (
-                     <a 
-                       href={data.trackingUrl}
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       className="flex items-center justify-center bg-indigo-50 text-indigo-700 transition-all font-serif text-sm font-semibold h-10 py-2 px-5 rounded-md hover:bg-indigo-100 shadow-sm"
-                     >
-                       Courier Tracking <FiExternalLink className="ml-2" />
-                     </a>
+               <button
+                 type="button"
+                 onClick={handleDownloadPdf}
+                 disabled={pdfLoading}
+                 className="flex items-center justify-center bg-[#D4AF37] text-black transition-all text-sm font-bold h-10 py-2 px-6 rounded-full hover:bg-[#bfa032] shadow-md cursor-pointer disabled:opacity-60"
+               >
+                 {pdfLoading ? "Preparing..." : "Download Invoice"}
+                 <IoCloudDownloadOutline className="ml-2" />
+               </button>
+               {isMounted && (
+                 <ReactToPrint
+                   trigger={() => (
+                     <button className="flex items-center justify-center bg-white/10 text-white border border-white/20 transition-all text-sm font-bold h-10 py-2 px-6 rounded-full hover:bg-white/20 shadow-md cursor-pointer">
+                       Print Invoice
+                     </button>
                    )}
-                 </>
-               )}
-
-               {data?.status === "Delivered" && refundMode && (
-                 <button
-                   onClick={() => setIsRefundModalOpen(true)}
-                   className="flex items-center justify-center bg-red-500 text-white transition-all font-serif text-sm font-semibold h-10 py-2 px-5 rounded-md hover:bg-red-600 shadow-sm"
-                 >
-                   Request Refund
-                 </button>
+                   content={() => printRef.current}
+                 />
                )}
             </div>
 
@@ -161,51 +134,6 @@ const Order = ({ params }) => {
               globalSetting={globalSetting}
             />
           </div>
-
-          {/* Refund Modal */}
-          {isRefundModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-              <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-                <h2 className="text-xl font-bold mb-4">Request Refund</h2>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Reason</label>
-                  <select
-                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-store-500 focus:ring-store-500 p-2 border"
-                    value={selectedReason}
-                    onChange={(e) => setSelectedReason(e.target.value)}
-                  >
-                    <option value="" disabled>Select a reason...</option>
-                    {refundReasons.map((r) => (
-                      <option key={r._id} value={r.title}>{r.title}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Additional Note (Optional)</label>
-                  <textarea
-                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-store-500 focus:ring-store-500 p-2 border"
-                    rows="3"
-                    value={refundNote}
-                    onChange={(e) => setRefundNote(e.target.value)}
-                  ></textarea>
-                </div>
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => setIsRefundModalOpen(false)}
-                    className="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-100"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleRefundSubmit}
-                    className="px-4 py-2 bg-store-500 text-white rounded-md hover:bg-store-600"
-                  >
-                    Submit Request
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </Layout>

@@ -6,19 +6,21 @@ import { IoLockOpenOutline } from "react-icons/io5";
 import { FiPhoneCall, FiUser, FiMapPin } from "react-icons/fi";
 import { signOut } from "next-auth/react";
 import { jwtDecode } from "jwt-decode";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 //internal import
-import { getUserSession } from "@lib/auth";
 import useGetSetting from "@hooks/useGetSetting";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import CustomerServices from "@services/CustomerServices";
+import { UserContext } from "@context/UserContext";
 
 const NavBarTop = () => {
-  const userInfo = getUserSession();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [location, setLocation] = useState(null);
+  const { state } = useContext(UserContext);
+  const userInfo = mounted ? state?.userInfo : null;
 
   const { storeCustomizationSetting } = useGetSetting();
   const { showingTranslateValue } = useUtilsFunction();
@@ -26,6 +28,7 @@ const NavBarTop = () => {
 
   // Load location from cookies on mount
   useEffect(() => {
+    setMounted(true);
     const savedLocation = Cookies.get("userLocation");
     if (savedLocation) {
       try {
@@ -129,7 +132,7 @@ const NavBarTop = () => {
 
             <div className="lg:text-right flex items-center gap-4 text-neutral-400">
               <Link
-                href={userInfo?.token ? "/user/my-account" : "/auth/login"}
+                href={mounted && userInfo?.token ? "/user/my-account" : "/auth/login"}
                 className="hover:text-white transition-colors"
               >
                 {showingTranslateValue(
@@ -137,7 +140,7 @@ const NavBarTop = () => {
                 )}
               </Link>
               <span className="text-neutral-700">|</span>
-              {userInfo?.token ? (
+              {mounted && userInfo?.token ? (
                 <button
                   onClick={handleLogOut}
                   className="flex items-center gap-1 hover:text-white transition-colors uppercase"

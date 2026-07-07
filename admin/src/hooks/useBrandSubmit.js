@@ -23,6 +23,7 @@ const useBrandSubmit = (id) => {
   const [coverUrl, setCoverUrl] = useState("");
   const [published, setPublished] = useState(true);
   const [featured, setFeatured] = useState(false);
+  const [showOnHomepage, setShowOnHomepage] = useState(true);
   const [language, setLanguage] = useState("en");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -90,6 +91,7 @@ const useBrandSubmit = (id) => {
         logo: logoUrl,
         coverImage: coverUrl,
         isFeatured: featured,
+        showOnHomepage,
         status: published ? "show" : "hide",
       };
 
@@ -123,6 +125,7 @@ const useBrandSubmit = (id) => {
       setCoverUrl("");
       setPublished(true);
       setFeatured(false);
+      setShowOnHomepage(true);
       clearErrors("name");
       clearErrors("description");
       setLanguage(lang);
@@ -143,6 +146,7 @@ const useBrandSubmit = (id) => {
           setCoverUrl(res?.coverImage || "");
           setPublished(res?.status !== "hide");
           setFeatured(!!res?.isFeatured);
+          setShowOnHomepage(res?.showOnHomepage !== false);
         } catch (err) {
           showAlert(err?.response?.data?.message || err?.message, "error");
         }
@@ -163,6 +167,8 @@ const useBrandSubmit = (id) => {
     setPublished,
     featured,
     setFeatured,
+    showOnHomepage,
+    setShowOnHomepage,
     handleSelectLanguage,
     isSubmitting,
   };

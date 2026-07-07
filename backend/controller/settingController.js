@@ -202,7 +202,7 @@ const getStoreCustomizationSetting = async (req, res) => {
     const storeCustomizationSetting = await Setting.findOne(
       { name: "storeCustomizationSetting" },
       projection
-    );
+    ).sort({ updatedAt: -1 });
 
     if (!storeCustomizationSetting) {
       return res.send({});
@@ -234,17 +234,27 @@ const updateStoreCustomizationSetting = async (req, res) => {
   try {
     const { setting } = req.body;
 
-    // Dynamically build the update fields
-    const updateFields = Object.keys(setting).reduce((acc, key) => {
-      acc[`setting.${key}`] = setting[key];
-      return acc;
-    }, {});
-    // Update the online store setting document
-    const storeCustomizationSetting = await Setting.findOneAndUpdate(
-      { name: "storeCustomizationSetting" },
-      { $set: updateFields },
-      { new: true, upsert: true } // upsert to create the document if it doesn't exist
-    );
+    if (!setting || typeof setting !== "object") {
+      return res.status(400).send({ message: "Invalid setting payload" });
+    }
+
+    let storeCustomizationSetting = await Setting.findOne({
+      name: "storeCustomizationSetting",
+    }).sort({ updatedAt: -1 });
+
+    if (!storeCustomizationSetting) {
+      storeCustomizationSetting = new Setting({
+        name: "storeCustomizationSetting",
+        setting: {},
+      });
+    }
+
+    storeCustomizationSetting.setting = {
+      ...(storeCustomizationSetting.setting || {}),
+      ...setting,
+    };
+    storeCustomizationSetting.markModified("setting");
+    await storeCustomizationSetting.save();
 
     res.send({
       data: storeCustomizationSetting,

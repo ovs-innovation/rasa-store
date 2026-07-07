@@ -70,7 +70,7 @@ const ReviewList = ({
             <div className="mt-2 flex items-center justify-between">
               <div className="flex items-center space-x-2 text-xs text-gray-500">
                 <span className="font-medium">
-                  {maskName(review?.user?.name)}
+                  {maskName(review?.displayName || review?.user?.name)}
                 </span>
                 <span>•</span>
                 <span>{dayjs(review.createdAt).fromNow()}</span>

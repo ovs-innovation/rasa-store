@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { IoClose, IoStar } from "react-icons/io5";
+import { IoClose } from "react-icons/io5";
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import BrandServices from "@services/BrandServices";
 import CategoryServices from "@services/CategoryServices";
@@ -12,8 +12,6 @@ const FilterSidebar = ({
   setPriceRange,
   selectedCategories,
   setSelectedCategories,
-  selectedRating,
-  setSelectedRating,
   selectedDiscount,
   setSelectedDiscount,
   onClearAll,
@@ -24,7 +22,6 @@ const FilterSidebar = ({
   const [expandedCategories, setExpandedCategories] = useState({});
   const [openSections, setOpenSections] = useState({
     brand: false,
-    rating: false,
     discount: false,
     category: true,
   });
@@ -73,7 +70,6 @@ const FilterSidebar = ({
     setPriceRange(newPriceRange);
   };
 
-  const ratings = [4, 3, 2, 1];
   const discounts = [50, 40, 30, 20, 10];
 
   return (
@@ -91,13 +87,12 @@ const FilterSidebar = ({
       {/* Active Filters */}
       {(selectedBrands.length > 0 ||
         selectedCategories.length > 0 ||
-        selectedRating > 0 ||
         selectedDiscount > 0 ||
         priceRange.min > 0 ||
         priceRange.max < 100000) && (
         <div className="p-4 flex flex-wrap gap-2 border-b border-neutral-850 bg-[#050505]/20">
           {selectedBrands.map((brandId) => {
-            const brand = brands.find((b) => b._id === brandId);
+            const brand = brands.find((b) => b._id === brandId || b.slug === brandId);
             if (!brand) return null;
             return (
               <span
@@ -182,15 +177,6 @@ const FilterSidebar = ({
                 onClick={() =>
                   setPriceRange((prev) => ({ ...prev, max: 100000 }))
                 }
-              />
-            </span>
-          )}
-          {selectedRating > 0 && (
-            <span className="inline-flex items-center px-2 py-1 bg-neutral-900 border border-neutral-800 text-xs rounded-lg text-neutral-300">
-              {selectedRating}★ & above
-              <IoClose
-                className="ml-1.5 cursor-pointer text-neutral-500 hover:text-white"
-                onClick={() => setSelectedRating(0)}
               />
             </span>
           )}
@@ -355,7 +341,10 @@ const FilterSidebar = ({
                 <input
                   type="checkbox"
                   id={`brand-${brand._id}`}
-                  checked={selectedBrands.includes(brand._id)}
+                  checked={
+                    selectedBrands.includes(brand._id) ||
+                    selectedBrands.includes(brand.slug)
+                  }
                   onChange={() => handleBrandChange(brand._id)}
                   className="rounded border-neutral-800 text-[#D4AF37] bg-neutral-950 focus:ring-[#D4AF37] focus:ring-offset-0 focus:outline-none w-4 h-4"
                 />
@@ -365,39 +354,6 @@ const FilterSidebar = ({
                 >
                   {showingTranslateValue(brand.name)}
                 </label>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Customer Ratings */}
-      <div className="border-b border-neutral-850">
-        <button
-          onClick={() => toggleSection("rating")}
-          className="w-full p-4 flex justify-between items-center text-xs font-black uppercase text-neutral-200 hover:bg-neutral-900/60 transition-colors"
-        >
-          Customer Ratings
-          {openSections.rating ? <FiChevronUp className="text-neutral-400" /> : <FiChevronDown className="text-neutral-400" />}
-        </button>
-        {openSections.rating && (
-          <div className="px-4 pb-4">
-            {ratings.map((rating) => (
-              <div
-                key={rating}
-                className="flex items-center mb-2 cursor-pointer group"
-                onClick={() => setSelectedRating(rating)}
-              >
-                <input
-                  type="radio"
-                  name="rating"
-                  checked={selectedRating === rating}
-                  onChange={() => setSelectedRating(rating)}
-                  className="text-[#D4AF37] bg-neutral-950 border-neutral-800 focus:ring-[#D4AF37] focus:ring-offset-0 focus:outline-none w-4 h-4"
-                />
-                <div className="ml-2 flex items-center text-sm text-neutral-350 group-hover:text-[#D4AF37] transition-colors">
-                  {rating} <IoStar className="text-[#D4AF37] ml-1 mr-1" /> & above
-                </div>
               </div>
             ))}
           </div>

@@ -1,9 +1,10 @@
 import requests from "./httpServices";
 
 const BrandServices = {
-  getShowingBrands: async () => {
+  getShowingBrands: async (homepage = false) => {
     try {
-      return await requests.get("/brand/show");
+      const suffix = homepage ? "?homepage=true" : "";
+      return await requests.get(`/brand/show${suffix}`);
     } catch {
       return [];
     }

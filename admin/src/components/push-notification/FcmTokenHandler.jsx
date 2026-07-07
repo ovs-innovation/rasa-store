@@ -14,12 +14,7 @@ const FcmTokenHandler = () => {
     const setupFcm = async () => {
       try {
         if (!adminInfo?._id) return;
-        if (typeof window === "undefined" || !app) {
-          console.warn(
-            "Firebase not configured in admin. Add VITE_APP_FIREBASE_* keys to admin/.env"
-          );
-          return;
-        }
+        if (typeof window === "undefined" || !app) return;
 
         const supported = await isSupported();
         if (!supported) {

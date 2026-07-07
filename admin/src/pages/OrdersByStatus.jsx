@@ -56,8 +56,6 @@ const STATUS_MAP = {
   delivered: "Delivered",
   canceled: "Cancel",
   "payment-failed": "Payment Failed",
-  refunded: "Refunded",
-  "refund-requested": "Refund Requested",
   "offline-payments": "Offline Payments",
 };
 
@@ -71,8 +69,6 @@ const TITLE_MAP = {
   delivered: "Delivered Orders",
   canceled: "Canceled Orders",
   "payment-failed": "Payment Failed Orders",
-  refunded: "Refunded Orders",
-  "refund-requested": "Refund Requested Orders",
   "offline-payments": "Offline Payments",
 };
 

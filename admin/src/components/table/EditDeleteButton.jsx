@@ -47,6 +47,18 @@ const EditDeleteButton = ({
               />
             </button>
           </>
+        ) : product ? (
+          <Link
+            to={`/products/edit/${id}`}
+            className="p-2 cursor-pointer text-gray-400 hover:text-store-600 focus:outline-none"
+          >
+            <Tooltip
+              id="edit"
+              Icon={FiEdit}
+              title={t("Edit")}
+              bgColor="#10B981"
+            />
+          </Link>
         ) : (
           <button
             disabled={isCheck?.length > 0}

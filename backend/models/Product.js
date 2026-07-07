@@ -177,7 +177,7 @@ const productSchema = new mongoose.Schema(
     // RASA: Sneakers | Bags | Slides | Accessories
     productType: {
       type: String,
-      enum: ["Sneakers", "Bags", "Slides", "Accessories", ""],
+      enum: ["Sneakers", "Bags", "Slides", "Heels", "Accessories", ""],
       default: "",
       trim: true,
     },

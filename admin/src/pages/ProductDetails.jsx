@@ -203,7 +203,7 @@ const ProductDetails = () => {
               </div>
               <div className="mt-6">
                 <button
-                  onClick={() => handleUpdate(id)}
+                  onClick={() => history.push(`/products/edit/${id}`)}
                   className="cursor-pointer leading-5 transition-colors duration-150 font-medium text-sm focus:outline-none px-5 py-2 rounded-md text-white bg-store-500 border border-transparent active:bg-store-600 hover:bg-store-600 "
                 >
                   {t("EditProduct")}

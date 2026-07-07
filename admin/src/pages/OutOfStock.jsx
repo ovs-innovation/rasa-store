@@ -10,6 +10,7 @@ import {
 } from "@windmill/react-ui";
 import { useContext, useEffect, useState } from "react";
 import { FiEdit, FiSearch, FiPackage, FiX, FiXCircle } from "react-icons/fi";
+import { Link } from "react-router-dom";
 
 import ProductServices from "@/services/ProductServices";
 import BrandServices from "@/services/BrandServices";
@@ -19,16 +20,12 @@ import AnimatedContent from "@/components/common/AnimatedContent";
 import PageTitle from "@/components/Typography/PageTitle";
 import { SidebarContext } from "@/context/SidebarContext";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
-import useToggleDrawer from "@/hooks/useToggleDrawer";
-import MainDrawer from "@/components/drawer/MainDrawer";
-import ProductDrawer from "@/components/drawer/ProductDrawer";
 
 const RESULTS_PER_PAGE = 20;
 
 const OutOfStock = () => {
   const { isUpdate } = useContext(SidebarContext);
   const { showingTranslateValue } = useUtilsFunction();
-  const { serviceId, handleUpdate } = useToggleDrawer();
 
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -80,10 +77,6 @@ const OutOfStock = () => {
     <>
       <PageTitle>Out Of Stock</PageTitle>
       <AnimatedContent>
-        <MainDrawer>
-          <ProductDrawer id={serviceId} />
-        </MainDrawer>
-
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center shadow-md">
             <FiXCircle className="w-5 h-5 text-white" />
@@ -182,13 +175,12 @@ const OutOfStock = () => {
                         <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-red-50 text-red-600 border border-red-100">0 units</span>
                       </TableCell>
                       <TableCell className="px-6 py-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleUpdate(p._id)}
+                        <Link
+                          to={`/products/edit/${p._id}`}
                           className="h-9 px-4 inline-flex items-center gap-2 border border-teal-200 text-teal-600 text-xs font-bold rounded-xl hover:bg-teal-600 hover:text-white transition-all"
                         >
                           <FiEdit size={13} /> Update Stock
-                        </button>
+                        </Link>
                       </TableCell>
                     </TableRow>
                   ))}

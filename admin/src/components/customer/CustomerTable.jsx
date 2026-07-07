@@ -1,17 +1,37 @@
-import { TableBody, TableCell, TableRow, Badge } from "@windmill/react-ui";
+import { TableBody, TableCell, TableRow } from "@windmill/react-ui";
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import { t } from "i18next";
 import React from "react";
-import { FiZoomIn, FiMail, FiPhone, FiCalendar, FiUser } from "react-icons/fi";
+import { FiShoppingBag, FiEdit, FiTrash2 } from "react-icons/fi";
 import { Link } from "react-router-dom";
 
-//internal import
 import MainDrawer from "@/components/drawer/MainDrawer";
 import DeleteModal from "@/components/modal/DeleteModal";
 import useToggleDrawer from "@/hooks/useToggleDrawer";
-import Tooltip from "@/components/tooltip/Tooltip";
 import CustomerDrawer from "@/components/drawer/CustomerDrawer";
-import EditDeleteButton from "@/components/table/EditDeleteButton";
+
+dayjs.extend(relativeTime);
+
+const getInitials = (name = "") => {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
+};
+
+const getStatus = (user) => {
+  if (user?.blocked) {
+    return { label: "Blocked", className: "bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300" };
+  }
+  if (user?.lastLogin) {
+    const daysSinceLogin = dayjs().diff(dayjs(user.lastLogin), "day");
+    if (daysSinceLogin <= 30) {
+      return { label: "Active", className: "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300" };
+    }
+  }
+  return { label: "Inactive", className: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300" };
+};
 
 const CustomerTable = ({ customers }) => {
   const { title, serviceId, handleModalOpen, handleUpdate } = useToggleDrawer();
@@ -25,83 +45,83 @@ const CustomerTable = ({ customers }) => {
       </MainDrawer>
 
       <TableBody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
-        {customers?.map((user) => (
-          <TableRow key={user._id} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/20 transition-colors group">
-            <TableCell className="py-4 pl-6">
-              <div className="flex flex-col">
-                <span className="font-bold text-[11px] text-gray-400 uppercase tracking-tighter">
-                  ID: {user?._id?.substring(18, 24)}
-                </span>
-              </div>
-            </TableCell>
-            
-            <TableCell className="py-4">
-              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                <FiCalendar className="text-gray-400" size={14} />
-                <span className="text-sm font-medium">
-                  {dayjs(user.createdAt).format("MMM D, YYYY")}
-                </span>
-              </div>
-            </TableCell>
+        {customers?.map((user) => {
+          const status = getStatus(user);
 
-            <TableCell className="py-4">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400 shadow-sm border border-teal-100 dark:border-teal-800/20 group-hover:scale-110 transition-transform">
-                  <FiUser size={16} />
+          return (
+            <TableRow
+              key={user._id}
+              className="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-colors"
+            >
+              <TableCell className="py-4">
+                <div className="flex items-center gap-3 min-w-[220px]">
+                  <div className="w-10 h-10 rounded-full bg-teal-600 text-white flex items-center justify-center text-sm font-bold shrink-0">
+                    {getInitials(user.name)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      {user.name || "Unnamed"}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {user.email || "—"}
+                    </p>
+                  </div>
                 </div>
-                <span className="text-sm font-bold text-gray-800 dark:text-gray-200">{user.name}</span>
-              </div>
-            </TableCell>
+              </TableCell>
 
-            <TableCell className="py-4">
-              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                <FiMail className="text-gray-400" size={14} />
-                <span className="text-sm">{user.email}</span>
-              </div>
-            </TableCell>
+              <TableCell className="py-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {user.createdAt ? dayjs(user.createdAt).format("DD MMM YYYY") : "—"}
+                </p>
+                {user.createdAt && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {dayjs(user.createdAt).fromNow()}
+                  </p>
+                )}
+              </TableCell>
 
-            <TableCell className="py-4">
-              <Badge 
-                type="success"
-                className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
-              >
-                {user.role || "Customer"}
-              </Badge>
-            </TableCell>
+              <TableCell className="py-4">
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {user.phone || "—"}
+                </p>
+              </TableCell>
 
-            <TableCell className="py-4 text-center">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600">
-                <FiPhone className="text-gray-400" size={12} />
-                <span className="text-xs font-bold text-gray-700 dark:text-gray-300">{user.phone || 'N/A'}</span>
-              </div>
-            </TableCell>
+              <TableCell className="py-4">
+                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${status.className}`}>
+                  {status.label}
+                </span>
+              </TableCell>
 
-            <TableCell className="py-4 pr-6">
-              <div className="flex justify-end items-center gap-2">
-                <Link 
-                  to={`/customer-order/${user._id}`}
-                  className="p-2.5 rounded-xl bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-500 hover:text-teal-600 hover:border-teal-200 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all shadow-sm"
-                >
-                  <Tooltip
-                    id="view"
-                    Icon={FiZoomIn}
+              <TableCell className="py-4">
+                <div className="flex justify-end items-center gap-1">
+                  <Link
+                    to={`/customer-order/${user._id}`}
                     title={t("ViewOrder")}
-                    bgColor="#0e7473"
-                  />
-                </Link>
-
-                <div className="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm overflow-hidden flex">
-                   <EditDeleteButton
-                    title={user.name}
-                    id={user._id}
-                    handleUpdate={handleUpdate}
-                    handleModalOpen={handleModalOpen}
-                  />
+                    className="p-2 rounded-lg text-gray-500 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"
+                  >
+                    <FiShoppingBag size={16} />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdate(user._id)}
+                    title={t("Edit")}
+                    className="p-2 rounded-lg text-gray-500 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors"
+                  >
+                    <FiEdit size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleModalOpen(user._id, user.name)}
+                    title={t("Delete")}
+                    className="p-2 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    <FiTrash2 size={16} />
+                  </button>
                 </div>
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </>
   );

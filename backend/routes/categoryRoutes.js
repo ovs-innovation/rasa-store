@@ -13,12 +13,16 @@ const {
   deleteCategory,
   deleteManyCategory,
   updateManyCategory,
-  updateFeatured
+  updateFeatured,
+  syncShopCategories
 
 } = require('../controller/categoryController');
 
 //add a category
 router.post('/add', isAuth, isAdmin, addCategory);
+
+// sync shop categories (Shoes & Bags) for product assignment
+router.post('/sync-shop', isAuth, isAdmin, syncShopCategories);
 
 //add all category
 router.post('/add/all', isAuth, isAdmin, addAllCategory);

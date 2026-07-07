@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FiBell } from "react-icons/fi";
 
-import Dashboard from "@pages/user/dashboard";
+import UserDashboardLayout from "@components/user/UserDashboardLayout";
 import useCustomerAuth from "@hooks/useCustomerAuth";
 import CustomerNotificationServices from "@services/CustomerNotificationServices";
 import NotificationListItem from "@components/notification/NotificationListItem";
@@ -12,6 +12,8 @@ import {
   resolveLink,
 } from "@utils/notificationHelpers";
 import { notifyError, notifySuccess } from "@utils/toast";
+import { UD } from "@components/user/userDashboardTheme";
+import withNoSsr from "@utils/withNoSsr";
 
 const NotificationsPage = () => {
   const router = useRouter();
@@ -70,17 +72,12 @@ const NotificationsPage = () => {
   };
 
   return (
-    <Dashboard title="Notifications" description="Your notifications">
-      <div className="max-w-4xl">
-        <div className="flex items-center justify-between gap-4 mb-8">
+    <UserDashboardLayout title="Notifications" description="Your notifications">
+      <div className="max-w-2xl space-y-5">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-serif font-bold text-white">
-              Notifications
-            </h1>
-            <p className="text-sm text-neutral-400 mt-1">
-              Tap an image to view it full size. Offers and updates from
-              Rasa Store.
-            </p>
+            <h1 className={UD.pageTitle}>Notifications</h1>
+            <p className={UD.pageSubtitle}>Offers and updates from the store</p>
           </div>
           {unreadCount > 0 && (
             <button
@@ -94,11 +91,9 @@ const NotificationsPage = () => {
         </div>
 
         {isLoading ? (
-          <div className="rounded-2xl border border-neutral-900 bg-[#0A0A0A] p-12 text-center text-neutral-400 text-sm">
-            Loading...
-          </div>
+          <div className={`${UD.panelPad} text-center ${UD.muted}`}>Loading...</div>
         ) : notifications.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-neutral-900 bg-neutral-950/20 text-center py-20 px-6">
+          <div className={`${UD.panelPad} ${UD.empty}`}>
             <span className="inline-flex w-16 h-16 rounded-2xl bg-neutral-900 text-[#D4AF37] items-center justify-center mb-4 border border-neutral-800">
               <FiBell className="text-3xl" />
             </span>
@@ -109,7 +104,7 @@ const NotificationsPage = () => {
             </p>
           </div>
         ) : (
-          <ul className="rounded-2xl border border-neutral-900 bg-[#0A0A0A] shadow-lg overflow-hidden divide-y divide-neutral-900">
+          <ul className={`${UD.panel} overflow-hidden divide-y divide-neutral-800`}>
             {notifications.map((item) => (
               <li key={item._id}>
                 <NotificationListItem
@@ -125,8 +120,8 @@ const NotificationsPage = () => {
           </ul>
         )}
       </div>
-    </Dashboard>
+    </UserDashboardLayout>
   );
 };
 
-export default NotificationsPage;
+export default withNoSsr(NotificationsPage);

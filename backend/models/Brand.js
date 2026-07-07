@@ -40,6 +40,10 @@ const brandSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    showOnHomepage: {
+      type: Boolean,
+      default: true,
+    },
     status: {
       type: String,
       enum: ["show", "hide"],

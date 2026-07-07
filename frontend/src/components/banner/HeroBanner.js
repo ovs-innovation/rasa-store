@@ -32,30 +32,37 @@ const DEFAULT_HERO_SLIDES = [
 
 const CMS_FALLBACK_SLIDES = [
   {
+    type: "footwear",
     title: "Fresh Drops",
     subtitle: "Fresh Drops",
     description: DEFAULT_HERO_SLIDES[0].desc,
     image: "/shoes1.png",
     link: "/search?category=footwear",
     brand: "Rasa",
+    bgText: "RASA",
+    accentColor: "#D4AF37",
   },
   {
+    type: "bags",
     title: "Bags & More",
     subtitle: "Bags & More",
     description: DEFAULT_HERO_SLIDES[1].desc,
     image: "/bag1.png",
     link: "/search?category=bags",
     brand: "Rasa",
+    bgText: "BAGS",
     accentColor: "#B07A4F",
   },
 ];
 
 const isBagSlide = (slide = {}) =>
+  slide?.type === "bags" ||
   /bag|duffle|backpack/i.test(
     `${slide.title || ""} ${slide.subtitle || ""} ${slide.link || ""} ${slide.image || ""}`
   );
 
 const isFootwearSlide = (slide = {}) =>
+  slide?.type === "footwear" ||
   /footwear|shoe|sneaker/i.test(
     `${slide.title || ""} ${slide.subtitle || ""} ${slide.link || ""} ${slide.image || ""}`
   );
@@ -88,7 +95,7 @@ const mapCmsToHeroSlide = (s, i) => ({
       ? "Bags, accessories and latest styles — if you've seen it, chances are we've got it."
       : "Affordable sneakers and streetwear — curated picks, delivered to your door."),
   image: s.image || "/shoes1.png",
-  bgText: (s.brand || s.title || "RASA").toUpperCase().slice(0, 4),
+  bgText: s.bgText || (isBagSlide(s) ? "BAGS" : (s.brand || s.title || "RASA").toUpperCase().slice(0, 4)),
   glowColor: isBagSlide(s) ? "rgba(176, 122, 79, 0.2)" : "rgba(212, 175, 55, 0.2)",
   accentColor: s.accentColor || (isBagSlide(s) ? "#B07A4F" : "#D4AF37"),
   textGradient: isBagSlide(s)

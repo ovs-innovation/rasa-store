@@ -70,10 +70,6 @@ const Faq = () => {
       answer: "Every item goes through a rigorous multi-point physical inspection by our team of expert authenticators before it is shipped to you, ensuring 100% genuine products.",
     },
     {
-      question: "How do I return an item?",
-      answer: "Returns are accepted within 7 days of delivery for unopened and undamaged products. Please refer to our Refund & Return Policy for more details.",
-    },
-    {
       question: "Can I pay using Cash on Delivery (COD)?",
       answer: "Yes, we offer Cash on Delivery for most locations. You can also pay online using UPI, Credit/Debit cards, or Net Banking for a contactless experience.",
     },

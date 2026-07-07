@@ -1,5 +1,4 @@
 import { useContext, useEffect, useMemo } from "react";
-import Cookies from "js-cookie";
 import { UserContext } from "@context/UserContext";
 import { setToken } from "@services/httpServices";
 
@@ -9,15 +8,7 @@ export default function useCustomerAuth() {
 
   const userInfo = useMemo(() => {
     if (state?.userInfo?.token) return state.userInfo;
-    if (typeof window === "undefined") return null;
-    const raw = Cookies.get("userInfo");
-    if (!raw) return null;
-    try {
-      const parsed = JSON.parse(raw);
-      return parsed?.token ? parsed : null;
-    } catch {
-      return null;
-    }
+    return null;
   }, [state?.userInfo]);
 
   useEffect(() => {

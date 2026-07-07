@@ -1,10 +1,70 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Select } from "@windmill/react-ui";
 
-// internal import
-import useAsync from "@/hooks/useAsync";
 import CategoryServices from "@/services/CategoryServices";
+import SettingServices from "@/services/SettingServices";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
+import { sanitizeCategoryBanners } from "@/hooks/useShopCategoryBanners";
+
+const SHOP_SLUGS = new Set(["footwear", "bags"]);
+
+const getCategoryLabel = (node) => {
+  if (!node?.name) return "";
+  if (typeof node.name === "string") return node.name;
+  return node.name.en || node.name.default || "";
+};
+
+const collectProductCategories = (tree = []) => {
+  if (!Array.isArray(tree) || tree.length === 0) return [];
+
+  const matched = [];
+
+  const walk = (nodes) => {
+    for (const node of nodes) {
+      const slug = String(node?.slug || "").toLowerCase();
+      const label = getCategoryLabel(node).toLowerCase();
+
+      if (SHOP_SLUGS.has(slug)) {
+        matched.push(node);
+      } else if (
+        label &&
+        label !== "home" &&
+        (label.includes("shoe") ||
+          label.includes("sneaker") ||
+          label.includes("footwear") ||
+          label === "bags" ||
+          label.includes("bag"))
+      ) {
+        matched.push(node);
+      }
+
+      if (node?.children?.length) walk(node.children);
+    }
+  };
+
+  walk(tree);
+
+  if (matched.length) {
+    const seen = new Set();
+    return matched.filter((cat) => {
+      const id = String(cat._id);
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }
+
+  const homeNode = tree.find(
+    (cat) =>
+      String(cat?.slug || "").toLowerCase() === "home" ||
+      getCategoryLabel(cat).toLowerCase() === "home"
+  );
+  if (homeNode?.children?.length) return homeNode.children;
+
+  return tree.filter(
+    (cat) => getCategoryLabel(cat).toLowerCase() !== "home"
+  );
+};
 
 const ParentCategory = ({
   selectedCategory,
@@ -12,55 +72,80 @@ const ParentCategory = ({
   setDefaultCategory,
   defaultCategory,
 }) => {
-  const { data, loading } = useAsync(CategoryServices?.getAllCategory);
   const { showingTranslateValue } = useUtilsFunction();
-
-  // Local state: which parent category is picked in the first dropdown
+  const [categoryTree, setCategoryTree] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedParentId, setSelectedParentId] = useState("");
-  // Local state: which sub-category is picked in the second dropdown
   const [selectedSubId, setSelectedSubId] = useState("");
 
-  // Sync selected dropdown values with defaultCategory on load
+  const loadCategories = useCallback(async () => {
+    setLoading(true);
+    try {
+      const settingsRes = await SettingServices.getStoreCustomizationSetting();
+      const setting = settingsRes?.setting || settingsRes;
+      const banners = sanitizeCategoryBanners(
+        setting?.rasaHomepage?.categoryBanners || []
+      );
+
+      if (banners.length) {
+        await CategoryServices.syncShopCategories({ categories: banners });
+      }
+
+      const data = await CategoryServices.getAllCategory();
+      setCategoryTree(Array.isArray(data) ? data : []);
+    } catch {
+      try {
+        const data = await CategoryServices.getAllCategory();
+        setCategoryTree(Array.isArray(data) ? data : []);
+      } catch {
+        setCategoryTree([]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    if (!data || !Array.isArray(data) || data.length === 0) return;
-    
-    // Get the first item of defaultCategory as the main category
+    loadCategories();
+  }, [loadCategories]);
+
+  const parentCategories = useMemo(
+    () => collectProductCategories(categoryTree),
+    [categoryTree]
+  );
+
+  useEffect(() => {
+    if (!categoryTree.length) return;
+
     const mainCategory = defaultCategory?.[0];
-    if (!mainCategory || !mainCategory._id) return;
+    if (!mainCategory?._id) return;
 
     const mainId = mainCategory._id;
+    const isParent = parentCategories.some((cat) => cat._id === mainId);
 
-    // Check if the mainId is a parent category
-    const isParent = data.some((cat) => cat._id === mainId);
     if (isParent) {
       setSelectedParentId(mainId);
       setSelectedSubId("");
-    } else {
-      // Find the parent of this sub-category
-      const parent = data.find((cat) => 
-        cat.children?.some((child) => child._id === mainId)
-      );
-      if (parent) {
-        setSelectedParentId(parent._id);
-        setSelectedSubId(mainId);
-      }
+      return;
     }
-  }, [data, defaultCategory]);
 
-  // Top-level (parent) categories — those with no parent or at root level
-  const parentCategories = Array.isArray(data) ? data : [];
+    const parent = categoryTree.find((cat) =>
+      cat.children?.some((child) => child._id === mainId)
+    );
+    if (parent) {
+      setSelectedParentId(parent._id);
+      setSelectedSubId(mainId);
+    }
+  }, [categoryTree, defaultCategory, parentCategories]);
 
-  // Sub-categories of the chosen parent
-  const subCategories = parentCategories.find(
-    (c) => c._id === selectedParentId
-  )?.children || [];
+  const subCategories =
+    parentCategories.find((c) => c._id === selectedParentId)?.children || [];
 
-  // Helper: find a category object by id (recursive)
   const findObject = (categories, targetId) => {
-    if (!categories || !Array.isArray(categories)) return undefined;
+    if (!Array.isArray(categories)) return undefined;
     for (const cat of categories) {
       if (cat._id === targetId) return cat;
-      if (cat.children?.length > 0) {
+      if (cat.children?.length) {
         const found = findObject(cat.children, targetId);
         if (found) return found;
       }
@@ -68,14 +153,13 @@ const ParentCategory = ({
     return undefined;
   };
 
-  // Push a category into the selectedCategory list (same logic as before)
   const addCategory = (id) => {
     if (!id) return;
-    const result = findObject(data, id);
+    const result = findObject(categoryTree, id);
     if (!result) return;
 
     const already = selectedCategory.some((v) => v._id === result._id);
-    if (already) return; // silently skip duplicate (matches original logic)
+    if (already) return;
 
     const entry = {
       _id: result._id,
@@ -86,35 +170,34 @@ const ParentCategory = ({
     setDefaultCategory(() => [entry]);
   };
 
-  // When parent dropdown changes
   const handleParentChange = (e) => {
     const id = e.target.value;
     setSelectedParentId(id);
-    setSelectedSubId(""); // reset sub-category
+    setSelectedSubId("");
 
-    // If the parent itself has no children, select it as the category
     const cat = parentCategories.find((c) => c._id === id);
     if (cat && (!cat.children || cat.children.length === 0)) {
       addCategory(id);
     }
   };
 
-  // When sub-category dropdown changes
   const handleSubChange = (e) => {
     const id = e.target.value;
     setSelectedSubId(id);
     if (id) addCategory(id);
   };
 
-  // Remove a selected category chip
   const handleRemove = (removedId) => {
     const updated = selectedCategory.filter((v) => v._id !== removedId);
     setSelectedCategory(updated);
+    if (!updated.length) {
+      setSelectedParentId("");
+      setDefaultCategory([]);
+    }
   };
 
   return (
     <div className="space-y-3">
-      {/* ── Category Dropdown ── */}
       <Select
         value={selectedParentId}
         onChange={handleParentChange}
@@ -126,12 +209,11 @@ const ParentCategory = ({
         </option>
         {parentCategories.map((cat) => (
           <option key={cat._id} value={cat._id}>
-            {showingTranslateValue(cat.name)}
+            {showingTranslateValue(cat.name) || getCategoryLabel(cat)}
           </option>
         ))}
       </Select>
 
-      {/* ── Sub-category Dropdown (only shown when parent has children) ── */}
       {selectedParentId && subCategories.length > 0 && (
         <Select
           value={selectedSubId}
@@ -141,13 +223,12 @@ const ParentCategory = ({
           <option value="">Select Sub-category</option>
           {subCategories.map((sub) => (
             <option key={sub._id} value={sub._id}>
-              {showingTranslateValue(sub.name)}
+              {showingTranslateValue(sub.name) || getCategoryLabel(sub)}
             </option>
           ))}
         </Select>
       )}
 
-      {/* ── Selected Category Chips ── */}
       {selectedCategory.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-1">
           {selectedCategory.map((cat) => (

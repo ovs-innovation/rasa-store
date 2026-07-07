@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { FiShield, FiTrendingUp, FiTruck, FiRefreshCw, FiArrowRight, FiUsers, FiPackage, FiAward } from "react-icons/fi";
+import { FiShield, FiTrendingUp, FiTruck, FiArrowRight, FiUsers, FiPackage, FiAward } from "react-icons/fi";
 
 //internal import
 import Layout from "@layout/Layout";
@@ -197,7 +197,7 @@ const AboutUs = () => {
       {/* 4. WHY SHOP WITH US: Black Banner */}
       <div className="bg-black text-white py-14 border-t border-b border-neutral-900">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 font-sans">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 font-sans">
             
             {/* Feature 1 */}
             <div className="flex items-start gap-4 text-left">
@@ -229,17 +229,6 @@ const AboutUs = () => {
               <div>
                 <h4 className="text-sm font-black uppercase tracking-wider text-white">FAST SHIPPING</h4>
                 <p className="text-xs text-neutral-450 leading-relaxed mt-1">Quick delivery across India.</p>
-              </div>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="flex items-start gap-4 text-left">
-              <div className="w-10 h-10 rounded-full border border-neutral-800 flex items-center justify-center flex-shrink-0 text-[#D4AF37]">
-                <FiRefreshCw className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-black uppercase tracking-wider text-white">EASY EXCHANGE</h4>
-                <p className="text-xs text-neutral-450 leading-relaxed mt-1">Hassle-free returns & exchanges.</p>
               </div>
             </div>
 

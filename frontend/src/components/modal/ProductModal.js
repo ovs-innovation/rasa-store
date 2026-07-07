@@ -35,13 +35,6 @@ const ProductModal = ({
     useUtilsFunction();
   const { storeCustomizationSetting, globalSetting } = useGetSetting();
 
-  // Get dynamic contact number
-  const contactNumber = 
-    
-    storeCustomizationSetting?.footer?.bottom_contact ||
-    globalSetting?.contact ||
-    "+0044235234";
-
   // react hook
   const [value, setValue] = useState("");
   const [price, setPrice] = useState(0);
@@ -369,12 +362,14 @@ const ProductModal = ({
               </div>
               <div className="flex justify-end mt-2">
                 <p className="text-xs sm:text-sm text-gray-600">
-                  Call Us To Order By Mobile Number :{" "}
-                  <a 
-                    href={`tel:${contactNumber.replace(/\s+/g, '')}`}
+                  WhatsApp Us To Order :{" "}
+                  <a
+                    href="https://wa.me/919731308713"
+                    target="_blank"
+                    rel="noreferrer"
                     className="text-store-500 font-semibold hover:text-store-600 hover:underline"
                   >
-                    {contactNumber}
+                    9731308713
                   </a>
                 </p>
               </div>

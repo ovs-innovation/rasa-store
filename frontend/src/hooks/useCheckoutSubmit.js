@@ -347,8 +347,6 @@ const useCheckoutSubmit = (storeSetting) => {
         orderId: orderResponse?._id,
         message: `${orderResponse?.user_info?.name || "A customer"
           } placed an order of ${parseFloat(orderResponse?.total || 0).toFixed(2)}!`,
-        image:
-          "https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png",
       };
 
       const updatedData = {

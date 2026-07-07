@@ -26,11 +26,8 @@ connectDB().then(async () => {
   const total = await Order.countDocuments();
   const placed = await Order.countDocuments({status:'Order Placed'});
   const delivered = await Order.countDocuments({status:'Delivered'});
-  const refundReq = await Order.countDocuments({status:'Refund Requested'});
-  const refunded = await Order.countDocuments({status:'Refunded'});
   const customers = await Customer.countDocuments();
   const withFCM = await Customer.countDocuments({fcmToken: {$exists: true, $ne: null}});
-  const refundEmailSent = await Order.countDocuments({refundEmailSent: true});
   const withStatusHistory = await Order.countDocuments({'statusHistory.0': {$exists: true}});
   const withTrackingHistory = await Order.countDocuments({'trackingHistory.0': {$exists: true}});
 
@@ -38,11 +35,8 @@ connectDB().then(async () => {
   console.log('Total orders:', total);
   console.log('Order Placed:', placed);
   console.log('Delivered:', delivered);
-  console.log('Refund Requested:', refundReq);
-  console.log('Refunded:', refunded);
   console.log('Total customers:', customers);
   console.log('Customers with FCM token:', withFCM);
-  console.log('Orders with refundEmailSent=true:', refundEmailSent);
   console.log('Orders with statusHistory:', withStatusHistory);
   console.log('Orders with trackingHistory:', withTrackingHistory);
   

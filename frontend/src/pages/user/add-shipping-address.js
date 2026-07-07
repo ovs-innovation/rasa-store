@@ -1,7 +1,8 @@
 import { useSearchParams } from "next/navigation";
 
 //internal imports
-import Dashboard from "./dashboard";
+import UserDashboardLayout from "@components/user/UserDashboardLayout";
+import withNoSsr from "@utils/withNoSsr";
 import Error from "@components/form/Error";
 import { countries } from "@utils/countries";
 import InputArea from "@components/form/InputArea";
@@ -28,7 +29,7 @@ const AddShippingAddress = () => {
   //   console.log("selectedValues", selectedValue);
 
   return (
-    <Dashboard
+    <UserDashboardLayout
       title="add-shipping-address"
       description="This is my account page"
     >
@@ -181,8 +182,8 @@ const AddShippingAddress = () => {
           </div>
         </form>
       </div>
-    </Dashboard>
+    </UserDashboardLayout>
   );
 };
 
-export default AddShippingAddress;
+export default withNoSsr(AddShippingAddress);

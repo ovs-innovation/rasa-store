@@ -28,10 +28,6 @@ const OrderServices = {
   sendEmailInvoiceToCustomer: async (body) => {
     return requests.post("/order/customer/invoice", body);
   },
-
-  requestRefund: async (id, body) => {
-    return requests.put(`/order/refund/${id}`, body);
-  },
 };
 
 export default OrderServices;

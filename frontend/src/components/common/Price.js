@@ -21,32 +21,46 @@ const Price = ({
     ? `${product?.isPriceInclusive ? "Incl. GST" : "Excl. GST"} (${taxRateValue}%)`
     : "";
 
+  // Get original price with fallback to product levels
+  let effectiveOriginalPrice = Number(originalPrice || 0);
+  if (!effectiveOriginalPrice && product?.prices?.originalPrice) {
+    effectiveOriginalPrice = Number(product.prices.originalPrice);
+  }
+
+  // Use passed `price` prop if provided, otherwise fallback to product prices
+  let effectivePrice = typeof price === 'number' && !Number.isNaN(price) ? price : Number(product?.prices?.price || 0);
+  effectivePrice = Math.max(0, effectivePrice);
+
+  // Safeguard: if selling price is 0 but MRP (original price) is > 0, fallback to original price and clear discount
+  let finalDiscount = discount;
+  if (effectivePrice === 0 && effectiveOriginalPrice > 0) {
+    effectivePrice = effectiveOriginalPrice;
+    finalDiscount = 0;
+  }
+
   // Get discount percentage from prop or product
   // Show discount as percentage, not as amount (without decimals)
   let discountPercentage = 0;
   
-  if (discount && discount > 0) {
+  if (finalDiscount && finalDiscount > 0) {
     // If discount is percentage (<= 100), use it directly
     // If discount > 100, it might be amount, convert to percentage
-    if (discount <= 100) {
-      discountPercentage = Math.round(discount);
-    } else if (originalPrice > 0) {
+    if (finalDiscount <= 100) {
+      discountPercentage = Math.round(finalDiscount);
+    } else if (effectiveOriginalPrice > 0) {
       // It's an amount, convert to percentage and round
-      discountPercentage = Math.round((discount / originalPrice) * 100);
+      discountPercentage = Math.round((finalDiscount / effectiveOriginalPrice) * 100);
     }
-  } else if (product?.prices?.discount) {
+  } else if (product?.prices?.discount && finalDiscount !== 0) {
     // Fallback to product discount if discount prop is not available
     const productDiscount = Number(product.prices.discount);
     if (productDiscount > 0 && productDiscount <= 100) {
       discountPercentage = Math.round(productDiscount);
-    } else if (productDiscount > 100 && originalPrice > 0) {
+    } else if (productDiscount > 100 && effectiveOriginalPrice > 0) {
       // It's an amount, convert to percentage and round
-      discountPercentage = Math.round((productDiscount / originalPrice) * 100);
+      discountPercentage = Math.round((productDiscount / effectiveOriginalPrice) * 100);
     }
   }
-
-  // Use passed `price` prop if provided, otherwise fallback to product prices
-  const effectivePrice = Math.max(0, typeof price === 'number' && !Number.isNaN(price) ? price : Number(product?.prices?.price || 0));
 
   return (
     <div className="font-serif product-price font-bold">
@@ -56,29 +70,29 @@ const Price = ({
             className={
               card
                 ? "inline-block text-lg font-semibold text-gray-800"
-                : "inline-block text-2xl"
+                : "inline-block text-3xl font-black text-white tracking-tight"
             }
           >
             {currency}
-            {getNumberTwo(Math.max(0, price))}
+            {getNumberTwo(Math.max(0, effectivePrice))}
           </span>
-          {(!hideDiscountAndMRP && originalPrice > price) ? (
+          {(!hideDiscountAndMRP && effectiveOriginalPrice > effectivePrice) ? (
             <>
               <del
                 className={
                   card
                     ? "sm:text-sm font-normal text-base text-gray-400 ml-1"
-                    : "text-lg font-normal text-gray-400 ml-1"
+                    : "text-base font-normal text-neutral-500 ml-2"
                 }
               >
                 {currency}
-                {getNumberTwo(originalPrice)}
+                {getNumberTwo(effectiveOriginalPrice)}
               </del>
               <span
                 className={
                   card
                     ? "block text-neutral-600 text-xs font-bold"
-                    : "inline-block text-neutral-600 text-sm font-bold ml-2"
+                    : "inline-block text-[#D4AF37] text-sm font-bold ml-2"
                 }
               >
                 {Math.round(discountPercentage)}% Off
@@ -92,29 +106,29 @@ const Price = ({
             className={
               card
                 ? "inline-block text-lg font-semibold text-gray-800"
-                : "inline-block text-2xl"
+                : "inline-block text-3xl font-black text-white tracking-tight"
             }
           >
             {currency}
             {getNumberTwo(effectivePrice)}
           </span>
-          {(!hideDiscountAndMRP && originalPrice > effectivePrice) ? (
+          {(!hideDiscountAndMRP && effectiveOriginalPrice > effectivePrice) ? (
             <>
               <del
                 className={
                   card
                     ? "sm:text-sm font-normal text-base text-gray-400 ml-1"
-                    : "text-lg font-normal text-gray-400 ml-1"
+                    : "text-base font-normal text-neutral-500 ml-2"
                 }
               >
                 {currency}
-                {getNumberTwo(originalPrice)}
+                {getNumberTwo(effectiveOriginalPrice)}
               </del>
               <span
                 className={
                   card
                     ? "block text-neutral-600 text-xs font-bold"
-                    : "inline-block text-neutral-600 text-sm font-bold ml-2"
+                    : "inline-block text-[#D4AF37] text-sm font-bold ml-2"
                 }
               >
                 {Math.round(discountPercentage)}% Off

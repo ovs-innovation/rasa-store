@@ -1,16 +1,17 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import useTranslation from "next-translate/useTranslation";
 import { IoArrowBack, IoClose, IoSearchOutline } from "react-icons/io5";
 import { FiHeart, FiShoppingCart, FiUser, FiFilter, FiList } from "react-icons/fi";
 import { useCart } from "react-use-cart";
-import LocationButton from "@components/location/LocationButton";
 import SearchSuggestions from "@components/search/SearchSuggestions";
 
 //internal import
 import Layout from "@layout/Layout";
 import useFilter from "@hooks/useFilter";
+import useUtilsFunction from "@hooks/useUtilsFunction";
 import Card from "@components/cta-card/Card";
 import Loading from "@components/preloader/Loading";
 import ProductServices from "@services/ProductServices";
@@ -18,6 +19,7 @@ import ProductCard from "@components/product/ProductCard";
 import { SidebarContext } from "@context/SidebarContext";
 import AttributeServices from "@services/AttributeServices";
 import CategoryServices from "@services/CategoryServices";
+import BrandServices from "@services/BrandServices";
 import CategoryCarousel from "@components/carousel/CategoryCarousel";
 import FilterSidebar from "@components/category/FilterSidebar";
 import FilterDrawer from "@components/drawer/FilterDrawer";
@@ -26,7 +28,8 @@ import useWishlist from "@hooks/useWishlist";
 const Search = ({ products, attributes }) => {
   const { t } = useTranslation();
   const router = useRouter();
-  const { query } = router.query;
+  const { showingTranslateValue } = useUtilsFunction();
+  const searchQueryText = router.query?.query || "";
   const { isLoading, setIsLoading, toggleFilterDrawer } = useContext(SidebarContext);
   const [visibleProduct, setVisibleProduct] = useState(18);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
@@ -41,6 +44,7 @@ const Search = ({ products, attributes }) => {
   // Maintain local products state so we can refetch when query params change (category/_id etc.)
   const [initialProducts, setInitialProducts] = useState(products || []);
   const [categories, setCategories] = useState([]);
+  const [allBrands, setAllBrands] = useState([]);
 
   // Fetch categories for useFilter name-based matching
   useEffect(() => {
@@ -55,6 +59,42 @@ const Search = ({ products, attributes }) => {
     fetchCats();
   }, []);
 
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        const res = await BrandServices.getShowingBrands();
+        setAllBrands(res || []);
+      } catch (err) {
+        console.error("Error fetching brands in search.js", err);
+      }
+    };
+    fetchBrands();
+  }, []);
+
+  const pageTitle = React.useMemo(() => {
+    if (!router.isReady) return "All Products";
+    if (searchQueryText) return String(searchQueryText);
+    if (router.query.category) {
+      return String(router.query.category)
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+    if (router.query.brand) {
+      const param = String(router.query.brand);
+      const match = allBrands.find((b) => b._id === param || b.slug === param);
+      if (match) return showingTranslateValue(match.name) || param;
+      return param.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+    return "All Products";
+  }, [
+    router.isReady,
+    searchQueryText,
+    router.query.category,
+    router.query.brand,
+    allBrands,
+    showingTranslateValue,
+  ]);
+
   // Call useFilter hook FIRST to get sortedField and other values
   const {
     setSortedField,
@@ -65,8 +105,6 @@ const Search = ({ products, attributes }) => {
     setPriceRange,
     selectedCategories,
     setSelectedCategories,
-    selectedRating,
-    setSelectedRating,
     selectedDiscount,
     setSelectedDiscount,
     sortedField,
@@ -128,17 +166,27 @@ const Search = ({ products, attributes }) => {
       try {
         const q = router.query.query;
         const brand = router.query.brand;
+        const category = router.query.category || router.query._id || "";
 
-        // Fetch products without category constraint so client-side filters work on all items
         const response = await ProductServices.getShowingStoreProducts({
-          category: "", 
+          category: category ? String(category) : "",
           title: q ? encodeURIComponent(q) : "",
-          brand: brand ? brand : "",
+          brand: brand ? String(brand) : "",
         });
 
-        if (response?.products) {
-          setInitialProducts(response.products);
+        let nextProducts = response?.products || [];
+
+        // If brand/category filter is too strict, fall back to a broader list for client filters
+        if ((brand || category) && nextProducts.length === 0) {
+          const fallback = await ProductServices.getShowingStoreProducts({
+            category: "",
+            title: q ? encodeURIComponent(q) : "",
+            brand: "",
+          });
+          nextProducts = fallback?.products || [];
         }
+
+        setInitialProducts(nextProducts);
       } catch (err) {
         console.error("Error fetching products:", err);
       } finally {
@@ -152,13 +200,20 @@ const Search = ({ products, attributes }) => {
       if (!isSidebarAction.current) {
         const catSlug = router.query.category;
         const id = router.query._id;
-        
+        const brandParam = router.query.brand;
+
         if (catSlug) {
           setSelectedCategories([catSlug]);
         } else if (id) {
-          setSelectedCategories([id]);
+          setSelectedCategories([String(id)]);
         } else {
           setSelectedCategories([]);
+        }
+
+        if (brandParam) {
+          setSelectedBrands([String(brandParam)]);
+        } else {
+          setSelectedBrands([]);
         }
       }
       fetchByQuery();
@@ -236,12 +291,6 @@ const Search = ({ products, attributes }) => {
     setPriceRange(newPriceRange);
   };
 
-  const handleRatingChange = (rating) => {
-    isSidebarAction.current = true;
-    clearSearchQuery();
-    setSelectedRating(rating);
-  };
-
   const handleDiscountChange = (discount) => {
     isSidebarAction.current = true;
     clearSearchQuery();
@@ -253,7 +302,6 @@ const Search = ({ products, attributes }) => {
     setSelectedBrands([]);
     setPriceRange({ min: 0, max: 100000 });
     setSelectedCategories([]);
-    setSelectedRating(0);
     setSelectedDiscount(0);
     clearSearchQuery();
   };
@@ -494,9 +542,7 @@ const Search = ({ products, attributes }) => {
             >
               <IoArrowBack size={24} />
             </button>
-            {/* Location Button */}
-            <LocationButton className="h-full" />
-            
+
             {/* Search Input */}
             <div className="flex-1 relative">
               <input
@@ -542,24 +588,21 @@ const Search = ({ products, attributes }) => {
           </form>
         ) : (
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button onClick={() => router.back()} className="text-gray-700">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <button onClick={() => router.back()} className="text-gray-700 shrink-0">
                 <IoArrowBack size={24} />
               </button>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 relative">
-                  <Image
-                    src="/rasaLogo.png"
-                    alt="logo"
-                    fill
-                    className="object-contain"
-                    sizes="32px"
-                  />
-                </div>
-                <h1 className="text-lg font-semibold text-gray-800 capitalize truncate max-w-[120px]">
-                  {query || "Search"}
-                </h1>
-              </div>
+              <Link href="/" className="shrink-0" aria-label="Home">
+                <img
+                  src="/rasaLogo.png"
+                  alt="The Rasa Store"
+                  className="h-10 w-10 object-contain select-none"
+                  draggable={false}
+                />
+              </Link>
+              <h1 className="text-base font-semibold text-gray-800 capitalize truncate">
+                {pageTitle}
+              </h1>
             </div>
             <div className="flex items-center gap-4 text-gray-700">
               <button onClick={() => setIsSearchOpen(true)}>
@@ -618,8 +661,6 @@ const Search = ({ products, attributes }) => {
               setPriceRange={handlePriceRangeChange}
               selectedCategories={selectedCategories}
               setSelectedCategories={handleCategoryChange}
-              selectedRating={selectedRating}
-              setSelectedRating={handleRatingChange}
               selectedDiscount={selectedDiscount}
               setSelectedDiscount={handleDiscountChange}
               onClearAll={handleClearAll}
@@ -669,15 +710,6 @@ const Search = ({ products, attributes }) => {
                       <option className="px-3 bg-neutral-950 text-white" value="High">
                         {t("highToLow")}
                       </option>
-                      <option className="px-3 bg-neutral-950 text-white" value="newest">
-                        Latest
-                      </option>
-                      <option className="px-3 bg-neutral-950 text-white" value="best-selling">
-                        Best Selling
-                      </option>
-                      <option className="px-3 bg-neutral-950 text-white" value="most-discounted">
-                        Most Discounted
-                      </option>
                     </select>
                   </span>
                 </div>
@@ -720,8 +752,6 @@ const Search = ({ products, attributes }) => {
         setPriceRange={handlePriceRangeChange}
         selectedCategories={selectedCategories}
         setSelectedCategories={handleCategoryChange}
-        selectedRating={selectedRating}
-        setSelectedRating={handleRatingChange}
         selectedDiscount={selectedDiscount}
         setSelectedDiscount={handleDiscountChange}
         onClearAll={handleClearAll}
@@ -760,50 +790,6 @@ const Search = ({ products, attributes }) => {
               >
                 Price: High to Low
               </button>
-              <button
-                onClick={() => {
-                  handleSortChange("newest");
-                  setIsSortModalOpen(false);
-                }}
-                className={`w-full text-left py-2 px-4 rounded-lg ${
-                  sortedField === "newest" ? "bg-store-100 text-store-600 font-semibold" : "text-gray-700"
-                }`}
-              >
-                Latest
-              </button>
-              <button
-                onClick={() => {
-                  handleSortChange("best-selling");
-                  setIsSortModalOpen(false);
-                }}
-                className={`w-full text-left py-2 px-4 rounded-lg ${
-                  sortedField === "best-selling" ? "bg-store-100 text-store-600 font-semibold" : "text-gray-700"
-                }`}
-              >
-                Best Selling
-              </button>
-              <button
-                onClick={() => {
-                  handleSortChange("most-discounted");
-                  setIsSortModalOpen(false);
-                }}
-                className={`w-full text-left py-2 px-4 rounded-lg ${
-                  sortedField === "most-discounted" ? "bg-store-100 text-store-600 font-semibold" : "text-gray-700"
-                }`}
-              >
-                Most Discounted
-              </button>
-              <button
-                onClick={() => {
-                  handleSortChange("All");
-                  setIsSortModalOpen(false);
-                }}
-                className={`w-full text-left py-2 px-4 rounded-lg ${
-                  sortedField === "All" ? "bg-store-100 text-store-600 font-semibold" : "text-gray-700"
-                }`}
-              >
-                Default
-              </button>
             </div>
           </div>
         </div>
@@ -815,13 +801,13 @@ const Search = ({ products, attributes }) => {
 export default Search;
 
 export const getServerSideProps = async (context) => {
-  const { query, brand } = context.query;
+  const { query, brand, category, _id } = context.query;
 
   const [dataResult, attributesResult] = await Promise.allSettled([
     ProductServices.getShowingStoreProducts({
-      category: "", // Fetch all products to support full client-side category filtering
+      category: category || _id || "",
       title: query ? encodeURIComponent(query) : "",
-      brand: brand ? brand : "",
+      brand: brand ? String(brand) : "",
     }),
     AttributeServices.getShowingAttributes({}),
   ]);

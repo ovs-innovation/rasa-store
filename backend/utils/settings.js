@@ -334,12 +334,12 @@ const setting = [
           de: " Interactively grow empowered for process-centric total linkage.",
         },
         call_box_title: {
-          en: "Call Us ",
-          de: "Rufen Sie uns an",
+          en: "WhatsApp Us",
+          de: "WhatsApp uns",
         },
         call_box_phone: {
-          en: "029-00124667",
-          de: "029-00124667",
+          en: "9731308713",
+          de: "9731308713",
         },
         call_box_text: {
           en: "Distinctively disseminate focused solutions clicks-and-mortar ministate. ",
@@ -405,15 +405,15 @@ const setting = [
         },
       },
       refund_return_policy: {
-        status: true,
-        header_bg:
-          "https://res.cloudinary.com/ahossain/image/upload/v1697439245/settings/yw3cd2xupqwqpqcbxv9l.jpg",
+        status: false,
+        header_bg: "",
         title: {
-          en: "Refund & Return Policy",
-          de: "Rückerstattungs- und Rückgaberichtlinie",
+          en: "",
+          de: "",
         },
         description: {
-          en: '<h1><strong>Refund & Return Policy</strong></h1><p>Last updated: ' + new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) + '</p><p>At RASA Store, we strive to ensure your complete satisfaction with every purchase. This Refund & Return Policy outlines our procedures for returns and refunds.</p><h2><strong>Return Eligibility</strong></h2><p>You may return most items within 7-30 days of delivery, depending on the product category. Items must be unused, in their original packaging, and in the same condition as when you received them.</p><h2><strong>Non-Returnable Items</strong></h2><ul><li>Perishable goods (food items, fresh produce)</li><li>Personal care products that have been opened</li><li>Customized or personalized items</li><li>Items damaged by misuse or normal wear</li></ul><h2><strong>Return Process</strong></h2><p>To initiate a return, please contact our customer service team with your order number and reason for return. We will provide you with return instructions and a return authorization if applicable.</p><h2><strong>Refund Processing</strong></h2><p>Once we receive and inspect your returned item, we will notify you of the approval or rejection of your refund. If approved, refunds will be processed to your original payment method within 5-10 business days.</p>',
+          en: "",
+          de: "",
         },
       },
       shipping_delivery_policy: {

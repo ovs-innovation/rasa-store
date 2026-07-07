@@ -646,32 +646,6 @@ const sendEmailInvoiceToCustomer = async (req, res) => {
   }
 };
 
-const requestRefund = async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id);
-    if (!order) {
-      return res.status(404).send({ message: "Order not found" });
-    }
-    
-    // Only allow refund if order is Delivered
-    if (order.status !== "Delivered") {
-      return res.status(400).send({ message: "Refund can only be requested for Delivered orders." });
-    }
-
-    order.status = "Refund Requested";
-    order.refund = {
-      reason: req.body.reason,
-      note: req.body.note || "",
-      requestedAt: new Date(),
-    };
-    
-    await order.save();
-    res.send({ message: "Refund Requested Successfully!", order });
-  } catch (err) {
-    res.status(500).send({ message: err.message });
-  }
-};
-
 module.exports = {
   addOrder,
   getOrderById,
@@ -680,5 +654,4 @@ module.exports = {
   createOrderByRazorPay,
   addRazorpayOrder,
   sendEmailInvoiceToCustomer,
-  requestRefund,
 };

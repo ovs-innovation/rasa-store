@@ -8,7 +8,9 @@ import {
   View,
 } from "@react-pdf/renderer";
 import dayjs from "dayjs";
-import { useEffect } from "react";
+
+import { pickBrandLogo } from "@/utils/brandAssets";
+import { resolveCloudinaryUrl } from "@/utils/cloudinaryUrl";
 
 Font.register({
   family: "Open Sans",
@@ -20,8 +22,13 @@ Font.register({
       src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-600.ttf",
       fontWeight: 600,
     },
+    {
+      src: "https://cdn.jsdelivr.net/npm/open-sans-all@0.1.3/fonts/open-sans-700.ttf",
+      fontWeight: 700,
+    },
   ],
 });
+
 Font.register({
   family: "DejaVu Sans",
   fonts: [
@@ -30,680 +37,478 @@ Font.register({
     },
     {
       src: "https://kendo.cdn.telerik.com/2017.2.621/styles/fonts/DejaVu/DejaVuSans-Bold.ttf",
+      fontWeight: 700,
     },
   ],
 });
+
+const PINK = "#d67b8c";
+const PINK_BG = "#FFF5F6";
+const PINK_LIGHT = "#FDF0F2";
+const PINK_BORDER = "#f5d6da";
+
 const styles = StyleSheet.create({
   page: {
-    marginRight: 10,
-    marginBottom: 20,
-    marginLeft: 10,
-    paddingTop: 10,
-    paddingLeft: 10,
-    paddingRight: 29,
-    lineHeight: 1.5,
+    backgroundColor: PINK_BG,
+    padding: 28,
+    fontFamily: "Open Sans",
+    fontSize: 9,
+    color: "#374151",
+    lineHeight: 1.4,
   },
-  table: {
-    display: "table",
-    width: "auto",
-    color: "#4b5563",
-    marginRight: 0,
-    marginBottom: 10,
-    marginLeft: 0,
-    marginTop: 0,
-    borderRadius: "8px",
-    borderColor: "#e9e9e9",
-    borderStyle: "solid",
-    borderWidth: 0.5,
-    padding: 0,
-    textAlign: "left",
-  },
-  tableRow: {
-    // margin: 'auto',
+  headerRow: {
     flexDirection: "row",
-    paddingBottom: 1,
-    paddingTop: 1,
-    textAlign: "left",
-    borderWidth: 0.8,
-    borderColor: "#E5E7EB",
-    borderBottom: "0",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingBottom: 14,
+    marginBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: PINK_BORDER,
   },
-  tableRowHeder: {
-    flexDirection: "row",
-    backgroundColor: "#006E44",
-    paddingBottom: 1,
-    paddingTop: 1,
-    paddingLeft: 0,
-    borderBottomWidth: 0.8,
-    borderColor: "#006E44",
-    borderStyle: "solid",
+  brandTag: {
+    fontSize: 6,
+    letterSpacing: 1.5,
+    color: PINK,
+    fontWeight: 700,
+    marginTop: 4,
     textTransform: "uppercase",
-    textAlign: "left",
   },
-  tableCol: {
-    width: "11%",
-    textAlign: "left",
+  thankYouTitle: {
+    fontSize: 22,
+    color: PINK,
+    fontWeight: 700,
+    marginBottom: 2,
   },
-  tableColProduct: {
-    width: "28%",
-    textAlign: "left",
+  thankYouSub: {
+    fontSize: 8,
+    fontWeight: 700,
+    color: "#111827",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  tableColMfg: {
-    width: "15%",
-    textAlign: "left",
+  thankYouItalic: {
+    fontSize: 7,
+    color: "#6b7280",
+    marginTop: 2,
   },
-  tableColHsn: {
-    width: "7%",
-    textAlign: "left",
-  },
-  tableColSmall: {
-    width: "8%",
-    textAlign: "left",
-  },
-  tableColQty: {
-    width: "5%",
-    textAlign: "left",
-  },
-  tableColSr: {
-    width: "5%",
-    textAlign: "left",
-  },
-  tableCell: {
-    margin: "auto",
-    marginTop: 1,
-    fontSize: 6,
-    paddingLeft: "0",
-    paddingRight: "0",
-    marginLeft: "8",
-    marginRight: "8",
-  },
-
-  tableCellNumeric: {
-    margin: "auto",
-    marginTop: 1,
-    fontSize: 6,
-    paddingLeft: "0",
-    paddingRight: "0",
-    marginLeft: "8",
-    marginRight: "8",
-    fontFamily: "DejaVu Sans",
-    whiteSpace: "nowrap",
-  },
-
-  invoiceFirst: {
-    display: "flex",
+  pill: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: 18,
-    paddingLeft: 10,
-    paddingRight: 10,
-    borderBottom: 1,
-    borderColor: "#f3f4f6",
-    // backgroundColor:'#EEF2FF',
-  },
-  invoiceSecond: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    paddingTop: 20,
-    paddingBottom: 10,
-    paddingLeft: 10,
-    paddingRight: 10,
-  },
-  invoiceSecondLeft: {
-    flex: 1,
-  },
-  invoiceSecondRight: {
-    flex: 1,
-    alignItems: "flex-end",
-    textAlign: "right",
-  },
-  lightLine: {
-    borderBottomWidth: 0.7,
-    borderColor: "#e5e7eb",
-    marginVertical: 4,
-    width: "100%",
-  },
-  invoiceThird: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "baseline",
-    justifyContent: "space-between",
-    paddingTop: 20,
-    paddingBottom: 20,
-    paddingLeft: 10,
-    paddingRight: 10,
-    borderTop: 1,
-    borderColor: "#ffffff",
-    backgroundColor: "#f4f5f7",
+    alignSelf: "flex-start",
+    backgroundColor: PINK_LIGHT,
+    color: PINK,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
     borderRadius: 12,
-    marginLeft: "13",
-    marginRight: "13",
-
-    // backgroundColor:'#F2FCF9',
+    borderWidth: 1,
+    borderColor: PINK_BORDER,
+    marginBottom: 8,
   },
-  logo: {
-    width: 64,
-    height: 25,
-    bottom: 5,
-    right: 10,
-    marginBottom: 10,
-    textAlign: "right",
-    color: "#4b5563",
-    fontFamily: "Open Sans",
-    fontWeight: "bold",
-    fontSize: 10.3,
-
-    marginRight: "39%",
+  pillText: {
+    fontSize: 7,
+    fontWeight: 700,
+    color: PINK,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  infoLabel: {
+    fontSize: 8,
+    color: "#6b7280",
+  },
+  infoValue: {
+    fontSize: 8,
+    fontWeight: 700,
+    color: "#111827",
+  },
+  infoValuePink: {
+    fontSize: 8,
+    fontWeight: 700,
+    color: PINK,
+  },
+  deliverBox: {
+    borderWidth: 1,
+    borderColor: PINK_BORDER,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 14,
+  },
+  deliverTitle: {
+    fontSize: 8,
+    fontWeight: 700,
+    color: PINK,
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  table: {
+    borderWidth: 1,
+    borderColor: PINK_BORDER,
+    borderRadius: 10,
+    overflow: "hidden",
+    marginBottom: 14,
+    backgroundColor: "#ffffff",
+  },
+  tableHead: {
+    flexDirection: "row",
+    backgroundColor: PINK_LIGHT,
+    borderBottomWidth: 1,
+    borderBottomColor: PINK_BORDER,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+  },
+  tableHeadCell: {
+    fontSize: 7,
+    fontWeight: 700,
+    color: "#1f2937",
     textTransform: "uppercase",
   },
-  title: {
-    color: "#2f3032",
-    fontFamily: "Open Sans",
-    fontWeight: "bold",
-    fontSize: 8.1,
-    textTransform: "uppercase",
+  tableRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f3f4f6",
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    alignItems: "center",
   },
-  info: {
-    fontSize: 9,
-    color: "#6b7280",
+  tableCell: {
+    fontSize: 8,
+    color: "#374151",
   },
-  infoCost: {
-    fontSize: 10,
-    color: "#6b7280",
-    marginLeft: "4%",
-    marginTop: "7px",
-    textAlign: "left",
-    width: "25%",
+  tableCellBold: {
+    fontSize: 8,
+    fontWeight: 700,
+    color: "#111827",
   },
-  invoiceNum: {
-    fontSize: 9,
-    color: "#6b7280",
-    marginLeft: "6%",
+  productRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  topAddress: {
-    fontSize: 10,
-    color: "#6b7280",
-    width: "100%",
-    marginLeft: "20%",
-
-    // textAlign: "right",
-    // whiteSapce: "nowrap",
+  productThumb: {
+    width: 28,
+    height: 28,
+    borderRadius: 4,
+    objectFit: "cover",
   },
-  amount: {
-    fontSize: 10,
-    color: "#1f2937",
+  messageBox: {
+    flex: 1,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#e8a0ad",
+    backgroundColor: "rgba(253,240,242,0.55)",
+    borderRadius: 10,
+    padding: 12,
+    marginRight: 10,
   },
-  totalAmount: {
-    fontSize: 10,
-    color: "#1f2937",
-    fontFamily: "Open Sans",
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    textAlign: "right",
+  totalsBox: {
+    width: "42%",
   },
-  status: {
-    color: "#006E44",
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+    paddingHorizontal: 4,
   },
-  quantity: {
-    color: "#1f2937",
-    textAlign: "center",
+  grandTotalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderTopWidth: 1,
+    borderTopColor: PINK_BORDER,
+    paddingTop: 8,
+    marginTop: 4,
+    paddingHorizontal: 4,
   },
-  itemPrice: {
-    color: "#1f2937",
-    textAlign: "left",
+  footer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 14,
+    paddingTop: 10,
   },
-  header: {
-    color: "#6b7280",
-    fontSize: 4,
+  footerCol: {
+    width: "30%",
+  },
+  stamp: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: PINK,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    padding: 4,
+  },
+  currency: {
     fontFamily: "DejaVu Sans",
-    fontWeight: "bold",
-    textTransform: "uppercase",
-    textAlign: "left",
-  },
-
-  thanks: {
-    color: "#006E44",
-  },
-  infoRight: {
-    textAlign: "right",
-    fontSize: 9,
-    color: "#6b7280",
-    width: "25%",
-    marginRight: "39%",
-    fontFamily: "Open Sans",
-    fontWeight: "bold",
-  },
-  titleRight: {
-    textAlign: "right",
-    fontFamily: "Open Sans",
-    fontWeight: "bold",
-    fontSize: 8.1,
-    width: "25%",
-    marginRight: "39%",
-    textTransform: "uppercase",
-    color: "#2f3032",
-  },
-  topBg: {
-    // backgroundColor:'#EEF2FF',
-  },
-  invoiceDiv: {
-    alignItems: "baseline",
   },
 });
+
+const absUrl = (url) => {
+  if (!url) return null;
+  const trimmed = String(url).trim();
+  if (trimmed.startsWith("http")) return trimmed;
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
+  }
+  return trimmed;
+};
+
+const formatInvoiceNumber = (invoice, createdAt) => {
+  if (!invoice) return "-";
+  const invStr = String(invoice).trim();
+  if (invStr.startsWith("FK/")) return invStr;
+  const year = createdAt
+    ? dayjs(createdAt).format("YYYY")
+    : dayjs().format("YYYY");
+  return `FK/${year}/${invStr}`;
+};
 
 const InvoiceForDownload = ({
   data,
   currency,
-  globalSetting,
   getNumberTwo,
   logo,
+  greetingMessage,
 }) => {
-  // Calculate discount same as Invoice.js
-  const mrpTotal = data?.cart?.reduce((sum, item) => {
-    const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
-    const qty = item.quantity || 1;
-    return sum + mrp * qty;
-  }, 0) || 0;
-  
-  const totalDiscount = data?.cart?.reduce((sum, item) => {
-    const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
-    const salePrice = item.price ?? 0;
-    const qty = item.quantity || 1;
-    return sum + ((mrp - salePrice) * qty);
-  }, 0) || 0;
+  const mrpTotal =
+    data?.cart?.reduce((sum, item) => {
+      const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
+      const qty = item.quantity || 1;
+      return sum + mrp * qty;
+    }, 0) || 0;
 
-  const totalGstRaw = data?.taxSummary?.exclusiveTax > 0 
-    ? data.taxSummary.exclusiveTax 
-    : data?.cart?.reduce((sum, item) => {
-        const sellingPrice = Number(item.price) || (item.mrp ?? item.originalPrice ?? item.price ?? 0);
-        const qty = item.quantity || 1;
-        const gstRate = parseFloat(item.taxRate || item.gstRate || item.gstPercentage || 12);
-        const gstAmount = (Math.abs(sellingPrice) * qty * gstRate) / 100;
-        return sum + gstAmount;
-      }, 0) || 0;
-  
-  // Ensure total GST is always positive
-  const totalGst = Math.abs(totalGstRaw);
+  const totalDiscount =
+    data?.cart?.reduce((sum, item) => {
+      const mrp = item.mrp ?? item.originalPrice ?? item.price ?? 0;
+      const salePrice = item.price ?? 0;
+      const qty = item.quantity || 1;
+      return sum + (mrp - salePrice) * qty;
+    }, 0) || 0;
 
-  const formatInvoiceNumber = (invoice, createdAt) => {
-    if (!invoice) return "-";
-    const invStr = String(invoice).trim();
-    if (invStr.startsWith("FK/")) return invStr;
-    const year = createdAt
-      ? dayjs(createdAt).format("YYYY")
-      : dayjs().format("YYYY");
-    return `FK/${year}/${invStr}`;
-  };
+  const shippingCharge = data?.shippingCost || 0;
+  const payableAmount = data?.total || 0;
+  const brandLogo = absUrl(pickBrandLogo(logo));
+  const illustration = absUrl("/invoice_illustration.png");
+  const stampLogo = absUrl("/rasaLogo.png");
 
+  const greeting =
+    greetingMessage || "We pack every order with love and care. ♥";
+
+  const InfoLine = ({ label, value, pink }) => (
+    <View style={{ flexDirection: "row", marginBottom: 3 }}>
+      <Text style={[styles.infoLabel, { width: "34%" }]}>{label}</Text>
+      <Text style={pink ? styles.infoValuePink : styles.infoValue}>
+        : {value}
+      </Text>
+    </View>
+  );
 
   return (
-    <>
-      <Document>
-        <Page size="A4" style={styles.page}>
-          {/* Top Section: Logo + Company (Left), Invoice Details + Bill To + QR (Right) */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 2, borderBottom: 1, borderColor: "#e5e7eb", marginBottom:0 }}>
-            {/* Left - Logo and Company Info */}
-            <View style={{ width: "34%", paddingRight: 10 }}>
-              {/* Original Logo */}
-              {logo && (
-                <Image
-                  src={logo}
-                  style={{ width: 90, height: 35, marginBottom: 4, objectFit: "contain" }}
-                />
-              )}
-
-              <Text style={{ fontSize: 9, fontWeight: "bold", color: "#111827", marginBottom: 2 }}>
-                {globalSetting?.company_name || "Rasa Store Private Limited"}
-              </Text>
-              <Text style={{ fontSize: 7, color: "#4b5563", lineHeight: 1.3, marginBottom: 3 }}>
-                {globalSetting?.address || "C-39, Basement, Block-5, Okhla Industrial Area-2, New Delhi, Delhi-110020"}
-              </Text>
-
-              {/* Email & Phone - Side by Side */}
-              {(globalSetting?.email || globalSetting?.contact) && (
-                <View style={{ flexDirection: "row", gap: 3, marginBottom: 1}}>
-                  {globalSetting?.email && (
-                    <View style={{ flexDirection: "row", gap: 2 }}>
-                      <Text style={{ fontSize: 7, fontWeight: "bold", color: "#1f2937" }}>Email:</Text>
-                      <Text style={{ fontSize: 7, color: "#4b5563" }}>{globalSetting.email}</Text>
-                    </View>
-                  )}
-                  {globalSetting?.contact && (
-                    <View style={{ flexDirection: "row", gap: 2 }}>
-                      <Text style={{ fontSize: 7, fontWeight: "bold", color: "#1f2937" }}>Phone No:</Text>
-                      <Text style={{ fontSize: 7, color: "#4b5563" }}>{globalSetting.contact}</Text>
-                    </View>
-                  )}
-                </View>
-              )}
-
-              {/* GST & CIN - Side by Side */}
-              {(globalSetting?.gstin || globalSetting?.cin) && (
-                <View style={{ flexDirection: "column", gap:0, marginTop: 1 }}>
-                  {globalSetting?.gstin && (
-                    <View style={{ flexDirection: "row", gap: 1 }}>
-                      <Text style={{ fontSize: 7, fontWeight: "bold", color: "#1f2937" }}>GST NO.:</Text>
-                      <Text style={{ fontSize: 7, color: "#374151" }}>{globalSetting.gstin}</Text>
-                    </View>
-                  )}
-                  {globalSetting?.cin && (
-                    <View style={{ flexDirection: "row", gap: 1 }}>
-                      <Text style={{ fontSize: 7, fontWeight: "bold", color: "#1f2937" }}>CIN:</Text>
-                      <Text style={{ fontSize: 7, color: "#374151" }}>{globalSetting.cin}</Text>
-                    </View>
-                  )}
-                </View>
-              )}
-              
-              {/* DL No - Separate line */}
-              {globalSetting?.dl_number && (
-                <View style={{ flexDirection: "row", gap: 1, marginTop: 1 }}>
-                  <Text style={{ fontSize: 7, fontWeight: "bold", color: "#1f2937" }}>DL No:</Text>
-                  <Text style={{ fontSize: 7, color: "#374151" }}>{globalSetting.dl_number}</Text>
-                </View>
-              )}
-            </View>
-
-            {/* Right - Invoice Details, Bill To, and QR Code */}
-            <View style={{ width: "62%", flexDirection: "column" }}>
-              {/* Top Row: Invoice Details */}
-              <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-                {/* Invoice No - Smaller width */}
-                <View style={{ width: "25%", borderLeft: 1, borderColor: "#006E44", paddingLeft: 10, paddingRight: 5 }}>
-                  <Text style={{ fontSize: 9, fontWeight: "bold", color: "#111827", marginBottom: 1 }}>Invoice No :</Text>
-                  <Text style={{ fontSize: 9, color: "#4b5563" }}>
-                    {formatInvoiceNumber(data?.invoice, data?.createdAt)}
-                  </Text>
-                </View>
-
-                {/* Order ID - Larger width */}
-                <View style={{ width: "50%", borderLeft: 1, borderColor: "#006E44", paddingLeft: 10, paddingRight: 5 }}>
-                  <Text style={{ fontSize: 9, fontWeight: "bold", color: "#111827", marginBottom: 1 }}>Order ID :</Text>
-                  <Text style={{ fontSize: 9, color: "#4b5563" }}>
-                    {data?._id || data?.orderId || "-"}
-                  </Text>
-                </View>
-
-                {/* Date - Smaller width */}
-                <View style={{ width: "25%", borderLeft: 1, borderColor: "#006E44", paddingLeft: 10, paddingRight: 5 }}>
-                  <Text style={{ fontSize: 9, fontWeight: "bold", color: "#111827", marginBottom: 1 }}>Date:</Text>
-                  <Text style={{ fontSize: 9, color: "#4b5563" }}>
-                    {data?.createdAt ? dayjs(data.createdAt).format("DD MMM YYYY") : "-"}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Bottom Row: Bill To and QR Code */}
-              <View style={{ flexDirection: "row", justifyContent: "space-between",borderTop: 1, borderLeft:1, borderColor: "#006E44" }}>
-                {/* Bill To */}
-                <View style={{ width: "75%", paddingRight: 10, paddingLeft: 10 , paddingTop:5 }}>
-                  <Text style={{ fontSize: 6, fontWeight: "bold", color: "#006E44", textTransform: "uppercase", marginBottom: 3 }}>
-                    BILL TO:
-                  </Text>
-                  <View style={{ fontSize: 8, color: "#374151" }}>
-                    <View style={{ marginBottom: 2 }}>
-                      <Text>
-                        <Text style={{ fontWeight: "bold", color: "#1f2937" }}>Order Placed By: </Text>
-                        <Text>{data?.user_info?.name || "-"}</Text>
-                      </Text>
-                    </View>
-                    <View style={{ marginBottom: 2 }}>
-                      <Text>
-                        <Text style={{ fontWeight: "bold", color: "#1f2937" }}>Email: </Text>
-                        <Text>{data?.user_info?.email || "-"}</Text>
-                        {data?.user_info?.contact && (
-                          <>
-                            <Text style={{ fontWeight: "bold", color: "#1f2937" }}>  Phone: </Text>
-                            <Text>{data.user_info.contact}</Text>
-                          </>
-                        )}
-                      </Text>
-                    </View>
-                    {(data?.user_info?.address || data?.user_info?.city || data?.user_info?.country || data?.user_info?.zipCode) && (
-                      <View style={{ marginBottom: 2 }}>
-                        <Text>
-                          <Text style={{ fontWeight: "bold", color: "#1f2937" }}>Address: </Text>
-                          {data?.user_info?.address && `${data.user_info.address}${data?.user_info?.city ? ", " : ""}`}
-                          {data?.user_info?.city && `${data.user_info.city}${data?.user_info?.country ? ", " : ""}`}
-                          {data?.user_info?.country && `${data.user_info.country}${data?.user_info?.zipCode ? ", " : ""}`}
-                          {data?.user_info?.zipCode && data.user_info.zipCode}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-
-              </View>
-            </View>
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.headerRow}>
+          <View style={{ width: "48%" }}>
+            {brandLogo ? (
+              <Image src={brandLogo} style={{ width: 90, height: 28, objectFit: "contain", marginBottom: 4 }} />
+            ) : null}
+            <Text style={styles.brandTag}>SNEAKERS • BAGS • ACCESSORIES</Text>
           </View>
+          <View style={{ width: "48%", flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
+            <View style={{ marginRight: 8, alignItems: "flex-end" }}>
+              <Text style={styles.thankYouTitle}>Thank You ♥</Text>
+              <Text style={styles.thankYouSub}>FOR SHOPPING WITH US!</Text>
+              <Text style={styles.thankYouItalic}>Your style, our passion.</Text>
+            </View>
+            {illustration ? (
+              <Image src={illustration} style={{ width: 72, height: 52, objectFit: "contain" }} />
+            ) : null}
+          </View>
+        </View>
 
-          {/* Product Table */}
-          <View style={{ marginTop: 0 }}>
-            <View style={styles.table}>
-              <View style={styles.tableRowHeder}>
-                <View style={{ width: "100%", paddingLeft: "3px", paddingRight: "3px", paddingTop:"2px" }}>
-                  <Text  >
-                    <Text style={[styles.header,{color:"#fff"}]}>product details:</Text>
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.tableRow}>
-                <View style={styles.tableColSr}>
-                  <Text style={styles.tableCell}>
-                    <Text style={styles.header}>Sr.</Text>
-                  </Text>
-                </View>
-                <View style={styles.tableColProduct}>
-                  <Text style={styles.tableCell}>
-                    <Text style={styles.header}>product name</Text>
-                  </Text>
-                </View>
-                {/* <View style={styles.tableColMfg}>
-                  <Text style={styles.tableCell}>
-                    <Text style={styles.header}>manufacturer name</Text>
-                  </Text>
-                </View> */}
-                <View style={styles.tableColHsn}>
-                  <Text style={styles.tableCell}>
-                    <Text style={styles.header}>hsn</Text>
-                  </Text>
-                </View>
-                <View style={styles.tableColQty}>
-                  <Text style={styles.tableCell}>
-                    <Text style={styles.header}>qty</Text>
-                  </Text>
-                </View>
-                <View style={styles.tableColSmall}>
-                  <Text style={styles.tableCell}>
-                    <Text style={styles.header}>mrp</Text>
-                  </Text>
-                </View>
-                <View style={styles.tableColSmall}>
-                  <Text style={styles.tableCell}>
-                    <Text style={styles.header}>discount</Text>
-                  </Text>
-                </View>
-                <View style={styles.tableColHsn}>
-                  <Text style={styles.tableCell}>
-                    <Text style={styles.header}>gst %</Text>
-                  </Text>
-                </View>
-                <View style={styles.tableColSmall}>
-                  <Text style={styles.tableCell}>
-                    <Text style={styles.header}>gst amt</Text>
-                  </Text>
-                </View>
-                <View style={styles.tableColSmall}>
-                  <Text style={styles.tableCell}>
-                    <Text style={styles.header}>Pay. AMT</Text>
-                  </Text>
-                </View>
-              </View>
-            {data?.cart?.map((item, i) => {
-              const mrp = Math.abs(Number(item.mrp) || Number(item.originalPrice) || Number(item.price) || 0);
-              const quantity = item.quantity || 1;
-              
-              let discountPerItem = 0;
-              const itemPrice = Number(item.price);
-              const hasValidPrice = !isNaN(itemPrice) && itemPrice > 0;
-              
-              if (hasValidPrice && itemPrice < mrp) {
-                discountPerItem = mrp - itemPrice;
-              } else if (typeof item.discount === "number" && item.discount > 0) {
-                discountPerItem = (mrp * item.discount) / 100;
-              } else if (item.originalPrice && item.price && item.originalPrice > item.price) {
-                discountPerItem = item.originalPrice - item.price;
+        <View style={{ flexDirection: "row", marginBottom: 14 }}>
+          <View style={{ width: "48%", paddingRight: 10 }}>
+            <View style={styles.pill}>
+              <Text style={styles.pillText}>INVOICE</Text>
+            </View>
+            <InfoLine
+              label="Invoice No."
+              value={formatInvoiceNumber(data?.invoice, data?.createdAt)}
+              pink
+            />
+            <InfoLine
+              label="Order ID"
+              value={data?._id ? data._id.slice(-8).toUpperCase() : "-"}
+            />
+            <InfoLine
+              label="Date"
+              value={
+                data?.createdAt
+                  ? dayjs(data.createdAt).format("DD MMMM YYYY")
+                  : "-"
               }
-              
-              const gstRate = parseFloat(item.taxRate || item.gstRate || item.gstPercentage || 12);
-              const sellingPrice = Number(item.price) || (mrp - discountPerItem) || 0;
-              const positiveSellingPrice = Math.abs(sellingPrice);
-              const gstAmount = Math.abs(((positiveSellingPrice * quantity * gstRate) / 100) || 0);
-              const payableAmount = (mrp - discountPerItem) * quantity;
-              const finalGstAmount = Math.abs(Number(gstAmount) || 0);
-              const finalPayableAmount = Math.abs(Number(payableAmount) || 0);
+            />
+            <InfoLine
+              label="Payment Method"
+              value={data?.paymentMethod || "RazorPay"}
+            />
+          </View>
 
-              return (
-                <View key={i} style={styles.tableRow}>
-                  <View style={styles.tableColSr}>
-                    <Text style={styles.tableCellNumeric}>{i + 1}</Text>
-                  </View>
-                  <View style={styles.tableColProduct}>
-                    <Text style={styles.tableCell}>{item.title}</Text>
-                  </View>
-                  {/* <View style={styles.tableColMfg}>
-                    <Text style={styles.tableCell}>
-                      {item.manufacturer && item.brand 
-                        ? `${item.manufacturer} (${item.brand})`
-                        : item.manufacturer || item.brand || "-"}
-                    </Text>
-                  </View> */}
-                  <View style={styles.tableColHsn}>
-                    <Text style={styles.tableCell}>
-                      {item.hsn || "-"}
-                    </Text>
-                  </View>
-                  <View style={styles.tableColQty}>
-                    <Text style={styles.tableCellNumeric}>
-                      {item.quantity}
-                    </Text>
-                  </View>
-                  <View style={styles.tableColSmall}>
-                    <Text style={styles.tableCellNumeric}>
-                      {`${currency}${getNumberTwo(mrp)}`}
-                    </Text>
-                  </View>
-                  <View style={styles.tableColSmall}>
-                    <Text style={styles.tableCellNumeric}>
-                      {`${currency}${getNumberTwo(Math.abs((discountPerItem || 0) * quantity))}`}
-                    </Text>
-                  </View>
-                  <View style={styles.tableColHsn}>
-                    <Text style={styles.tableCellNumeric}>
-                      {gstRate}%
-                    </Text>
-                  </View>
-                  <View style={styles.tableColSmall}>
-                    <Text style={styles.tableCellNumeric}>
-                      {`${currency}${getNumberTwo(Math.abs(finalGstAmount))}`}
-                    </Text>
-                  </View>
-                  <View style={styles.tableColSmall}>
-                    <Text style={styles.tableCellNumeric}>
-                      {`${currency}${getNumberTwo(finalPayableAmount)}`}
-                    </Text>
+          <View style={{ width: "48%", borderLeftWidth: 1, borderLeftColor: PINK_BORDER, paddingLeft: 14 }}>
+            <View style={styles.pill}>
+              <Text style={styles.pillText}>BILL TO</Text>
+            </View>
+            <InfoLine label="Name" value={data?.user_info?.name || "-"} />
+            <InfoLine label="Phone" value={data?.user_info?.contact || "-"} />
+            <InfoLine
+              label="Address"
+              value={`${data?.user_info?.address || ""}, ${data?.user_info?.city || ""}, ${data?.user_info?.country || ""} - ${data?.user_info?.zipCode || ""}`}
+            />
+          </View>
+        </View>
+
+        <View style={styles.deliverBox}>
+          <Text style={styles.deliverTitle}>🎁 Deliver To:</Text>
+          <Text style={{ fontSize: 9, fontWeight: 700, color: "#111827", marginBottom: 2 }}>
+            {data?.user_info?.name || "-"}
+          </Text>
+          {data?.user_info?.contact ? (
+            <Text style={{ fontSize: 8, marginBottom: 2 }}>📞 {data.user_info.contact}</Text>
+          ) : null}
+          <Text style={{ fontSize: 8, lineHeight: 1.4 }}>
+            📍 {data?.user_info?.address}, {data?.user_info?.city},{" "}
+            {data?.user_info?.country} - {data?.user_info?.zipCode}
+          </Text>
+        </View>
+
+        <View style={styles.table}>
+          <View style={styles.tableHead}>
+            <Text style={[styles.tableHeadCell, { width: "6%", textAlign: "center" }]}>Sr.</Text>
+            <Text style={[styles.tableHeadCell, { width: "38%" }]}>Product</Text>
+            <Text style={[styles.tableHeadCell, { width: "16%", textAlign: "center" }]}>Size / Color</Text>
+            <Text style={[styles.tableHeadCell, { width: "8%", textAlign: "center" }]}>Qty</Text>
+            <Text style={[styles.tableHeadCell, { width: "16%", textAlign: "right" }]}>Price</Text>
+            <Text style={[styles.tableHeadCell, { width: "16%", textAlign: "right" }]}>Total</Text>
+          </View>
+
+          {data?.cart?.map((item, index) => {
+            const productImg = absUrl(resolveCloudinaryUrl(item.image) || "/rasaLogo.png");
+            return (
+              <View key={index} style={styles.tableRow} wrap={false}>
+                <Text style={[styles.tableCell, { width: "6%", textAlign: "center" }]}>
+                  {index + 1}
+                </Text>
+                <View style={{ width: "38%" }}>
+                  <View style={styles.productRow}>
+                    {productImg ? (
+                      <Image src={productImg} style={styles.productThumb} />
+                    ) : null}
+                    <View>
+                      <Text style={styles.tableCellBold}>{item.title}</Text>
+                      <Text style={{ fontSize: 6, color: "#9ca3af", marginTop: 1 }}>
+                        {item.categoryName || "Premium Item"}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              );
-            })}
+                <Text style={[styles.tableCell, { width: "16%", textAlign: "center", fontWeight: 600 }]}>
+                  {item.variantName || "-"}
+                </Text>
+                <Text style={[styles.tableCellBold, { width: "8%", textAlign: "center" }]}>
+                  {item.quantity}
+                </Text>
+                <Text style={[styles.tableCell, styles.currency, { width: "16%", textAlign: "right" }]}>
+                  {currency}
+                  {getNumberTwo(item.price)}
+                </Text>
+                <Text style={[styles.tableCellBold, styles.currency, { width: "16%", textAlign: "right" }]}>
+                  {currency}
+                  {getNumberTwo(item.itemTotal || item.price * item.quantity)}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+
+        <View style={{ flexDirection: "row", marginBottom: 12 }}>
+          <View style={styles.messageBox}>
+            <Text style={{ fontSize: 8, fontWeight: 700, color: "#1f2937", lineHeight: 1.5 }}>
+              {greeting}
+            </Text>
+          </View>
+
+          <View style={styles.totalsBox}>
+            <View style={styles.totalRow}>
+              <Text style={{ fontSize: 8, textTransform: "uppercase" }}>Subtotal</Text>
+              <Text style={[styles.tableCellBold, styles.currency]}>
+                {currency}
+                {getNumberTwo(mrpTotal)}
+              </Text>
+            </View>
+            <View style={styles.totalRow}>
+              <Text style={{ fontSize: 8, textTransform: "uppercase" }}>Shipping</Text>
+              <Text style={[styles.tableCellBold, styles.currency, { color: shippingCharge > 0 ? "#111827" : PINK }]}>
+                {shippingCharge > 0
+                  ? `${currency}${getNumberTwo(shippingCharge)}`
+                  : "FREE"}
+              </Text>
+            </View>
+            {totalDiscount > 0 ? (
+              <View style={styles.totalRow}>
+                <Text style={{ fontSize: 8, textTransform: "uppercase", color: "#ef4444" }}>Discount</Text>
+                <Text style={[styles.currency, { color: "#ef4444", fontWeight: 700 }]}>
+                  -{currency}
+                  {getNumberTwo(totalDiscount)}
+                </Text>
+              </View>
+            ) : null}
+            <View style={styles.grandTotalRow}>
+              <Text style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase" }}>
+                Grand Total
+              </Text>
+              <Text style={[styles.currency, { fontSize: 10, fontWeight: 700, color: PINK }]}>
+                {currency}
+                {getNumberTwo(payableAmount)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.footer}>
+          <View style={styles.footerCol}>
+            <Text style={{ fontSize: 8, fontWeight: 700, color: PINK, marginBottom: 3 }}>
+              Need Help? 💬
+            </Text>
+            <Text style={{ fontSize: 8, fontWeight: 700, color: "#111827" }}>
+              WhatsApp: +91 9731308713
+            </Text>
+            <Text style={{ fontSize: 7, color: "#6b7280", marginTop: 2 }}>
+              workwithrasa@gmail.com
+            </Text>
+          </View>
+
+          <View style={{ width: "30%", alignItems: "center" }}>
+            <View style={styles.stamp}>
+              <Text style={{ fontSize: 5, fontWeight: 700, textTransform: "uppercase" }}>Rasa Store</Text>
+              {stampLogo ? (
+                <Image src={stampLogo} style={{ width: 12, height: 12, marginVertical: 2 }} />
+              ) : null}
+              <Text style={{ fontSize: 5, fontWeight: 700, textTransform: "uppercase" }}>Thank You</Text>
             </View>
           </View>
 
-          {/* Bottom Section: Terms & Conditions + Price Summary */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 0, paddingHorizontal: 5 }}>
-            {/* Left: Terms and Conditions */}
-            <View style={{ width: "55%", paddingRight: 10 }}>
-              {/* <Text style={{ fontSize: 5, fontWeight: "bold", color: "#006E44", textTransform: "uppercase", marginBottom: 2, borderBottom: 2, borderColor: "#006E44", paddingBottom: 2 }}>
-                TERMS AND CONDITIONS
-              </Text>
-              <Text style={{ fontSize: 7, color: "#374151", lineHeight: 1.4, marginBottom: 3 }}>
-                This invoice is issued by RASA Store. Products once sold will not be taken back or exchanged unless required by law. Please verify the product name, size, and quantity before accepting delivery.
-              </Text> */}
-              <Text style={{ fontSize: 7, fontWeight: "bold", color: "#1f2937", marginBottom: 0 }}>
-                Registered Pharmacist
-              </Text>
-              <Text style={{ fontSize: 7, color: "#006E44", marginBottom: 0 }}>
-                {globalSetting?.company_name || "Rasa Store Private Limited"}
-              </Text>
-              <Text style={{ fontSize: 7, color: "#006E44" }}>
-                {globalSetting?.website || "www.Rasa Store.com"}
-              </Text>
-            </View>
-
-            {/* Right: Price Summary */}
-            <View style={{ width: "40%", borderLeft: 1, borderColor: "#e5e7eb", paddingLeft: 10 }}>
-              {/* MRP Total */}
-              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 0 }}>
-                <Text style={{ fontSize: 7, color: "#374151" }}>MRP Total</Text>
-                <Text style={{ fontSize: 7, color: "#374151", fontWeight: "bold", fontFamily: "DejaVu Sans" }}>
-                  {currency}{getNumberTwo(Math.abs(mrpTotal))}
-                </Text>
-              </View>
-              
-              {/* Total Discount */}
-              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 0 }}>
-                <Text style={{ fontSize: 7, color: "#374151" }}>Total Discount</Text>
-                <Text style={{ fontSize: 7, color: "#16a34a", fontWeight: "bold", fontFamily: "DejaVu Sans" }}>
-                  -{currency}{getNumberTwo(Math.abs(totalDiscount))}
-                </Text>
-              </View>
-              
-              {/* Coupon Applied */}
-              {data?.coupon?.couponCode && (
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 0, backgroundColor: "#f0fdf4", padding: 2, borderRadius: 1 }}>
-                  <Text style={{ fontSize: 7, color: "#15803d" }}>
-                    Coupon: <Text style={{ fontWeight: "bold" }}>{data.coupon.couponCode}</Text>
-                  </Text>
-                  <Text style={{ fontSize: 7, color: "#16a34a", fontWeight: "bold", fontFamily: "DejaVu Sans" }}>
-                    -{currency}{getNumberTwo(Math.abs(data?.coupon?.discountAmount || data?.discount || 0))}
-                  </Text>
-                </View>
-              )}
-              
-              {/* GST */}
-              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 0 }}>
-                <Text style={{ fontSize: 7, color: "#374151" }}>GST</Text>
-                <Text style={{ fontSize: 7, color: "#374151", fontWeight: "bold", fontFamily: "DejaVu Sans" }}>
-                  {currency}{getNumberTwo(Math.abs(totalGst))}
-                </Text>
-              </View>
-              
-              {/* Shipping Cost */}
-              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 0 }}>
-                <Text style={{ fontSize: 7, color: "#374151" }}>Shipping Cost</Text>
-                <Text style={{ fontSize: 7, color: (data?.shippingCost || 0) > 0 ? "#374151" : "#16a34a", fontWeight: "bold", fontFamily: "DejaVu Sans" }}>
-                  {(data?.shippingCost || 0) > 0 ? `${currency}${getNumberTwo(Math.abs(data.shippingCost))}` : "FREE"}
-                </Text>
-              </View>
-              
-              {/* Estimated Payable */}
-              <View style={{ flexDirection: "row", justifyContent: "space-between", backgroundColor: "#f3f4f6", padding: 4, borderRadius: 2 }}>
-                <Text style={{ fontSize: 8, color: "#1f2937", fontWeight: "bold" }}>Estimated Payable</Text>
-                <Text style={{ fontSize: 8, color: "#1f2937", fontWeight: "bold", fontFamily: "DejaVu Sans" }}>
-                  {currency}{getNumberTwo(Math.abs(data.total || 0))}
-                </Text>
-              </View>
-            </View>
+          <View style={[styles.footerCol, { alignItems: "flex-end" }]}>
+            <Text style={{ fontSize: 8, fontWeight: 700, color: "#111827", marginBottom: 2 }}>
+              Stay Connected With Us
+            </Text>
+            <Text style={{ fontSize: 8, fontWeight: 700, color: PINK, marginBottom: 2 }}>
+              Instagram: @kicksbyrasaa
+            </Text>
+            <Text style={{ fontSize: 7, color: "#6b7280" }}>www.therasastore.in</Text>
           </View>
-          <View style={styles.lightLine} />
-
-          
-        </Page>
-      </Document>
-    </>
+        </View>
+      </Page>
+    </Document>
   );
 };
 

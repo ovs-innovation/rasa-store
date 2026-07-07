@@ -28,6 +28,8 @@ const BrandDrawer = ({ id }) => {
     setPublished,
     featured,
     setFeatured,
+    showOnHomepage,
+    setShowOnHomepage,
     handleSelectLanguage,
     isSubmitting,
   } = useBrandSubmit(id);
@@ -130,13 +132,26 @@ const BrandDrawer = ({ id }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+            <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
               <LabelArea label={t("BrandFeatured")} />
               <div className="col-span-8 sm:col-span-4">
                 <SwitchToggle
                   handleProcess={setFeatured}
                   processOption={featured}
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6">
+              <LabelArea label="Show on Homepage" />
+              <div className="col-span-8 sm:col-span-4">
+                <SwitchToggle
+                  handleProcess={setShowOnHomepage}
+                  processOption={showOnHomepage}
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  When off, this brand is hidden from the homepage Shop By Brand section.
+                </p>
               </div>
             </div>
           </div>

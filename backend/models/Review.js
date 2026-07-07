@@ -11,8 +11,19 @@ const reviewSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",
-      required: true,
+      required: false,
       index: true,
+    },
+    displayName: {
+      type: String,
+      trim: true,
+      maxlength: 120,
+    },
+    reply: {
+      type: String,
+      trim: true,
+      maxlength: 2000,
+      default: "",
     },
     rating: {
       type: Number,
@@ -60,8 +71,14 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
-// Ensure one review per user per product
-reviewSchema.index({ product: 1, user: 1 }, { unique: true });
+// Ensure one review per customer per product (admin reviews may omit user)
+reviewSchema.index(
+  { product: 1, user: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { user: { $exists: true, $ne: null } },
+  }
+);
 
 const Review = mongoose.model("Review", reviewSchema);
 

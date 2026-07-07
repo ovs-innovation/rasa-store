@@ -1,5 +1,5 @@
 import React from "react";
-import { IoShieldCheckmarkOutline, IoCardOutline, IoSyncOutline, IoHeadsetOutline } from "react-icons/io5";
+import { IoShieldCheckmarkOutline, IoCardOutline, IoRocketOutline, IoHeadsetOutline } from "react-icons/io5";
 
 const TrustBadges = () => {
   const items = [
@@ -17,9 +17,9 @@ const TrustBadges = () => {
     },
     {
       id: 3,
-      icon: <IoSyncOutline className="text-3xl text-[#D4AF37]" />,
-      title: "Easy Exchanges",
-      desc: "Hassle-free size replacement policy"
+      icon: <IoRocketOutline className="text-3xl text-[#D4AF37]" />,
+      title: "Fast Delivery",
+      desc: "Quick shipping across India"
     },
     {
       id: 4,

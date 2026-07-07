@@ -45,7 +45,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <PersistGate loading={null} persistor={persistor}>
           <SidebarProvider>
             <Suspense fallback={<ThemeSuspense />}>
-              <Windmill usePreferences theme={myTheme}>
+              <Windmill theme={myTheme} dark>
                 <App />
               </Windmill>
             </Suspense>
@@ -54,6 +54,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       </Provider>
     </AdminProvider>
   </QueryClientProvider>
+
 );
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
