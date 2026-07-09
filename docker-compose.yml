@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    container_name: rasa_frontend
+    restart: always
+    ports:
+      - "3050:3018" # Maps VPS port 3050 to Next.js port 3018 in container
+    env_file:
+      - ./frontend/.env
+
+  backend:
+    build: ./backend
+    container_name: rasa_backend
+    restart: always
+    ports:
+      - "3051:5000" # Maps VPS port 3051 to Express port 5000
+    env_file:
+      - ./backend/.env
+
+  admin:
+    build: ./admin
+    container_name: rasa_admin
+    restart: always
+    ports:
+      - "3052:80" # Maps VPS port 3052 to Nginx port 80 in container
+    env_file:
+      - ./admin/.env
