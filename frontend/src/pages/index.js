@@ -139,7 +139,7 @@ export const getStaticProps = async () => {
   const [dataResult, attributesResult, brandsResult] = await Promise.allSettled([
     ProductServices.getShowingStoreProducts({}),
     AttributeServices.getShowingAttributes(),
-    BrandServices.getShowingBrands(true),
+    BrandServices.getShowingBrands({ homepage: true }),
   ]);
 
   const data = dataResult.status === "fulfilled" ? dataResult.value : null;

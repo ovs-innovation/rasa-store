@@ -1,7 +1,8 @@
 import { useContext, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { IoClose } from "react-icons/io5";
+import { useRouter } from "next/router";
+import { IoClose, IoChevronDown, IoChevronForward } from "react-icons/io5";
 import {
   FiHome,
   FiGrid,
@@ -17,12 +18,17 @@ import {
 
 //internal import
 import useShopCategories from "@hooks/useShopCategories";
+import useUtilsFunction from "@hooks/useUtilsFunction";
+import { getCategoryNavUrl } from "@utils/shopCategories";
 import { SidebarContext } from "@context/SidebarContext";
 
 const Category = () => {
+  const router = useRouter();
   const { categoryDrawerOpen, closeCategoryDrawer } = useContext(SidebarContext);
-  const { categories: shopCategories } = useShopCategories();
+  const { navItems } = useShopCategories();
+  const { showingTranslateValue } = useUtilsFunction();
   const [activeTab, setActiveTab] = useState("category");
+  const [expandedCategoryId, setExpandedCategoryId] = useState(null);
 
   const mainLinks = [
     { title: "Home", href: "/", icon: FiHome },
@@ -69,7 +75,10 @@ const Category = () => {
         {/* Tabs */}
         <div className="flex border-b border-neutral-900 bg-[#0A0A0A]">
           <button
-            onClick={() => setActiveTab("category")}
+            onClick={() => {
+              setActiveTab("category");
+              setExpandedCategoryId(null);
+            }}
             className={`flex-1 py-4 text-center font-bold text-xs uppercase tracking-widest transition-colors duration-300 ${
               activeTab === "category"
                 ? `text-[#D4AF37] border-b-2 border-[#D4AF37]`
@@ -79,7 +88,10 @@ const Category = () => {
             Category
           </button>
           <button
-            onClick={() => setActiveTab("pages")}
+            onClick={() => {
+              setActiveTab("pages");
+              setExpandedCategoryId(null);
+            }}
             className={`flex-1 py-4 text-center font-bold text-xs uppercase tracking-widest transition-colors duration-300 ${
               activeTab === "pages"
                 ? `text-[#D4AF37] border-b-2 border-[#D4AF37]`
@@ -108,24 +120,69 @@ const Category = () => {
             </ul>
           </nav>
         ) : (
-          <div className="relative grid grid-cols-1 gap-2 p-4 pt-3">
-            {shopCategories.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/search?category=${cat.slug}`}
-                onClick={closeCategoryDrawer}
-                className="flex items-center gap-3 px-3 py-3 text-xs font-black uppercase tracking-widest text-neutral-200 hover:bg-neutral-900 hover:text-[#D4AF37] border-b border-neutral-900/30 transition-colors"
-              >
-                <img
-                  src={cat.image}
-                  alt={cat.title}
-                  width={32}
-                  height={32}
-                  className="h-8 w-8 rounded-md object-cover flex-shrink-0 border border-neutral-800"
-                />
-                <span>{cat.title}</span>
-              </Link>
-            ))}
+          <div className="relative grid grid-cols-1 gap-1 p-4 pt-3">
+            {navItems.map((cat) => {
+              const hasChildren = cat.children?.length > 0;
+              const isExpanded = expandedCategoryId === cat._id;
+              const categoryName = showingTranslateValue(cat.name) || cat.slug;
+
+              return (
+                <div key={cat._id} className="border-b border-neutral-900/30">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (hasChildren) {
+                        setExpandedCategoryId(isExpanded ? null : cat._id);
+                        return;
+                      }
+                      closeCategoryDrawer();
+                      router.push(getCategoryNavUrl(cat));
+                    }}
+                    className="flex w-full items-center gap-3 px-3 py-3 text-xs font-black uppercase tracking-widest text-neutral-200 hover:bg-neutral-900 hover:text-[#D4AF37] transition-colors"
+                  >
+                    <img
+                      src={cat.icon}
+                      alt={categoryName}
+                      width={32}
+                      height={32}
+                      className="h-8 w-8 rounded-md object-cover flex-shrink-0 border border-neutral-800"
+                    />
+                    <span className="flex-1 text-left">{categoryName}</span>
+                    {hasChildren ? (
+                      <span className="text-neutral-500">
+                        {isExpanded ? (
+                          <IoChevronDown className="text-sm" />
+                        ) : (
+                          <IoChevronForward className="text-sm" />
+                        )}
+                      </span>
+                    ) : null}
+                  </button>
+
+                  {hasChildren && isExpanded && (
+                    <div className="pb-3 pl-14 pr-3">
+                      <Link
+                        href={getCategoryNavUrl(cat)}
+                        onClick={closeCategoryDrawer}
+                        className="block py-2 text-[10px] font-black uppercase tracking-widest text-[#D4AF37] hover:text-white transition-colors"
+                      >
+                        View All {categoryName}
+                      </Link>
+                      {cat.children.map((sub) => (
+                        <Link
+                          key={sub._id}
+                          href={getCategoryNavUrl(sub)}
+                          onClick={closeCategoryDrawer}
+                          className="block py-2 text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-[#D4AF37] transition-colors"
+                        >
+                          {showingTranslateValue(sub.name)}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

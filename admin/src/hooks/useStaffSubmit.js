@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import Cookies from "js-cookie";
+import { setAdminInfoCookie } from "@/utils/adminCookie";
 import { useContext, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useLocation } from "react-router";
@@ -142,12 +143,7 @@ const useStaffSubmit = (id) => {
 
         if (isSameAdmin) {
           dispatch({ type: "USER_LOGIN", payload: res });
-          const cookieTimeOut = 0.5;
-          Cookies.set("adminInfo", JSON.stringify(res), {
-            expires: cookieTimeOut,
-            sameSite: "None",
-            secure: true,
-          });
+          setAdminInfoCookie(res, 0.5);
         }
         setIsUpdate(true);
         setIsSubmitting(false);

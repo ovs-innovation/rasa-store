@@ -3,7 +3,7 @@ import { Input, Select } from "@windmill/react-ui";
 import ParentCategory from "@/components/category/ParentCategory";
 import Multiselect from "multiselect-react-dropdown";
 
-export const UK_SIZES = ["UK 3", "UK 4", "UK 5", "UK 6", "UK 7", "UK 8", "UK 9", "UK 10"];
+export const UK_SIZES = ["UK 3 - UK 6", "UK 6 - UK 10", "UK 3 - UK 10"];
 
 const FashionProductCoreFields = ({
   register,

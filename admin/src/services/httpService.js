@@ -1,5 +1,6 @@
-import axios from "axios";
 import Cookies from "js-cookie";
+import axios from "axios";
+import { setAdminInfoCookie, clearAdminInfoCookie } from "@/utils/adminCookie";
 
 // console.log("base url", import.meta.env.VITE_APP_API_BASE_URL);
 
@@ -53,5 +54,20 @@ const requests = {
 
   delete: (url, body) => instance.delete(url, body).then(responseBody),
 };
+
+instance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const requestUrl = String(error?.config?.url || "");
+    const isAuthRequest = requestUrl.includes("/admin/login");
+
+    if (status === 401 && !isAuthRequest) {
+      clearAdminInfoCookie();
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default requests;

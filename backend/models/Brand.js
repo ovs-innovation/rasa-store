@@ -44,6 +44,11 @@ const brandSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    shopCategories: {
+      type: [String],
+      enum: ["footwear", "bags"],
+      default: [],
+    },
     status: {
       type: String,
       enum: ["show", "hide"],

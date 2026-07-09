@@ -30,7 +30,8 @@ const Search = ({ products, attributes }) => {
   const router = useRouter();
   const { showingTranslateValue } = useUtilsFunction();
   const searchQueryText = router.query?.query || "";
-  const { isLoading, setIsLoading, toggleFilterDrawer } = useContext(SidebarContext);
+  const { isLoading, setIsLoading, toggleFilterDrawer, setMobileSortOpen } =
+    useContext(SidebarContext);
   const [visibleProduct, setVisibleProduct] = useState(18);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
   const { totalItems } = useCart();
@@ -40,6 +41,11 @@ const Search = ({ products, attributes }) => {
   useEffect(() => {
     setIsLoading(false);
   }, [products, setIsLoading]);
+
+  useEffect(() => {
+    setMobileSortOpen?.(isSortModalOpen);
+    return () => setMobileSortOpen?.(false);
+  }, [isSortModalOpen, setMobileSortOpen]);
 
   // Maintain local products state so we can refetch when query params change (category/_id etc.)
   const [initialProducts, setInitialProducts] = useState(products || []);
@@ -759,11 +765,16 @@ const Search = ({ products, attributes }) => {
 
       {/* Sort Modal for Mobile */}
       {isSortModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black bg-opacity-50 lg:hidden">
-          <div className="bg-white w-full rounded-t-2xl p-6 animate-slide-up">
-            <div className="flex justify-between items-center mb-4">
+        <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/50 lg:hidden">
+          <div className="bg-white w-full rounded-t-2xl p-6 animate-slide-up relative z-[111]">
+            <div className="flex justify-between items-center mb-4 pr-2">
               <h3 className="text-lg font-semibold">Sort By</h3>
-              <button className="p-2 border border-store-400 rounded-lg" onClick={() => setIsSortModalOpen(false)}>
+              <button
+                type="button"
+                className="relative z-[112] p-2 border border-store-400 rounded-lg bg-white"
+                onClick={() => setIsSortModalOpen(false)}
+                aria-label="Close sort options"
+              >
                 <IoClose size={24} />
               </button>
             </div>

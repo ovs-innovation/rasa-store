@@ -1,4 +1,5 @@
 const Brand = require("../models/Brand");
+const { SHOP_CATEGORY_SLUGS } = require("../lib/shopCategoryBrands");
 
 const slugify = (text = "") =>
   text
@@ -48,6 +49,7 @@ const addBrand = async (req, res) => {
       sortOrder = 0,
       isFeatured = false,
       showOnHomepage = true,
+      shopCategories = [],
       status = "show",
     } = req.body;
 
@@ -71,6 +73,7 @@ const addBrand = async (req, res) => {
         : Number(sortOrder),
       isFeatured,
       showOnHomepage: showOnHomepage !== false,
+      shopCategories: normalizeShopCategories(shopCategories),
       status,
     });
 
@@ -96,12 +99,27 @@ const getAllBrands = async (req, res) => {
   }
 };
 
+const normalizeShopCategories = (values = []) => {
+  if (!Array.isArray(values)) return [];
+  return [...new Set(values.map((value) => String(value).trim().toLowerCase()))].filter(
+    (value) => SHOP_CATEGORY_SLUGS.has(value)
+  );
+};
+
 const getShowingBrands = async (req, res) => {
   try {
     const forHomepage = req.query.homepage === "true" || req.query.homepage === "1";
+    const categorySlug = String(req.query.category || "")
+      .trim()
+      .toLowerCase();
+
     const query = { status: "show" };
     if (forHomepage) {
       query.showOnHomepage = { $ne: false };
+    }
+
+    if (SHOP_CATEGORY_SLUGS.has(categorySlug)) {
+      query.shopCategories = categorySlug;
     }
 
     const brands = await Brand.find(query).sort({
@@ -140,6 +158,7 @@ const updateBrand = async (req, res) => {
       isFeatured,
       status,
       showOnHomepage,
+      shopCategories,
     } = req.body;
 
     const brand = await Brand.findById(req.params.id);
@@ -165,6 +184,9 @@ const updateBrand = async (req, res) => {
       typeof isFeatured === "boolean" ? isFeatured : brand.isFeatured;
     brand.showOnHomepage =
       typeof showOnHomepage === "boolean" ? showOnHomepage : brand.showOnHomepage;
+    if (shopCategories !== undefined) {
+      brand.shopCategories = normalizeShopCategories(shopCategories);
+    }
     brand.status = status || brand.status;
 
     await brand.save();

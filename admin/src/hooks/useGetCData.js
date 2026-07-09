@@ -16,30 +16,27 @@ const useGetCData = () => {
 
   // Function to decrypt data
   const decryptData = async (encryptedData, iv) => {
-    const secretKey = import.meta.env.VITE_APP_ENCRYPT_PASSWORD; // Your secret password
+    const secretKey = import.meta.env.VITE_APP_ENCRYPT_PASSWORD;
+    if (!secretKey || !encryptedData || !iv) return null;
 
-    // Ensure the secret key is exactly 32 bytes
-    const keyBuffer = await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(secretKey)
-    );
-
-    // Convert the encrypted data from hex to a Uint8Array
-    const encryptedArray = new Uint8Array(
-      encryptedData.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
-    );
-
-    // Decode IV from hex to ArrayBuffer (must be 16 bytes)
-    const ivBuffer = new Uint8Array(
-      iv.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
-    );
-
-    // Decrypt using Web Crypto API
     try {
+      const keyBuffer = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(secretKey)
+      );
+
+      const encryptedArray = new Uint8Array(
+        encryptedData.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
+      );
+
+      const ivBuffer = new Uint8Array(
+        iv.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
+      );
+
       const decrypted = await crypto.subtle.decrypt(
         {
           name: "AES-CBC",
-          iv: ivBuffer, // IV should be 16 bytes long
+          iv: ivBuffer,
         },
         await crypto.subtle.importKey(
           "raw",
@@ -48,40 +45,46 @@ const useGetCData = () => {
           false,
           ["decrypt"]
         ),
-        encryptedArray // The encrypted data as Uint8Array
+        encryptedArray
       );
 
-      // Convert the decrypted bytes back to a string
-      const decodedData = new TextDecoder().decode(decrypted);
-      return decodedData;
+      return new TextDecoder().decode(decrypted);
     } catch (error) {
-      console.error("Decryption failed:", error);
+      console.warn("Admin access decrypt skipped:", error?.name || error);
       return null;
     }
   };
 
   useEffect(() => {
     const fetchDecryptedData = async () => {
+      if (!adminInfo) return;
+
       if (adminInfo?.data && adminInfo?.iv) {
         try {
           const decryptedString = await decryptData(
             adminInfo.data,
             adminInfo.iv
           );
-          const decryptedArray = JSON.parse(decryptedString); // Assuming the decrypted data is a JSON string
 
-          // Set state: accessList is all except last element, role is last element
-          const lastElement = decryptedArray.pop(); // Remove and get the last element
-          setRole(lastElement);
-          setAccessList(decryptedArray);
-
-          //   console.log("Decrypted Data:", decryptedArray, "Role:", lastElement);
-          //   const isAuthorized =
-          //     decryptedArray && decryptedArray.includes("customers"); // Remove the leading "/"
-          //   console.log("isAuthorized", isAuthorized, path);
+          if (decryptedString) {
+            const decryptedArray = JSON.parse(decryptedString);
+            if (Array.isArray(decryptedArray) && decryptedArray.length > 0) {
+              const lastElement = decryptedArray[decryptedArray.length - 1];
+              setRole(lastElement);
+              setAccessList(decryptedArray.slice(0, -1));
+              return;
+            }
+          }
         } catch (error) {
-          console.error("Failed to decrypt and parse data:", error);
+          console.warn("Failed to decrypt admin access list:", error);
         }
+      }
+
+      if (adminInfo?.role) {
+        setRole(adminInfo.role);
+        setAccessList(
+          Array.isArray(adminInfo.access_list) ? adminInfo.access_list : []
+        );
       }
     };
 

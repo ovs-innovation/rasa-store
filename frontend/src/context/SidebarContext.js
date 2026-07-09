@@ -8,6 +8,7 @@ export const SidebarProvider = ({ children }) => {
   const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mobileSortOpen, setMobileSortOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,6 +47,8 @@ export const SidebarProvider = ({ children }) => {
       isModalOpen,
       toggleModal,
       closeModal,
+      mobileSortOpen,
+      setMobileSortOpen,
       showSearch,
       toggleSearch,
       closeSearch,
@@ -62,6 +65,7 @@ export const SidebarProvider = ({ children }) => {
       categoryDrawerOpen,
       filterDrawerOpen,
       isModalOpen,
+      mobileSortOpen,
       currentPage,
       isLoading,
       showSearch,

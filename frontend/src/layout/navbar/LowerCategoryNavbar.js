@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { IoChevronDown } from "react-icons/io5";
 
+import { getCategoryNavUrl } from "@utils/shopCategories";
+
 export default function LowerCategoryNavbar({
   categories: originalCategories = [],
   showingTranslateValue,
@@ -103,18 +105,8 @@ export default function LowerCategoryNavbar({
   const getUrl = (cat) => {
     if (!cat) return "/";
     const slug = String(cat.slug || createSlug(getName(cat)) || "").trim();
-    if (!slug || slug === "/") return "/";
-    if (slug === "new-arrivals") return "/new-arrivals";
-    if (slug.startsWith("search?")) return `/${slug}`;
-    if (slug.startsWith("footwear?brand=")) {
-      const brandName = slug.split("=")[1];
-      return `/search?category=footwear&brand=${brandName}`;
-    }
-    if (slug.startsWith("bags?type=")) {
-      const bagType = slug.split("=")[1];
-      return `/search?category=bags&type=${bagType}`;
-    }
-    return `/search?category=${slug}`;
+    if (!slug) return "/";
+    return getCategoryNavUrl({ ...cat, slug });
   };
   const activeCategory = categories.find((c) => getId(c) === activeCategoryId);
   const hasChildren = activeCategory?.children?.length > 0;

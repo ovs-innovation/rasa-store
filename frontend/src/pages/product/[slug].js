@@ -58,6 +58,7 @@ import CustomerServices from "@services/CustomerServices";
 import { useQuery } from "@tanstack/react-query";
 import Cookies from "js-cookie";
 import SuggestedProducts from "@components/product/SuggestedProducts";
+import { UK_SIZE_RANGES } from "@utils/fashionMap";
 
 const ProductScreen = ({ product, attributes, relatedProducts }) => {
   const router = useRouter();
@@ -1086,9 +1087,12 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     });
 
     const dynamicVarTitle = attributeKeys.map((key) => {
-      const values = [
-        ...new Set(product.variants.map((v) => v[key]).filter(Boolean)),
-      ];
+      const isSize = isSizeKey(key);
+      const values = isSize
+        ? UK_SIZE_RANGES
+        : [
+            ...new Set(product.variants.map((v) => v[key]).filter(Boolean)),
+          ];
 
       const dbAtt = attributes?.find(
         (att) =>

@@ -66,10 +66,17 @@ const VariantList = ({
     ).values(),
   ];
 
-  const optionItems = uniqueOptions
-    .map((vl) => {
-      const attribute = getAttributeMeta(att);
-      const valueId = vl[att];
+  const attribute = getAttributeMeta(att);
+  const isSize = isSizeAttribute(att);
+  const sizeOptionsFromMeta =
+    isSize && Array.isArray(attribute?.variants) && attribute.variants.length > 0
+      ? attribute.variants
+      : null;
+
+  const optionItems = (sizeOptionsFromMeta || uniqueOptions.map((vl) => ({ vl, fromVariant: true })))
+    .map((entry) => {
+      const vl = entry.fromVariant ? entry.vl : null;
+      const valueId = vl ? vl[att] : entry._id;
       if (!valueId) return null;
 
       const variantOption =
@@ -115,10 +122,9 @@ const VariantList = ({
   }
 
   const isColor = isColorAttribute(att);
-  const isSize = isSizeAttribute(att);
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className={`flex flex-wrap gap-2 ${isSize ? "flex-col sm:flex-row" : ""}`}>
       {optionItems.map((item) => {
         if (isColor && item.hexColor) {
           return (
@@ -153,13 +159,13 @@ const VariantList = ({
               e.preventDefault();
               if (!item.isDisabled) handleChangeVariant(item.valueId);
             }}
-            className={`min-w-[2.75rem] px-3 py-2 text-sm rounded-md border transition-colors ${
+            className={`${isSize ? "w-full sm:w-auto px-4 py-2.5 text-xs sm:text-sm" : "min-w-[2.75rem] px-3 py-2 text-sm"} rounded-md border transition-colors ${
               item.isDisabled
                 ? "border-neutral-800 text-neutral-600 cursor-not-allowed line-through"
                 : item.isSelected
                 ? "border-[#D4AF37] bg-[#D4AF37]/10 text-white"
                 : "border-neutral-700 text-neutral-300 hover:border-neutral-500"
-            } ${isSize ? "font-medium tracking-wide" : ""}`}
+            } ${isSize ? "font-medium tracking-wide text-left sm:text-center" : ""}`}
           >
             {item.name}
           </button>

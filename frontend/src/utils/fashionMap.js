@@ -52,7 +52,9 @@ export function transformStoreData(data) {
   };
 }
 
-export const sneakerSizeFilters = ["UK 3", "UK 4", "UK 5", "UK 6", "UK 7", "UK 8", "UK 9", "UK 10"];
+export const UK_SIZE_RANGES = ["UK 3 - UK 6", "UK 6 - UK 10", "UK 3 - UK 10"];
+
+export const sneakerSizeFilters = UK_SIZE_RANGES;
 
 export const priceQuickFilters = [
   { label: "Under ₹2000", min: 0, max: 2000 },

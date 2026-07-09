@@ -11,6 +11,7 @@ import { SidebarContext } from "@/context/SidebarContext";
 import AttributeServices from "@/services/AttributeServices";
 import ProductServices from "@/services/ProductServices";
 import BrandServices from "@/services/BrandServices";
+import { UK_SIZES } from "@/components/product/FashionProductCoreFields";
 import { notifyError, notifySuccess } from "@/utils/toast";
 import useTranslationValue from "./useTranslationValue";
 
@@ -79,7 +80,7 @@ const ensureVariantsHaveSku = (variantList, baseSku) =>
     const existingSizes = variant.sizes || [];
     const sizesMap = new Map(existingSizes.map(s => [s.size, s]));
     
-    const normalizedSizes = ["UK 3", "UK 4", "UK 5", "UK 6", "UK 7", "UK 8", "UK 9", "UK 10"].map(size => {
+    const normalizedSizes = UK_SIZES.map(size => {
       const match = sizesMap.get(size);
       const qty = match ? (typeof match.quantity === "number" ? match.quantity : Number(match.stock || 0)) : 0;
       return {

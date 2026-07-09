@@ -1,4 +1,3 @@
-import Cookies from "js-cookie";
 import { useContext, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useHistory, useLocation } from "react-router-dom";
@@ -6,6 +5,7 @@ import { useHistory, useLocation } from "react-router-dom";
 //internal import
 import { AdminContext } from "@/context/AdminContext";
 import AdminServices from "@/services/AdminServices";
+import { setAdminInfoCookie } from "@/utils/adminCookie";
 import { notifyError, notifySuccess } from "@/utils/toast";
 
 const useLoginSubmit = () => {
@@ -19,27 +19,28 @@ const useLoginSubmit = () => {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      email: "info@ovsinnovation.com",
-      password: "Admin@123"
-    }
+      email: "admin@rasastore.com",
+      password: "RasaStore@123",
+    },
   });
 
   const onSubmit = async ({ name, email, verifyEmail, password, role }) => {
     setLoading(true);
     const cookieTimeOut = 0.5;
+    const normalizedEmail = String(email || "").trim();
+    const normalizedPassword = String(password || "").trim();
 
     try {
       if (location.pathname === "/login") {
-        const res = await AdminServices.loginAdmin({ email, password });
+        const res = await AdminServices.loginAdmin({
+          email: normalizedEmail,
+          password: normalizedPassword,
+        });
 
         if (res) {
           notifySuccess("Login Success!");
           dispatch({ type: "USER_LOGIN", payload: res });
-          Cookies.set("adminInfo", JSON.stringify(res), {
-            expires: cookieTimeOut,
-            sameSite: "None",
-            secure: true,
-          });
+          setAdminInfoCookie(res, cookieTimeOut);
           history.replace("/dashboard");
         }
       }
@@ -55,11 +56,7 @@ const useLoginSubmit = () => {
         if (res) {
           notifySuccess("Register Success!");
           dispatch({ type: "USER_LOGIN", payload: res });
-          Cookies.set("adminInfo", JSON.stringify(res), {
-            expires: cookieTimeOut,
-            sameSite: "None",
-            secure: true,
-          });
+          setAdminInfoCookie(res, cookieTimeOut);
           history.replace("/");
         }
       }

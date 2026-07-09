@@ -67,6 +67,8 @@ const loginAdmin = async (req, res) => {
         token,
         _id: admin._id,
         name: admin.name,
+        role: admin.role,
+        access_list: effectiveAccess,
         phone: admin.phone,
         email: admin.email,
         image: admin.image,

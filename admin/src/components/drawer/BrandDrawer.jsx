@@ -30,6 +30,8 @@ const BrandDrawer = ({ id }) => {
     setFeatured,
     showOnHomepage,
     setShowOnHomepage,
+    shopCategories,
+    setShopCategories,
     handleSelectLanguage,
     isSubmitting,
   } = useBrandSubmit(id);
@@ -139,6 +141,43 @@ const BrandDrawer = ({ id }) => {
                   handleProcess={setFeatured}
                   processOption={featured}
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
+              <LabelArea label="Shop Category" />
+              <div className="col-span-8 sm:col-span-4 space-y-3">
+                <label className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-200">
+                  <input
+                    type="checkbox"
+                    checked={shopCategories.footwear}
+                    onChange={(e) =>
+                      setShopCategories((prev) => ({
+                        ...prev,
+                        footwear: e.target.checked,
+                      }))
+                    }
+                    className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                  />
+                  <span>Shoes / Sneakers</span>
+                </label>
+                <label className="flex items-center gap-3 text-sm text-gray-700 dark:text-gray-200">
+                  <input
+                    type="checkbox"
+                    checked={shopCategories.bags}
+                    onChange={(e) =>
+                      setShopCategories((prev) => ({
+                        ...prev,
+                        bags: e.target.checked,
+                      }))
+                    }
+                    className="rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                  />
+                  <span>Bags</span>
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Choose where this brand appears in the mobile menu. Only selected categories will show this brand.
+                </p>
               </div>
             </div>
 

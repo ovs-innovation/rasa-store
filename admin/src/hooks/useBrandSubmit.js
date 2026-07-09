@@ -24,6 +24,10 @@ const useBrandSubmit = (id) => {
   const [published, setPublished] = useState(true);
   const [featured, setFeatured] = useState(false);
   const [showOnHomepage, setShowOnHomepage] = useState(true);
+  const [shopCategories, setShopCategories] = useState({
+    footwear: false,
+    bags: false,
+  });
   const [language, setLanguage] = useState("en");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -92,6 +96,9 @@ const useBrandSubmit = (id) => {
         coverImage: coverUrl,
         isFeatured: featured,
         showOnHomepage,
+        shopCategories: Object.entries(shopCategories)
+          .filter(([, enabled]) => enabled)
+          .map(([category]) => category),
         status: published ? "show" : "hide",
       };
 
@@ -126,6 +133,7 @@ const useBrandSubmit = (id) => {
       setPublished(true);
       setFeatured(false);
       setShowOnHomepage(true);
+      setShopCategories({ footwear: false, bags: false });
       clearErrors("name");
       clearErrors("description");
       setLanguage(lang);
@@ -147,6 +155,13 @@ const useBrandSubmit = (id) => {
           setPublished(res?.status !== "hide");
           setFeatured(!!res?.isFeatured);
           setShowOnHomepage(res?.showOnHomepage !== false);
+          const savedCategories = Array.isArray(res?.shopCategories)
+            ? res.shopCategories
+            : [];
+          setShopCategories({
+            footwear: savedCategories.includes("footwear"),
+            bags: savedCategories.includes("bags"),
+          });
         } catch (err) {
           showAlert(err?.response?.data?.message || err?.message, "error");
         }
@@ -169,6 +184,8 @@ const useBrandSubmit = (id) => {
     setFeatured,
     showOnHomepage,
     setShowOnHomepage,
+    shopCategories,
+    setShopCategories,
     handleSelectLanguage,
     isSubmitting,
   };

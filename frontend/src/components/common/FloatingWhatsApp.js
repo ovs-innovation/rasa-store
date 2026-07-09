@@ -1,9 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { FaWhatsapp } from "react-icons/fa";
 import useGetSetting from "@hooks/useGetSetting";
+import { SidebarContext } from "@context/SidebarContext";
 
 const FloatingWhatsApp = () => {
   const { storeCustomizationSetting } = useGetSetting();
+  const {
+    filterDrawerOpen,
+    cartDrawerOpen,
+    isModalOpen,
+    mobileSortOpen,
+  } = useContext(SidebarContext) || {};
   const [isVisible, setIsVisible] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -20,8 +27,12 @@ const FloatingWhatsApp = () => {
 
   if (!isVisible) return null;
 
+  if (filterDrawerOpen || cartDrawerOpen || isModalOpen || mobileSortOpen) {
+    return null;
+  }
+
   return (
-    <div className="fixed bottom-24 lg:bottom-8 right-4 lg:right-8 z-[99] flex items-end justify-end flex-col group">
+    <div className="fixed bottom-24 lg:bottom-8 right-4 lg:right-8 z-[90] flex items-end justify-end flex-col group pointer-events-none">
       {/* Tooltip */}
       <div 
         className={`bg-[#0d0d0d] text-white px-4 py-3 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] border border-neutral-800 mb-4 mr-2 transition-all duration-500 transform origin-bottom-right max-w-[200px]
@@ -42,7 +53,7 @@ const FloatingWhatsApp = () => {
         href={`https://wa.me/${whatsappNumber.replace(/\D/g, "")}?text=${encodeURIComponent("Hello, I need some help with Rasa Store.")}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="relative flex items-center justify-center w-14 h-14 bg-[#25D366] text-white rounded-full shadow-lg hover:shadow-2xl transform hover:scale-110 transition-all duration-300 hover:bg-[#128C7E] animate-bounce-slow"
+        className="relative flex items-center justify-center w-14 h-14 bg-[#25D366] text-white rounded-full shadow-lg hover:shadow-2xl transform hover:scale-110 transition-all duration-300 hover:bg-[#128C7E] animate-bounce-slow pointer-events-auto"
         aria-label="Chat on WhatsApp"
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
