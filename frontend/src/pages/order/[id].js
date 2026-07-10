@@ -1,58 +1,32 @@
-import { useRef, useEffect, useState } from "react";
+import { useEffect } from "react";
 import dynamic from "next/dynamic";
-import { IoCloudDownloadOutline } from "react-icons/io5";
-import { notifyError, notifySuccess } from "@utils/toast";
-import ReactToPrint from "react-to-print";
+import Link from "next/link";
+import dayjs from "dayjs";
 import { useQuery } from "@tanstack/react-query";
 import Cookies from "js-cookie";
-
-//internal import
+import { IoBagCheckOutline } from "react-icons/io5";
 
 import Layout from "@layout/Layout";
-import useGetSetting from "@hooks/useGetSetting";
-import Invoice from "@components/invoice/Invoice";
 import Loading from "@components/preloader/Loading";
 import OrderServices from "@services/OrderServices";
 import useUtilsFunction from "@hooks/useUtilsFunction";
-import OrderTracking from "@components/order/OrderTracking";
+import useGetSetting from "@hooks/useGetSetting";
 import { setToken } from "@services/httpServices";
-import { downloadInvoicePdf } from "@utils/downloadInvoicePdf";
+
 const Order = ({ params }) => {
-  const printRef = useRef();
   const orderId = params.id;
 
-  // Set auth token before fetching order
   useEffect(() => {
     const userInfo = Cookies.get("userInfo");
     if (userInfo) {
-      const parsedUser = JSON.parse(userInfo);
-      if (parsedUser?.token) {
-        setToken(parsedUser.token);
+      try {
+        const parsedUser = JSON.parse(userInfo);
+        if (parsedUser?.token) setToken(parsedUser.token);
+      } catch {
+        /* ignore */
       }
     }
   }, []);
-
-  const [isMounted, setIsMounted] = useState(false);
-  const [pdfLoading, setPdfLoading] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const handleDownloadPdf = async () => {
-    if (!printRef.current || pdfLoading) return;
-    setPdfLoading(true);
-    try {
-      await downloadInvoicePdf(
-        printRef.current,
-        `Invoice-${data?.invoice || orderId}`
-      );
-      notifySuccess("Invoice downloaded");
-    } catch (err) {
-      notifyError(err?.message || "Failed to download invoice");
-    } finally {
-      setPdfLoading(false);
-    }
-  };
 
   const { data, error, isLoading } = useQuery({
     queryKey: ["order", orderId],
@@ -61,15 +35,10 @@ const Order = ({ params }) => {
   });
 
   const { showingTranslateValue, getNumberTwo, currency } = useUtilsFunction();
-  const { storeCustomizationSetting, globalSetting } = useGetSetting();
-
-  const handleCopyTracking = (num) => {
-    navigator.clipboard.writeText(num);
-    notifySuccess("Tracking number copied!");
-  };
+  const { storeCustomizationSetting } = useGetSetting();
 
   return (
-    <Layout title="Invoice" description="order confirmation page">
+    <Layout title="Order Confirmed" description="Order confirmation page">
       <style jsx global>{`
         body {
           background-color: #050505 !important;
@@ -83,56 +52,92 @@ const Order = ({ params }) => {
           {error?.response?.data?.message || error?.message || String(error)}
         </h2>
       ) : (
-        <div className="max-w-screen-2xl mx-auto py-10 px-3 sm:px-6">
-          <div className="bg-[#D4AF37]/10 border border-[#D4AF37]/20 text-[#D4AF37] rounded-2xl mb-5 px-4 py-3">
-            <label className="text-sm font-semibold">
+        <div className="max-w-2xl mx-auto py-10 px-4 sm:px-6">
+          <div className="text-center mb-8">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#D4AF37]/15 border border-[#D4AF37]/30">
+              <IoBagCheckOutline className="text-3xl text-[#D4AF37]" />
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-2">Order Confirmed</h1>
+            <p className="text-sm text-neutral-400">
               {showingTranslateValue(
                 storeCustomizationSetting?.dashboard?.invoice_message_first
-              )}{" "}
-              <span className="font-extrabold text-white">
-                {data?.user_info?.name},
-              </span>{" "}
+              ) || "Thank you"}{" "}
+              <span className="text-white font-semibold">{data?.user_info?.name}</span>
+              {", "}
               {showingTranslateValue(
                 storeCustomizationSetting?.dashboard?.invoice_message_last
-              )}
-            </label>
+              ) || "your order has been received!"}
+            </p>
           </div>
-          <div className="w-full">
-            <div className="flex flex-wrap gap-3 mb-8">
-               <button
-                 type="button"
-                 onClick={handleDownloadPdf}
-                 disabled={pdfLoading}
-                 className="flex items-center justify-center bg-[#D4AF37] text-black transition-all text-sm font-bold h-10 py-2 px-6 rounded-full hover:bg-[#bfa032] shadow-md cursor-pointer disabled:opacity-60"
-               >
-                 {pdfLoading ? "Preparing..." : "Download Invoice"}
-                 <IoCloudDownloadOutline className="ml-2" />
-               </button>
-               {isMounted && (
-                 <ReactToPrint
-                   trigger={() => (
-                     <button className="flex items-center justify-center bg-white/10 text-white border border-white/20 transition-all text-sm font-bold h-10 py-2 px-6 rounded-full hover:bg-white/20 shadow-md cursor-pointer">
-                       Print Invoice
-                     </button>
-                   )}
-                   content={() => printRef.current}
-                 />
-               )}
+
+          <div className="rounded-2xl border border-neutral-800 bg-[#0D0D0D] p-6 space-y-4">
+            <div className="flex flex-wrap justify-between gap-2 text-sm">
+              <span className="text-neutral-500">Order ID</span>
+              <span className="font-mono text-[#D4AF37]">
+                #{data?._id?.slice(-8).toUpperCase()}
+              </span>
+            </div>
+            <div className="flex flex-wrap justify-between gap-2 text-sm">
+              <span className="text-neutral-500">Date</span>
+              <span className="text-white">
+                {data?.createdAt
+                  ? dayjs(data.createdAt).format("DD MMM YYYY · hh:mm A")
+                  : "-"}
+              </span>
+            </div>
+            <div className="flex flex-wrap justify-between gap-2 text-sm">
+              <span className="text-neutral-500">Status</span>
+              <span className="text-white font-medium">{data?.status || "Pending"}</span>
+            </div>
+            <div className="flex flex-wrap justify-between gap-2 text-sm">
+              <span className="text-neutral-500">Payment</span>
+              <span className="text-white">{data?.paymentMethod || "-"}</span>
             </div>
 
-            {/* Live Tracking Section */}
-            {(data.trackingNumber || data.status === "Shipped" || data.status === "OutForDelivery") && (
-               <div className="mb-10">
-                  <OrderTracking order={data} />
-               </div>
+            {data?.cart?.length > 0 && (
+              <div className="pt-4 border-t border-neutral-800 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                  Items
+                </p>
+                {data.cart.map((item, index) => (
+                  <div
+                    key={`${item._id || item.productId || index}`}
+                    className="flex justify-between gap-3 text-sm"
+                  >
+                    <span className="text-neutral-300">
+                      {item.title} × {item.quantity || 1}
+                    </span>
+                    <span className="text-white font-medium shrink-0">
+                      {currency}
+                      {getNumberTwo(item.itemTotal || item.price * (item.quantity || 1))}
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
 
-            <Invoice
-              data={data}
-              printRef={printRef}
-              currency={currency}
-              globalSetting={globalSetting}
-            />
+            <div className="flex justify-between pt-4 border-t border-neutral-800 text-base font-bold">
+              <span className="text-white">Total</span>
+              <span className="text-[#D4AF37]">
+                {currency}
+                {getNumberTwo(data?.total || 0)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3 justify-center mt-8">
+            <Link
+              href="/user/my-orders"
+              className="inline-flex items-center justify-center bg-[#D4AF37] text-black text-sm font-bold h-10 px-6 rounded-full hover:bg-[#bfa032] transition-colors"
+            >
+              My Orders
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center bg-white/10 text-white border border-white/20 text-sm font-bold h-10 px-6 rounded-full hover:bg-white/20 transition-colors"
+            >
+              Continue Shopping
+            </Link>
           </div>
         </div>
       )}
@@ -140,10 +145,8 @@ const Order = ({ params }) => {
   );
 };
 
-export const getServerSideProps = ({ params }) => {
-  return {
-    props: { params },
-  };
-};
+export const getServerSideProps = ({ params }) => ({
+  props: { params },
+});
 
 export default dynamic(() => Promise.resolve(Order), { ssr: false });

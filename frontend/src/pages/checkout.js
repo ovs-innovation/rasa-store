@@ -1,4 +1,4 @@
-import React,{useState, useRef, useEffect} from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -16,7 +16,8 @@ import { FiLoader, FiEdit } from "react-icons/fi";
 import { useQuery } from "@tanstack/react-query";
 import { ImCreditCard } from "react-icons/im";
 import useTranslation from "next-translate/useTranslation";
-import { getUserSession } from "@lib/auth";
+import { useSession } from "next-auth/react";
+import { readUserInfoFromCookie } from "@lib/auth";
 
 //internal import
 
@@ -36,6 +37,7 @@ import LocationServices from "@services/LocationServices";
 import SwitchToggle from "@components/form/SwitchToggle";
 import { notifySuccess, notifyError } from "@utils/toast";
 import { isProfileComplete, getDisplayEmail } from "@utils/profileAuth";
+import { UserContext } from "@context/UserContext";
 
 const Checkout = () => {
   const { t } = useTranslation();
@@ -58,15 +60,23 @@ const Checkout = () => {
     addressType: "Home",
     isDefault: false
   });
-  const userInfo = getUserSession();
+  const { state } = useContext(UserContext);
+  const { data: sessionData } = useSession();
+  const sessionUser = sessionData?.user?.token ? sessionData.user : null;
+  const userInfo = state?.userInfo || sessionUser || readUserInfoFromCookie();
   const { showingTranslateValue, currency } = useUtilsFunction();
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
+    setAuthReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
     if (!userInfo?.token) {
       router.replace("/auth/login?redirectUrl=checkout");
-      return;
     }
-  }, [userInfo, router]);
+  }, [authReady, userInfo, router]);
 
   useEffect(() => {
     setPortalReady(true);
@@ -506,9 +516,96 @@ const Checkout = () => {
           button.bg-store-500:hover {
             background-color: #c29e2e !important;
           }
+
+          /* Checkout readability — brighter text on dark panels */
+          .checkout-page h2,
+          .checkout-page .form-group h2 {
+            color: #ffffff !important;
+          }
+
+          .checkout-page .text-gray-700 {
+            color: #f5f5f5 !important;
+          }
+
+          .checkout-page .text-gray-500,
+          .checkout-page .text-gray-600 {
+            color: #d1d5db !important;
+          }
+
+          .checkout-page .text-gray-300 {
+            color: #e5e7eb !important;
+          }
+
+          .checkout-page .text-gray-800,
+          .checkout-page .text-gray-900 {
+            color: #ffffff !important;
+          }
+
+          .checkout-page .border-t.mt-4 .font-extrabold {
+            color: #d4af37 !important;
+            font-size: 1.35rem !important;
+          }
+
+          .checkout-page .border-t.mt-4 .text-gray-900 {
+            color: #f3f4f6 !important;
+          }
+
+          .checkout-page .bg-\\[\\#0D0D0D\\],
+          .checkout-page .bg-\\[\\#0F0F0F\\] {
+            border-color: #2a2a2a !important;
+          }
+
+          .checkout-page button.checkout-place-order-btn:disabled {
+            color: #bdbdbd !important;
+            background-color: #1a1a1a !important;
+            border-color: #404040 !important;
+          }
+
+          .checkout-page .text-green-600 {
+            color: #4ade80 !important;
+          }
+
+          @media (max-width: 639px) {
+            .checkout-page {
+              overflow-x: hidden;
+            }
+
+            .checkout-page .checkout-summary-line {
+              font-size: 0.875rem;
+              gap: 0.75rem;
+            }
+
+            .checkout-page .checkout-total-block {
+              flex-direction: column;
+              align-items: flex-start !important;
+              gap: 0.5rem;
+            }
+
+            .checkout-page .checkout-total-block .checkout-total-amount {
+              font-size: 1.5rem !important;
+              width: 100%;
+              text-align: left;
+            }
+
+            .checkout-page .checkout-address-actions {
+              flex-direction: row;
+              align-self: stretch !important;
+              justify-content: flex-end;
+            }
+
+            .checkout-page .checkout-coupon-actions {
+              width: 100%;
+            }
+
+            .checkout-page .checkout-coupon-actions button {
+              width: 100% !important;
+              margin-left: 0 !important;
+              margin-top: 0.5rem !important;
+            }
+          }
         `}</style>
-        <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 lg:px-10">
-          <div className="py-6 sm:py-10 lg:py-12 w-full flex flex-col lg:flex-row lg:gap-10 xl:gap-14">
+        <div className="checkout-page mx-auto max-w-screen-2xl px-3 sm:px-6 lg:px-10 overflow-x-hidden pb-8 sm:pb-10">
+          <div className="py-4 sm:py-10 lg:py-12 w-full flex flex-col lg:flex-row lg:gap-10 xl:gap-14 gap-6">
             <div className="w-full lg:w-3/5 flex flex-col min-w-0">
               <div className="mt-2 lg:mt-0">
                 <form ref={formRef} onSubmit={handleSubmit(submitHandler)}>
@@ -523,12 +620,12 @@ const Checkout = () => {
                     </div>
                   )}
                   <div className="form-group">
-                    <h2 className="font-semibold font-serif text-base text-gray-700 pb-3">
+                    <h2 className="font-semibold font-serif text-base text-white pb-3">
                       {showingTranslateValue(
                         storeCustomizationSetting?.checkout?.personal_details
                       )}
                     </h2>
-                    <div className="bg-[#0D0D0D] border border-neutral-800 rounded-2xl p-4 sm:p-6">
+                    <div className="bg-[#0D0D0D] border border-neutral-800 rounded-2xl p-3 sm:p-6">
                       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
                         <h3 className="text-sm font-medium text-white">Select Delivery Address</h3>
                         <button
@@ -544,7 +641,7 @@ const Checkout = () => {
                       </div>
 
                       {shippingAddresses && shippingAddresses.length > 0 ? (
-                        <div className="space-y-3 max-h-[300px] overflow-y-auto scrollbar-hide">
+                        <div className="space-y-3 max-h-[50vh] sm:max-h-[300px] overflow-y-auto scrollbar-hide pr-0.5">
                           {shippingAddresses.map((address) => {
                             const locationText = `${address.city || ''}${address.city && address.zipCode ? ', ' : ''}${address.zipCode || ''}`;
                             const locationDisplay = locationText.length > 25 ? locationText.substring(0, 25) + '..' : locationText;
@@ -619,7 +716,7 @@ const Checkout = () => {
                                       </p>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2 sm:ml-4 shrink-0 self-end sm:self-start">
+                                  <div className="flex items-center gap-2 sm:ml-4 shrink-0 checkout-address-actions self-end sm:self-start">
                                     <div className="flex flex-col items-end gap-1">
                                       <button
                                         type="button"
@@ -668,15 +765,15 @@ const Checkout = () => {
                   </div>
 
                   {/* Cart Items Section */}
-                  <div className="form-group mt-8 sm:mt-12 max-h-[420px] sm:max-h-[500px] overflow-y-auto scrollbar-hide">
-                    <h2 className="font-semibold font-serif text-base text-gray-700 pb-3">
+                  <div className="form-group mt-6 sm:mt-12 max-h-none sm:max-h-[500px] overflow-visible sm:overflow-y-auto scrollbar-hide">
+                    <h2 className="font-semibold font-serif text-base text-white pb-3">
                       
                       Order Items
                     </h2>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {items.map((item) => (
-                        <CartItem key={item.id} item={item} currency={currency} />
+                        <CartItem key={item.id} item={item} currency={currency} variant="checkout" />
                       ))}
 
                       {isEmpty && (
@@ -744,24 +841,24 @@ const Checkout = () => {
               </div>
             </div>
 
-            <div className="w-full lg:w-2/5 flex flex-col self-start mt-8 lg:mt-0 lg:sticky lg:top-28 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto min-w-0">
-              <div className="border border-neutral-800 p-4 sm:p-5 lg:px-8 lg:py-8 rounded-2xl bg-[#0D0D0D]">
-                <h2 className="font-semibold font-serif text-lg pb-4">
+            <div className="w-full lg:w-2/5 flex flex-col self-start lg:sticky lg:top-28 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto min-w-0">
+              <div className="border border-neutral-800 p-3 sm:p-5 lg:px-8 lg:py-8 rounded-2xl bg-[#0D0D0D]">
+                <h2 className="font-semibold font-serif text-lg pb-4 text-white">
                   {showingTranslateValue(
                     storeCustomizationSetting?.checkout?.order_summary
                   )}
                 </h2>
 
                 {/* Coupon Section */}
-                <div className="flex items-center mt-4 py-4 lg:py-4 text-sm w-full font-semibold text-gray-500 last:border-b-0 last:text-base last:pb-0">
+                <div className="flex items-center mt-3 sm:mt-4 py-3 sm:py-4 text-sm w-full font-semibold text-gray-500 last:border-b-0 last:text-base last:pb-0">
                     <form className="w-full">
                       {couponInfo.couponCode ? (
-                        <div className="relative bg-[#d4af37]/5 border-2 border-dashed border-[#d4af37]/30 rounded-lg p-5 w-full overflow-hidden shadow-sm">
+                        <div className="relative bg-[#d4af37]/5 border-2 border-dashed border-[#d4af37]/30 rounded-lg p-3 sm:p-5 w-full overflow-hidden shadow-sm">
                           {/* Cutouts for coupon effect */}
                           <div className="absolute top-1/2 -left-3 transform -translate-y-1/2 w-6 h-6 bg-[#0D0D0D] rounded-full border-r-2 border-dashed border-[#d4af37]/30 z-10"></div>
                           <div className="absolute top-1/2 -right-3 transform -translate-y-1/2 w-6 h-6 bg-[#0D0D0D] rounded-full border-l-2 border-dashed border-[#d4af37]/30 z-10"></div>
                           
-                          <div className="flex justify-between items-start mb-2">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
                             <div className="flex flex-col gap-1">
                               <span className="text-xs uppercase font-bold tracking-widest text-[#d4af37] flex items-center gap-1">
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" /></svg>
@@ -780,7 +877,7 @@ const Checkout = () => {
                           
                           <div className="border-t-2 border-dashed border-[#d4af37]/20 my-4 relative"></div>
                           
-                          <div className="flex justify-between items-center">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                             <div className="text-sm text-gray-300 font-medium">
                               You save <span className="font-bold text-lg text-[#d4af37]">{currency}{discountAmount.toFixed(2)}</span>
                             </div>
@@ -827,7 +924,7 @@ const Checkout = () => {
                                 ))}
                               </select>
 
-                              <div className="flex flex-col sm:flex-row items-start justify-end">
+                              <div className="flex flex-col gap-2 w-full checkout-coupon-actions">
                                 {isCouponAvailable ? (
                                   <button
                                     disabled
@@ -875,9 +972,9 @@ const Checkout = () => {
                   </div>
                 
                 {/* Total MRP */}
-                <div className="flex items-center py-2 text-sm w-full font-semibold text-gray-500 last:border-b-0 last:text-base last:pb-0">
+                <div className="flex items-center justify-between gap-3 py-2.5 text-sm w-full font-semibold text-gray-500 checkout-summary-line">
                     Total MRP
-                    <span className="ml-auto flex-shrink-0 text-gray-800 font-bold">
+                    <span className="flex-shrink-0 text-gray-800 font-bold text-right">
                       {currency}
                       {totals.totalMRP.toFixed(2)}
                     </span>
@@ -885,9 +982,9 @@ const Checkout = () => {
                 
                 {/* Total Discount */}
                 {totals.totalDiscount > 0 && (
-                  <div className="flex items-center py-2 text-sm w-full font-semibold text-green-600 last:border-b-0 last:text-base last:pb-0">
+                  <div className="flex items-center justify-between gap-3 py-2.5 text-sm w-full font-semibold text-green-600 checkout-summary-line">
                     Total Discount
-                    <span className="ml-auto flex-shrink-0 font-bold text-green-600">
+                    <span className="flex-shrink-0 font-bold text-green-600 text-right">
                       -{currency}
                       {totals.totalDiscount.toFixed(2)}
                     </span>
@@ -898,18 +995,18 @@ const Checkout = () => {
                  
                 {/* Tax Display */}
                 {taxSummary?.inclusiveTax > 0 && (
-                  <div className="flex items-center py-2 text-xs sm:text-sm w-full font-semibold text-gray-500">
+                  <div className="flex items-center justify-between gap-3 py-2.5 text-xs sm:text-sm w-full font-semibold text-gray-500 checkout-summary-line">
                     GST (included in price)
-                    <span className="ml-auto flex-shrink-0 text-gray-800 font-bold">
+                    <span className="flex-shrink-0 text-gray-800 font-bold text-right">
                       {currency}
                       {Number(taxSummary.inclusiveTax).toFixed(2)}
                     </span>
                   </div>
                 )}
                 {taxSummary?.exclusiveTax > 0 && (
-                  <div className="flex items-center py-2 text-xs sm:text-sm w-full font-semibold text-gray-500">
+                  <div className="flex items-center justify-between gap-3 py-2.5 text-xs sm:text-sm w-full font-semibold text-gray-500 checkout-summary-line">
                     GST (added at checkout)
-                    <span className="ml-auto flex-shrink-0 text-gray-800 font-bold">
+                    <span className="flex-shrink-0 text-gray-800 font-bold text-right">
                       {currency}
                       {Number(taxSummary.exclusiveTax).toFixed(2)}
                     </span>
@@ -919,7 +1016,7 @@ const Checkout = () => {
                 {/* Coupon Offer / Additional Discount */}
                 {discountAmount > 0 && (
                   <div
-                    className={`flex items-center py-2 text-sm w-full font-semibold last:border-b-0 last:text-base last:pb-0 ${
+                    className={`flex items-center justify-between gap-3 py-2.5 text-sm w-full font-semibold checkout-summary-line ${
                       isCouponApplied ? "text-green-600" : "text-gray-500"
                     }`}
                   >
@@ -929,7 +1026,7 @@ const Checkout = () => {
                           storeCustomizationSetting?.checkout?.discount
                         )}
                     <span
-                      className={`ml-auto flex-shrink-0 font-bold ${
+                      className={`flex-shrink-0 font-bold text-right ${
                         isCouponApplied ? "text-green-600" : "text-orange-400"
                       }`}
                     >
@@ -941,34 +1038,34 @@ const Checkout = () => {
                 
                 {/* Shipping Cost */}
                 {shippingCost > 0 ? (
-                  <div className="flex items-center py-2 text-sm w-full font-semibold text-gray-500 last:border-b-0 last:text-base last:pb-0">
+                  <div className="flex items-center justify-between gap-3 py-2.5 text-sm w-full font-semibold text-gray-500 checkout-summary-line">
                     Shipping Cost
-                    <span className="ml-auto flex-shrink-0 text-gray-800 font-bold">
+                    <span className="flex-shrink-0 text-gray-800 font-bold text-right">
                       {currency}
                       {shippingCost.toFixed(2)}
                     </span>
                   </div>
                 ) : (
-                  <div className="flex items-center py-2 text-sm w-full font-semibold text-green-600 last:border-b-0 last:text-base last:pb-0">
+                  <div className="flex items-center justify-between gap-3 py-2.5 text-sm w-full font-semibold text-green-600 checkout-summary-line">
                     Shipping Cost
-                    <span className="ml-auto flex-shrink-0 font-bold text-green-600">
+                    <span className="flex-shrink-0 font-bold text-green-600 text-right">
                       FREE
                     </span>
                   </div>
                 )}
-                <div className="border-t mt-4">
-                  <div className="flex items-center font-bold font-serif justify-between pt-5 text-sm uppercase">
-                    <div className="flex flex-col">
+                <div className="border-t border-neutral-800 mt-3 sm:mt-4">
+                  <div className="flex items-center font-bold font-serif justify-between gap-3 pt-4 sm:pt-5 text-sm uppercase checkout-total-block">
+                    <div className="flex flex-col min-w-0">
                       <span>
                         {showingTranslateValue(
                           storeCustomizationSetting?.checkout?.total_cost
                         )}
                       </span>
-                      <span className="text-medium font-bold text-gray-900 capitalize">
+                      <span className="text-medium font-bold text-gray-900 capitalize normal-case text-base">
                         Estimated Payable
                       </span>
                     </div>
-                    <span className="font-serif font-extrabold text-lg">
+                    <span className="font-serif font-extrabold text-xl sm:text-2xl text-[#D4AF37] checkout-total-amount shrink-0">
                       {currency}
                       {parseFloat(total).toFixed(2)}
                     </span>
@@ -976,7 +1073,7 @@ const Checkout = () => {
                 </div>
 
                 {/* Payment Method and Place Order Section */}
-                <div className="mt-6 bg-[#0F0F0F] border border-neutral-800 rounded-xl p-4">
+                <div className="mt-5 sm:mt-6 bg-[#0F0F0F] border border-neutral-800 rounded-xl p-3 sm:p-4">
                   {/* Payment Method Selection */}
                   <div className="mb-4">
                     {/* Hidden input to register with react-hook-form */}
@@ -1001,7 +1098,7 @@ const Checkout = () => {
                             </svg>
                           </div>
                           <div className="flex-grow">
-                            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Pay using</p>
+                            <p className="text-[10px] text-neutral-300 uppercase tracking-wider font-semibold">Pay using</p>
                             <p className="text-sm font-semibold text-[#D4AF37]">
                               {selectedPaymentMethod === 'Cash' 
                                 ? 'Cash on Delivery' 
@@ -1074,13 +1171,12 @@ const Checkout = () => {
                         notifyError("Please agree to Terms & Conditions to place order");
                         return;
                       }
-                      // Trigger form submission
                       if (formRef.current) {
                         formRef.current.requestSubmit();
                       }
                     }}
                     disabled={isEmpty || isCheckoutSubmit || !agreeToTerms}
-                    className={`w-full py-4 rounded-full text-base font-bold uppercase tracking-wider transition-all duration-200 ${
+                    className={`checkout-place-order-btn w-full py-3.5 sm:py-4 rounded-full text-sm sm:text-base font-bold uppercase tracking-wider transition-all duration-200 ${
                       isEmpty || isCheckoutSubmit || !agreeToTerms
                         ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed border border-neutral-700'
                         : 'bg-[#D4AF37] text-black hover:bg-[#bfa032] shadow-md hover:shadow-lg'

@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { IoBagHandle, IoRefreshOutline, IoTimeOutline } from "react-icons/io5";
-import { FiEye, FiStar, FiPackage, FiTruck, FiCheck, FiX, FiClock, FiShoppingCart } from "react-icons/fi";
+import { FiEye, FiStar, FiPackage, FiCheck, FiX, FiClock, FiShoppingCart } from "react-icons/fi";
 import ReactPaginate from "react-paginate";
 import dayjs from "dayjs";
 import { SidebarContext } from "@context/SidebarContext";
@@ -178,9 +178,6 @@ const RecentOrder = ({ data, loading, error }) => {
                           <Link href={`/order/${order._id}`} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-gray-100 text-gray-600 hover:bg-store-500 hover:text-white transition-all">
                             <FiEye size={10} /> View
                           </Link>
-                          <Link href={`/order/${order._id}`} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-store-50 text-store-600 hover:bg-store-500 hover:text-white transition-all">
-                            <FiTruck size={10} /> Track
-                          </Link>
                           <button
                             type="button"
                             disabled={reorderingId === order._id}
@@ -229,7 +226,7 @@ const RecentOrder = ({ data, loading, error }) => {
                   </div>
                   <div className="px-3 py-2.5 bg-gray-50 border-t border-gray-100 flex gap-2">
                     <Link href={`/order/${order._id}`} className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 text-xs font-semibold rounded-lg bg-white border border-gray-200 text-gray-600 hover:border-store-400 hover:text-store-600 transition-all">
-                      <FiTruck size={11} /> Track
+                      <FiEye size={11} /> View
                     </Link>
                     <button type="button" disabled={reorderingId === order._id} onClick={() => handleReorder(order)}
                       className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 text-xs font-semibold rounded-lg bg-store-500 text-white hover:bg-store-600 disabled:opacity-60 transition-all">

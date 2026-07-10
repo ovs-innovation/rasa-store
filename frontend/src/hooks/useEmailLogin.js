@@ -72,8 +72,8 @@ export default function useEmailLogin(authIntent = "login") {
       setErrorCode(null);
       try {
         return await CustomerServices.verifyEmailOtp({
-          email,
-          otp: otpCode,
+          email: String(email || "").trim().toLowerCase(),
+          otp: String(otpCode || "").trim(),
           intent,
           avatar,
         });

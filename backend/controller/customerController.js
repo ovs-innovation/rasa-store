@@ -27,6 +27,28 @@ const buildPlaceholderEmail = (phone) => {
   return `${p || Date.now()}@${PLACEHOLDER_EMAIL_DOMAIN}`;
 };
 
+const RECENT_LOGIN_GRACE_MS = 5 * 60 * 1000;
+
+const hasActiveLoginOtp = (user) =>
+  Boolean(
+    user?.loginOtp &&
+      user?.loginOtpExpires &&
+      new Date() <= new Date(user.loginOtpExpires)
+  );
+
+const isRecentAuth = (user) =>
+  Boolean(
+    user?.lastLogin &&
+      Date.now() - new Date(user.lastLogin).getTime() < RECENT_LOGIN_GRACE_MS
+  );
+
+const clearLoginOtpFields = async (user) => {
+  user.loginOtp = undefined;
+  user.loginOtpExpires = undefined;
+  user.loginOtpAttempts = 0;
+  await user.save();
+};
+
 const isPlaceholderEmail = (email) =>
   !!email && String(email).toLowerCase().endsWith(`@${PLACEHOLDER_EMAIL_DOMAIN}`);
 
@@ -311,8 +333,13 @@ const verifyPhoneEmailOTP = async (req, res) => {
 
     const wasVerified = !!user.phoneVerified;
 
+    const otpCode = String(otp).trim();
+
     // Check if OTP exists and is not expired
-    if (!user.loginOtp || !user.loginOtpExpires || new Date() > user.loginOtpExpires) {
+    if (!hasActiveLoginOtp(user)) {
+      if (isRecentAuth(user) && user.phoneVerified) {
+        return sendCustomerAuthResponse(res, user, "Login Successful!");
+      }
       return res.status(400).send({ message: "OTP has expired or not found. Please request a new one." });
     }
 
@@ -322,7 +349,7 @@ const verifyPhoneEmailOTP = async (req, res) => {
     }
 
     // Verify OTP
-    const isMatch = bcrypt.compareSync(otp, user.loginOtp);
+    const isMatch = bcrypt.compareSync(otpCode, user.loginOtp);
 
     if (!isMatch) {
       user.loginOtpAttempts += 1;
@@ -330,21 +357,18 @@ const verifyPhoneEmailOTP = async (req, res) => {
       return res.status(400).send({ message: "Invalid OTP code." });
     }
 
-    // Success! Clear OTP fields
-    user.loginOtp = undefined;
-    user.loginOtpExpires = undefined;
-    user.loginOtpAttempts = 0;
+    const isNewUser = !wasVerified;
     user.phoneVerified = true;
     user.lastLogin = new Date();
     await user.save();
 
-    const isNewUser = !wasVerified;
     await sendCustomerAuthResponse(
       res,
       user,
       isNewUser ? "Account created!" : "Login Successful!",
       { isNewUser }
     );
+    await clearLoginOtpFields(user);
   } catch (err) {
     console.error("verifyPhoneEmailOTP error:", err);
     res.status(500).send({ message: err.message });
@@ -2146,7 +2170,8 @@ const verifyEmailOtpLogin = async (req, res) => {
     const { email, otp, intent: rawIntent, avatar } = req.body;
     const intent = rawIntent === "signup" ? "signup" : "login";
 
-    if (!email || !otp) {
+    const otpCode = String(otp || "").trim();
+    if (!email || !otpCode) {
       return res.status(400).send({ message: "Email and OTP are required." });
     }
 
@@ -2166,7 +2191,10 @@ const verifyEmailOtpLogin = async (req, res) => {
     const wasVerified = !!user.emailVerified;
 
     // Check if OTP exists and is not expired
-    if (!user.loginOtp || !user.loginOtpExpires || new Date() > user.loginOtpExpires) {
+    if (!hasActiveLoginOtp(user)) {
+      if (isRecentAuth(user) && user.emailVerified) {
+        return sendCustomerAuthResponse(res, user, "Login Successful!");
+      }
       return res.status(400).send({ message: "OTP has expired or not found. Please request a new one." });
     }
 
@@ -2176,7 +2204,7 @@ const verifyEmailOtpLogin = async (req, res) => {
     }
 
     // Verify OTP
-    const isMatch = bcrypt.compareSync(otp, user.loginOtp);
+    const isMatch = bcrypt.compareSync(otpCode, user.loginOtp);
 
     if (!isMatch) {
       user.loginOtpAttempts += 1;
@@ -2184,10 +2212,7 @@ const verifyEmailOtpLogin = async (req, res) => {
       return res.status(400).send({ message: "Invalid OTP code." });
     }
 
-    // Success! Clear OTP fields
-    user.loginOtp = undefined;
-    user.loginOtpExpires = undefined;
-    user.loginOtpAttempts = 0;
+    const isNewUser = !wasVerified;
     user.emailVerified = true;
     user.lastLogin = new Date();
     if (avatar) {
@@ -2195,13 +2220,13 @@ const verifyEmailOtpLogin = async (req, res) => {
     }
     await user.save();
 
-    const isNewUser = !wasVerified;
     await sendCustomerAuthResponse(
       res,
       user,
       isNewUser ? "Account created!" : "Login Successful!",
       { isNewUser }
     );
+    await clearLoginOtpFields(user);
   } catch (err) {
     console.error("verifyEmailOtpLogin error:", err);
     res.status(500).send({ message: err.message });

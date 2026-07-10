@@ -9,7 +9,6 @@ import {
   FiList,
   FiMenu,
   FiSettings,
-  FiTruck,
   FiUser,
   FiShoppingBag,
   FiX,
@@ -87,11 +86,6 @@ const UserDashboardLayout = ({ title, description, children }) => {
       icon: FiUser,
     },
     {
-      title: "Track Order",
-      href: "/user/track-order",
-      icon: FiTruck,
-    },
-    {
       title: showingTranslateValue(storeCustomizationSetting?.dashboard?.update_profile) || "Edit Profile",
       href: "/user/update-profile",
       icon: FiSettings,
@@ -101,7 +95,6 @@ const UserDashboardLayout = ({ title, description, children }) => {
   const quickLinks = [
     { href: "/user/my-orders", icon: FiList, label: "Orders" },
     { href: "/user/my-account", icon: FiUser, label: "Account" },
-    { href: "/user/track-order", icon: FiTruck, label: "Track" },
     { href: "/user/update-profile", icon: FiSettings, label: "Profile" },
   ];
 

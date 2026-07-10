@@ -118,7 +118,7 @@ async function sendStatusNotification(order, newStatus) {
       },
       data: {
         orderId: order._id.toString(),
-        click_action: `/user/track-order?id=${order._id}`,
+        click_action: `/user/my-orders`,
         type: "ORDER_UPDATE",
       },
       token: user.fcmToken,

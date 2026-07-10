@@ -106,6 +106,7 @@ const EmailLoginForm = ({ variant = "login" }) => {
   const [otpLength, setOtpLength] = useState(emailLogin.otpLength);
   const [otp, setOtp] = useState(Array(emailLogin.otpLength).fill(""));
   const otpInputRefs = useRef([]);
+  const verifyingRef = useRef(false);
   const [emailAddress, setEmailAddress] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState(isSignup ? STREETWEAR_AVATARS.boys[0].url : "");
 
@@ -149,12 +150,15 @@ const EmailLoginForm = ({ variant = "login" }) => {
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
-    const otpCode = otp.join("");
+    if (verifyingRef.current || emailLogin.loading) return;
+
+    const otpCode = otp.join("").trim();
     if (otpCode.length !== otpLength) {
       emailLogin.setError(`Enter the ${otpLength}-digit OTP`);
       return;
     }
     emailLogin.setError("");
+    verifyingRef.current = true;
     try {
       const response = await emailLogin.verifyOtp(emailAddress.trim(), otpCode, selectedAvatar);
       if (response?.token) {
@@ -168,6 +172,8 @@ const EmailLoginForm = ({ variant = "login" }) => {
       }
     } catch {
       /* inline */
+    } finally {
+      verifyingRef.current = false;
     }
   };
 

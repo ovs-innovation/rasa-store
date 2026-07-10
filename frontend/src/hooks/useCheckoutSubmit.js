@@ -349,30 +349,6 @@ const useCheckoutSubmit = (storeSetting) => {
           } placed an order of ${parseFloat(orderResponse?.total || 0).toFixed(2)}!`,
       };
 
-      const updatedData = {
-        ...orderResponse,
-        date: showDateFormat(orderResponse.createdAt),
-        company_info: {
-          currency: currency,
-          vat_number: globalSetting?.vat_number,
-          company: globalSetting?.company_name,
-          address: globalSetting?.address,
-          phone: globalSetting?.contact,
-          email: globalSetting?.email,
-          website: globalSetting?.website,
-          from_email: globalSetting?.from_email,
-        },
-      };
-
-      if (globalSetting?.email_to_customer) {
-        // Trigger email in the background
-        OrderServices.sendEmailInvoiceToCustomer(updatedData).catch(
-          (emailErr) => {
-            console.error("Failed to send email invoice:", emailErr.message);
-          }
-        );
-      }
-
       // Trigger Shiprocket order asynchronously
       syncOrderWithShiprocket(orderResponse);
 
@@ -381,9 +357,7 @@ const useCheckoutSubmit = (storeSetting) => {
 
       // Proceed with order success
       router.push(`/order/${orderResponse?._id}`);
-      notifySuccess(
-        "Your Order Confirmed! The invoice will be emailed to you shortly."
-      );
+      notifySuccess("Your order has been confirmed!");
       Cookies.remove("couponInfo");
       // Clear local cart AND DB cart
       await clearCartWithDB();

@@ -146,7 +146,6 @@ const MyOrders = () => {
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <Link href={`/order/${order._id}`} className={UD.btnSecondary}>View</Link>
-                      <Link href={`/user/track-order?id=${order._id}`} className={UD.btnSecondary}>Track</Link>
                       <button
                         type="button"
                         disabled={reorderingId === order._id}

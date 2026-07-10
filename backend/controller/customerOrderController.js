@@ -109,46 +109,7 @@ const sendOrderNotifications = async (order) => {
       }
     }
 
-    // 2) Customer invoice: Email PDF if real email
-    if (customerEmail && !order.invoiceEmailSent) {
-      try {
-        const pdf = await handleCreateInvoice(order, `${order.invoice}.pdf`);
-        const option = {
-          name: order.user_info.name,
-          invoice: order.invoice,
-          total: order.total,
-          currency,
-          date: new Date(order.createdAt).toLocaleDateString(),
-          paymentStatus:
-            order.paymentMethod === "Cash On Delivery" ? "Pending" : "Confirmed",
-          status: order.status || "Order Placed",
-          trackingUrl: `${process.env.STORE_URL}/user/dashboard`,
-          contact_email: contactEmail,
-          shop_name: shopName,
-          logo,
-        };
-
-        await sendEmail({
-          to: customerEmail,
-          replyTo: contactEmail,
-          subject: `${shopName} – Invoice #${order.invoice}`,
-          html: customerInvoiceEmailBody(option),
-          attachments: [
-            {
-              filename: `${order.invoice}.pdf`,
-              content: pdf,
-              contentType: "application/pdf",
-            },
-          ],
-          emailType: "invoice",
-        });
-        order.invoiceEmailSent = true;
-      } catch (err) {
-        console.error("Invoice email failed:", err.message);
-      }
-    }
-
-    // 3) Company/admin notification email for every order
+    // 2) Company/admin notification email for every order
     if (contactEmail && !order.adminNewOrderEmailSent) {
       try {
         const adminBody = {

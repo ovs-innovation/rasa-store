@@ -36,11 +36,7 @@ const orderConfirmationBody = (option) => {
             </table>
         </div>
 
-        <p>We are processing your order and will notify you as soon as it's shipped. You can track your order status in your dashboard.</p>
-
-        <div style="text-align: center;">
-            <a href="${option.trackingUrl}" class="btn">Track your order</a>
-        </div>
+        <p>We are processing your order and will notify you as soon as it's shipped. Thank you for shopping with us!</p>
 
         <p style="margin-top: 25px;color:#475569;">If you have any questions, reply to this email or contact us at ${option.contact_email}.</p>
 

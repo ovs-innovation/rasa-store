@@ -2,6 +2,46 @@ import { useRouter } from "next/router";
 import { useMemo, useState, useEffect } from "react";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 
+const resolveShopBucket = (slug = "", name = "") => {
+  const s = String(slug || "").trim().toLowerCase();
+  const n = String(name || "").trim().toLowerCase();
+  if (s === "bags" || n === "bags") return "bags";
+  if (["footwear", "sneakers"].includes(s) || n === "sneakers") return "footwear";
+  return null;
+};
+
+const buildCategoryLookup = (categories, showingTranslateValue) => {
+  const byId = new Map();
+  const walk = (cats) => {
+    for (const cat of cats || []) {
+      if (cat?._id) {
+        byId.set(String(cat._id).toLowerCase(), {
+          slug: String(cat.slug || "").trim().toLowerCase(),
+          name: showingTranslateValue(cat.name)?.toLowerCase().trim() || "",
+        });
+      }
+      walk(cat.children);
+    }
+  };
+  walk(categories);
+  return byId;
+};
+
+const getProductShopBucket = (product, showingTranslateValue) => {
+  const productType = String(product?.productType || "").trim().toLowerCase();
+  if (productType === "bags") return "bags";
+  if (productType === "sneakers" || productType === "footwear") return "footwear";
+
+  const category = product?.category || product?.categories?.[0];
+  const catSlug = String(
+    product?.categorySlug || category?.slug || ""
+  )
+    .trim()
+    .toLowerCase();
+  const catName = showingTranslateValue(category?.name)?.toLowerCase().trim() || "";
+  return resolveShopBucket(catSlug, catName);
+};
+
 const useFilter = (data, allCategories = []) => {
   const router = useRouter();
   const [pending, setPending] = useState([]);
@@ -79,7 +119,10 @@ const useFilter = (data, allCategories = []) => {
 
     // Filter by Category
     if (selectedCategories.length > 0) {
+      const categoryLookup = buildCategoryLookup(allCategories, showingTranslateValue);
+
       services = services.filter((product) => {
+        const productBucket = getProductShopBucket(product, showingTranslateValue);
         const catSlug = (product.categorySlug || "").toLowerCase().trim();
         const titleLower = showingTranslateValue(product.title)?.toLowerCase() || "";
         const descLower = showingTranslateValue(product.description)?.toLowerCase() || "";
@@ -88,7 +131,15 @@ const useFilter = (data, allCategories = []) => {
 
         return selectedCategories.some(selectedId => {
           const selId = selectedId.toLowerCase().trim();
-          
+          const selectedMeta = categoryLookup.get(selId);
+          const selectedBucket = selectedMeta
+            ? resolveShopBucket(selectedMeta.slug, selectedMeta.name)
+            : resolveShopBucket(selId, "");
+
+          if (selectedBucket && productBucket) {
+            return productBucket === selectedBucket;
+          }
+
           // Match main categories
           if (selId === "footwear" && catSlug === "footwear") return true;
           if (selId === "bags" && catSlug === "bags") return true;
@@ -110,7 +161,11 @@ const useFilter = (data, allCategories = []) => {
             (product.category?._id || product.category || "").toString().toLowerCase(),
             ...(product.categories || []).map(c => (c._id || c || "").toString().toLowerCase())
           ];
-          if (productCategoryIds.includes(selId)) return true;
+          if (productCategoryIds.includes(selId)) {
+            if (selectedBucket === "bags" && productBucket === "footwear") return false;
+            if (selectedBucket === "footwear" && productBucket === "bags") return false;
+            return true;
+          }
 
           return false;
         });
@@ -181,6 +236,7 @@ const useFilter = (data, allCategories = []) => {
     selectedCategories,
     selectedDiscount,
     searchQuery,
+    allCategories,
   ]);
 
   return {
