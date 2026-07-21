@@ -97,6 +97,7 @@ const REFUND_RETURN_POLICY = `<h2>1. Order Cancellation</h2>
 </ul>
 <h2>5. Exchange Processing</h2>
 <p>If a claim is approved, the product will be exchanged for the same model only. All claims are subject to verification by our team.</p>
+<p>Exchange/Replacement deliveries will be done within <strong>5–7 business days</strong>.</p>
 ${CONTACT_BLOCK}`;
 
 const SHIPPING_POLICY = `<p>We deliver across India through trusted courier partners.</p>

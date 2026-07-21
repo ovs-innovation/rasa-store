@@ -58,6 +58,7 @@ const ReturnRefundPolicy = () => {
   <li>Edited, cut, or pre-opened package videos will be rejected</li>
 </ul>
 <p>If a claim is approved, the product will be exchanged only for the same model. All claims are subject to verification and approval by our team.</p>
+<p>Exchange/Replacement deliveries will be done within <strong>5–7 business days</strong>.</p>
 <h2>Contact Us</h2>
 <p><strong>Business Name:</strong> Rachana Dharmesh Kelawala<br/>
 <strong>Address:</strong> Bangalore, Karnataka, India - 570037<br/>
