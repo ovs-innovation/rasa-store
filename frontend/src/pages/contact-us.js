@@ -20,7 +20,22 @@ const ContactUs = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            <div className="border border-neutral-900 bg-[#0A0A0A] p-10 rounded-2xl text-center md:col-span-3">
+              <h5 className="text-xl mb-2 font-black uppercase tracking-wide">Registered Business</h5>
+              <p className="text-sm text-neutral-400 leading-7">
+                <strong className="text-neutral-200">Rachana Dharmesh Kelawala</strong>
+                <br />
+                Bangalore, Karnataka, India
+                <br />
+                Pincode: 570037
+                <br />
+                <span className="text-neutral-500 text-xs mt-2 inline-block">
+                  Support: Mon–Sat, 10:00 AM – 7:00 PM IST
+                </span>
+              </p>
+            </div>
+
             <div className="border border-neutral-900 bg-[#0A0A0A] p-10 rounded-2xl text-center">
               <span className="flex justify-center text-4xl text-[#D4AF37] mb-4">
                 <FaWhatsapp />
@@ -53,6 +68,14 @@ const ContactUs = () => {
                 </a>
               </p>
             </div>
+          </div>
+
+          <div className="max-w-4xl mx-auto mt-8 text-center border border-neutral-900 bg-[#0A0A0A] rounded-2xl px-6 py-5">
+            <p className="text-sm text-neutral-400 leading-7">
+              Bangalore, Karnataka
+              <br />
+              Pincode: 570037
+            </p>
           </div>
         </div>
       </div>

@@ -8,10 +8,11 @@ const { connectDB } = require("../config/db");
 const Setting = require("../models/Setting");
 
 const STORE_NAME = "RASA";
-const COMPANY_NAME = "RASA Store Pvt Ltd";
-const ADDRESS = "Plot No. 12, Sector 4, Ghaziabad, Uttar Pradesh, 201012";
-const EMAIL = "contact@rasastore.com";
-const PHONE = "+91 98765 43210";
+const COMPANY_NAME = "Rachana Dharmesh Kelawala";
+const ADDRESS = "Bangalore, Karnataka, 570037";
+const POST_CODE = "570037";
+const EMAIL = "workwithrasa@gmail.com";
+const PHONE = "+91 9731308713";
 const WEBSITE = "rasastore.com";
 
 const run = async () => {
@@ -25,6 +26,7 @@ const run = async () => {
       shop_name: STORE_NAME,
       company_name: COMPANY_NAME,
       address: ADDRESS,
+      post_code: POST_CODE,
       email: EMAIL,
       website: WEBSITE,
       contact: PHONE,
@@ -49,9 +51,9 @@ const run = async () => {
         ...contactUs,
         email_box_email: { en: EMAIL },
         call_box_phone: { en: PHONE },
-        address_box_address_one: { en: ADDRESS },
-        address_box_address_two: { en: "Ghaziabad, NCR" },
-        address_box_address_three: { en: "India" }
+        address_box_address_one: { en: COMPANY_NAME },
+        address_box_address_two: { en: ADDRESS },
+        address_box_address_three: { en: "Pincode: 570037" }
       },
       footer: {
         ...footer,

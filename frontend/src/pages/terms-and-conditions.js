@@ -1,5 +1,5 @@
 import React from "react";
-import { FiFileText, FiAlertCircle, FiCheckCircle, FiShield, FiInfo, FiLock, FiLink } from "react-icons/fi";
+import { FiFileText, FiAlertCircle, FiCheckCircle, FiShield, FiInfo, FiLock, FiLink, FiRefreshCw } from "react-icons/fi";
 import Link from "next/link";
 
 //internal import
@@ -137,6 +137,13 @@ const TermAndConditions = () => {
                           >
                             <FiLock className="w-4 h-4" />
                             <span>Privacy Policy</span>
+                          </Link>
+                          <Link 
+                            href="/return-refund-policy"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-store-600 hover:text-store-700 hover:border-store-300 font-medium transition-all"
+                          >
+                            <FiRefreshCw className="w-4 h-4" />
+                            <span>Return & Exchange Policy</span>
                           </Link>
                           <Link 
                             href="/shipping-delivery-policy"

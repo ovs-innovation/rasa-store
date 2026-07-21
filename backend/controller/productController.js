@@ -1136,7 +1136,7 @@ const getShowingStoreProducts = async (req, res) => {
         categoryBanners: (() => {
           const cms = rasaHomepage.categoryBanners || [];
           const defaults = [
-            { type: "footwear", title: "Shoes", slug: "footwear", image: "/shoes1.png" },
+            { type: "footwear", title: "Shoes", slug: "footwear", image: "/shoes3.png" },
             { type: "bags", title: "Bags", slug: "bags", image: "/bag1.png" },
           ];
           const footwear =
@@ -1175,7 +1175,7 @@ const getShowingStoreProducts = async (req, res) => {
             subtitle: "Fresh Drops",
             description:
               "Affordable sneakers and streetwear — curated picks, delivered to your door.",
-            image: "/shoes1.png",
+            image: "/shoes3.png",
             link: "/search?category=footwear",
             brand: "Rasa",
             bgText: "RASA",

@@ -8,7 +8,7 @@ const DEFAULT_HERO_SLIDES = [
     brand: "Rasa",
     name: "Fresh Drops",
     desc: "Affordable sneakers and streetwear — curated picks, delivered to your door.",
-    image: "/shoes1.png",
+    image: "/shoes3.png",
     bgText: "RASA",
     glowColor: "rgba(212, 175, 55, 0.2)",
     accentColor: "#D4AF37",
@@ -36,7 +36,7 @@ const CMS_FALLBACK_SLIDES = [
     title: "Fresh Drops",
     subtitle: "Fresh Drops",
     description: DEFAULT_HERO_SLIDES[0].desc,
-    image: "/shoes1.png",
+    image: "/shoes3.png",
     link: "/search?category=footwear",
     brand: "Rasa",
     bgText: "RASA",
@@ -94,7 +94,7 @@ const mapCmsToHeroSlide = (s, i) => ({
     (isBagSlide(s)
       ? "Bags, accessories and latest styles — if you've seen it, chances are we've got it."
       : "Affordable sneakers and streetwear — curated picks, delivered to your door."),
-  image: s.image || "/shoes1.png",
+  image: s.image || "/shoes3.png",
   bgText: s.bgText || (isBagSlide(s) ? "BAGS" : (s.brand || s.title || "RASA").toUpperCase().slice(0, 4)),
   glowColor: isBagSlide(s) ? "rgba(176, 122, 79, 0.2)" : "rgba(212, 175, 55, 0.2)",
   accentColor: s.accentColor || (isBagSlide(s) ? "#B07A4F" : "#D4AF37"),

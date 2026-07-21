@@ -20,7 +20,7 @@ const HERO_SLIDE_META = {
       subtitle: "Fresh Drops",
       description:
         "Affordable sneakers and streetwear — curated picks, delivered to your door.",
-      image: "/shoes1.png",
+      image: "/shoes3.png",
       link: "/search?category=footwear",
       brand: "Rasa",
       bgText: "RASA",

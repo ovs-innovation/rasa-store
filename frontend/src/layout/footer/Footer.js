@@ -33,6 +33,7 @@ const Footer = () => {
     { title: "FAQs", href: "/faq" },
     { title: "Privacy Policy", href: "/privacy-policy" },
     { title: "Terms & Conditions", href: "/terms-and-conditions" },
+    { title: "Return & Exchange", href: "/return-refund-policy" },
     { title: "Shipping & Delivery", href: "/shipping-delivery-policy" },
   ];
 
@@ -139,6 +140,11 @@ const Footer = () => {
                   {email}
                 </a>
               </div>
+              <p className="text-neutral-500 leading-relaxed pt-1 border-t border-neutral-900/80">
+                Bangalore, Karnataka
+                <br />
+                Pincode: 570037
+              </p>
             </div>
             {block3Links.length > 0 && (
               <ul className="text-[10px] uppercase tracking-wider font-bold flex flex-col space-y-3 pt-2 border-t border-neutral-900/80">
@@ -159,7 +165,7 @@ const Footer = () => {
         <div className="py-6 border-t border-neutral-900/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <p className="text-[9px] uppercase tracking-[0.15em] text-neutral-600 font-medium mb-1">
-              © {new Date().getFullYear()} Rasa Store. All rights reserved.
+              © {new Date().getFullYear()} RASA Store — Rachana Dharmesh Kelawala. All rights reserved.
             </p>
             <p className="text-[9px] text-neutral-700 leading-relaxed max-w-2xl">
               All trademarks and brand names belong to their respective owners. Product listings are for identification only.

@@ -35,6 +35,17 @@ const nextConfig = {
     defaultLocale: "en",
   },
 
+  async redirects() {
+    return [
+      { source: "/terms", destination: "/terms-and-conditions", permanent: true },
+      { source: "/privacy", destination: "/privacy-policy", permanent: true },
+      { source: "/cancellation-policy", destination: "/return-refund-policy", permanent: true },
+      { source: "/refund-policy", destination: "/return-refund-policy", permanent: true },
+      { source: "/cancellation-and-refund-policy", destination: "/return-refund-policy", permanent: true },
+      { source: "/shipping-and-delivery-policy", destination: "/shipping-delivery-policy", permanent: true },
+    ];
+  },
+
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {

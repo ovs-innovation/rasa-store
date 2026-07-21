@@ -16,7 +16,7 @@ class MyDocument extends Document {
           <link rel="shortcut icon" href={favicon} />
           <link rel="apple-touch-icon" href={favicon} />
           <link rel="preload" href="/rasaLogo.png" as="image" />
-          <link rel="preload" href="/shoes1.png" as="image" />
+          <link rel="preload" href="/shoes3.png" as="image" />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           <link

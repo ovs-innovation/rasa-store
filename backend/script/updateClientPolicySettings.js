@@ -41,7 +41,8 @@ const run = async () => {
 
     // 2. Refund & Return Policy
     customSet.setting.refund_return_policy = {
-      title: { en: "Return & Refund Policy" },
+      status: true,
+      title: { en: "Return & Exchange Policy" },
       description: { en: `<p>We do not offer returns, refunds, or exchanges for change of mind, sizing concerns, or personal preferences.</p>
 <p>Exchanges will only be considered if:</p>
 <ul>

@@ -324,6 +324,40 @@ const AboutUs = () => {
         </div>
       </div>
 
+      {/* Business Details — required for payment gateway verification */}
+      <div className="bg-[#0A0A0A] text-white py-16 border-t border-neutral-900">
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-10 text-center">
+          <span className="text-[#D4AF37] text-xs font-black uppercase tracking-[0.25em] block mb-4">
+            Legal Information
+          </span>
+          <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight mb-6">
+            Registered Business Details
+          </h2>
+          <div className="max-w-lg mx-auto text-sm text-neutral-400 leading-7 space-y-1">
+            <p><strong className="text-white">Rachana Dharmesh Kelawala</strong></p>
+            <p>Bangalore, Karnataka, India — 570037</p>
+            <p>
+              <a href="mailto:workwithrasa@gmail.com" className="text-[#D4AF37] hover:underline">
+                workwithrasa@gmail.com
+              </a>
+              {" · "}
+              <a href="https://wa.me/919731308713" className="text-[#D4AF37] hover:underline">
+                +91 9731308713
+              </a>
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3 mt-8 text-[10px] uppercase tracking-wider font-bold">
+            <Link href="/privacy-policy" className="text-neutral-500 hover:text-white transition-colors">Privacy Policy</Link>
+            <span className="text-neutral-700">·</span>
+            <Link href="/terms-and-conditions" className="text-neutral-500 hover:text-white transition-colors">Terms & Conditions</Link>
+            <span className="text-neutral-700">·</span>
+            <Link href="/return-refund-policy" className="text-neutral-500 hover:text-white transition-colors">Return & Exchange</Link>
+            <span className="text-neutral-700">·</span>
+            <Link href="/shipping-delivery-policy" className="text-neutral-500 hover:text-white transition-colors">Shipping Policy</Link>
+          </div>
+        </div>
+      </div>
+
     </Layout>
   );
 };

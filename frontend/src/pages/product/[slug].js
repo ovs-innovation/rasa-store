@@ -43,6 +43,7 @@ import ProductServices from "@services/ProductServices";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import useGetSetting from "@hooks/useGetSetting";
 import ProductImageGallery from "@components/product/ProductImageGallery";
+import ProductDetailsSection from "@components/product/ProductDetailsSection";
 import RelatedProductsSection from "@components/product/RelatedProductsSection";
 import LocationPickerDropdown from "@components/location/LocationPickerDropdown";
 import RatingSummary from "@components/reviews/RatingSummary";
@@ -1585,6 +1586,31 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
                     </h1>
 
+                    {dynamicDescription && (
+                      <p className="mt-3 text-sm text-neutral-400 leading-relaxed">
+                        {dynamicDescription}
+                      </p>
+                    )}
+
+                    {showingTranslateValue(product?.highlights) && (
+                      <div className="mt-4 text-sm text-neutral-400 leading-relaxed whitespace-pre-line">
+                        {isReadMore
+                          ? `${showingTranslateValue(product?.highlights).slice(0, 180)}${
+                              showingTranslateValue(product?.highlights).length > 180 ? "..." : ""
+                            }`
+                          : showingTranslateValue(product?.highlights)}
+                        {showingTranslateValue(product?.highlights).length > 180 && (
+                          <button
+                            type="button"
+                            onClick={() => setIsReadMore(!isReadMore)}
+                            className="ml-1 text-[#D4AF37] hover:text-white font-medium transition-colors"
+                          >
+                            {isReadMore ? "Read more" : "Read less"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+
 
 
                     <div className="mt-4">
@@ -1809,6 +1835,19 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                 </div>
 
               </div>
+
+              <ProductDetailsSection
+                dynamicSections={
+                  variantDynamicSections ||
+                  (Array.isArray(product?.dynamicSections) ? product.dynamicSections : [])
+                }
+                mediaSections={
+                  variantMediaSections ||
+                  (Array.isArray(product?.mediaSections) ? product.mediaSections : [])
+                }
+                selectedAttributes={selectVa}
+                isVariantSpecific={Boolean(variantDynamicSections || variantMediaSections)}
+              />
 
             </div>
 
