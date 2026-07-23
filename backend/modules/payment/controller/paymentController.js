@@ -86,9 +86,32 @@ const createPhonePeCheckout = async (req, res) => {
   res.setHeader("X-Correlation-Id", correlationId);
 
   try {
-    const cfg = getConfig();
+    let cfg;
+    try {
+      cfg = getConfig();
+    } catch (cfgErr) {
+      console.error("PhonePe config error:", cfgErr.message);
+      return sendError(
+        res,
+        503,
+        "PHONEPE_NOT_CONFIGURED",
+        "PhonePe is not configured on the server. Add PHONEPE_CLIENT_ID and PHONEPE_CLIENT_SECRET to backend .env, then restart.",
+        { correlationId }
+      );
+    }
+
     if (!cfg.enabled) {
       return sendError(res, 400, "PHONEPE_DISABLED", "PhonePe payments are disabled.");
+    }
+
+    if (!cfg.clientId || !cfg.clientSecret) {
+      return sendError(
+        res,
+        503,
+        "PHONEPE_NOT_CONFIGURED",
+        "PhonePe credentials missing on server. Update backend .env and restart.",
+        { correlationId }
+      );
     }
 
     const validation = validateCreatePhonePeCheckout(req.body);
@@ -138,6 +161,17 @@ const createPhonePeCheckout = async (req, res) => {
       .trim()
       .replace(/\/+$/, "");
 
+    // PhonePe requires a public HTTPS return URL in production
+    if (cfg.isProduction && !/^https:\/\//i.test(frontendBase)) {
+      return sendError(
+        res,
+        503,
+        "STORE_URL_INVALID",
+        "STORE_URL must be https://therasastore.in on the production backend.",
+        { correlationId, frontendBase }
+      );
+    }
+
     const redirectUrl = `${frontendBase}/payment/phonepe/return?moid=${encodeURIComponent(
       merchantOrderId
     )}&cid=${encodeURIComponent(correlationId)}`;
@@ -151,13 +185,16 @@ const createPhonePeCheckout = async (req, res) => {
       cart: cartWithTax,
       cartSnapshot: priced.snapshot,
       pricingSnapshot: {
-        ...priced.pricing,
+        subTotal: priced.pricing.subTotal,
+        shippingCost: priced.pricing.shippingCost,
+        discount: priced.pricing.discount,
+        total: priced.pricing.total,
         calculatedAt: new Date(),
       },
       subTotal: priced.pricing.subTotal,
       shippingCost: priced.pricing.shippingCost,
       discount: priced.pricing.discount,
-      coupon: priced.pricing.coupon,
+      ...(priced.pricing.coupon ? { coupon: priced.pricing.coupon } : {}),
       taxSummary: req.body.taxSummary || undefined,
       total,
       merchantOrderId,
@@ -231,6 +268,13 @@ const createPhonePeCheckout = async (req, res) => {
       });
     } catch (gatewayErr) {
       const errData = gatewayErr?.response?.data || { message: gatewayErr.message };
+      const gatewayMsg =
+        errData?.message ||
+        errData?.error ||
+        errData?.code ||
+        gatewayErr.message ||
+        "Unable to start PhonePe payment.";
+
       payment.status = "Failed";
       payment.failedAt = new Date();
       payment.rawGatewayResponse = errData;
@@ -247,7 +291,7 @@ const createPhonePeCheckout = async (req, res) => {
         source: "API",
         action: "create_checkout_gateway_error",
         success: false,
-        message: gatewayErr.message,
+        message: gatewayMsg,
         response: errData,
         ip,
         userAgent,
@@ -257,7 +301,7 @@ const createPhonePeCheckout = async (req, res) => {
         res,
         502,
         "GATEWAY_CREATE_FAILED",
-        errData?.message ||
+        String(gatewayMsg).slice(0, 300) ||
           "Unable to start PhonePe payment. Please try again or use Cash on Delivery.",
         { correlationId }
       );
@@ -315,10 +359,29 @@ const createPhonePeCheckout = async (req, res) => {
       action: "create_checkout_exception",
       success: false,
       message: err.message,
+      response: {
+        name: err.name,
+        code: err.code,
+        errors: err.errors ? Object.keys(err.errors) : undefined,
+      },
       ip,
       userAgent,
     });
-    return sendError(res, 500, "PAYMENT_INIT_FAILED", "Payment init failed.", {
+
+    const raw = String(err.message || "");
+    let message = "Payment init failed. Please try again or use Cash on Delivery.";
+    if (/PhonePe credentials missing/i.test(raw)) {
+      message =
+        "PhonePe credentials missing on server. Add PHONEPE_* keys to backend .env and restart.";
+    } else if (/Cast to ObjectId|CastError/i.test(raw) || err.name === "CastError") {
+      message = "Invalid product in cart. Remove items and add again.";
+    } else if (/validation failed/i.test(raw)) {
+      message = "Order details invalid. Check name, phone, email, address and try again.";
+    } else if (raw && raw.length < 180 && !/secret|password|token|mongo/i.test(raw)) {
+      message = raw;
+    }
+
+    return sendError(res, 500, "PAYMENT_INIT_FAILED", message, {
       correlationId,
     });
   }

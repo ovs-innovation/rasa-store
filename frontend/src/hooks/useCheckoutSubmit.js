@@ -665,6 +665,7 @@ const useCheckoutSubmit = (storeSetting) => {
       console.error("PhonePe checkout error:", err);
       const msg =
         err?.response?.data?.message ||
+        err?.response?.data?.errors?.[0] ||
         err?.message ||
         "PhonePe payment failed to start. Please try again.";
       notifyError(msg);

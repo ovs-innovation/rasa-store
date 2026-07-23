@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const mongoose = require("mongoose");
 const Product = require("../../../models/Product");
 const Coupon = require("../../../models/Coupon");
 
@@ -6,7 +7,8 @@ const resolveProductId = (item) => {
   const raw = item?._id || item?.id;
   if (!raw) return null;
   const str = String(raw).split("-")[0];
-  return str || null;
+  if (!str || !mongoose.Types.ObjectId.isValid(str)) return null;
+  return str;
 };
 
 const showingTitle = (title) => {
@@ -90,7 +92,16 @@ const buildValidatedCheckout = async ({
       return { ok: false, code: "INVALID_PRODUCT", message: "Invalid product in cart." };
     }
 
-    const product = await Product.findById(productId);
+    let product;
+    try {
+      product = await Product.findById(productId);
+    } catch (err) {
+      return {
+        ok: false,
+        code: "INVALID_PRODUCT",
+        message: `Invalid product in cart: ${showingTitle(item.title)}`,
+      };
+    }
     if (!product) {
       return {
         ok: false,
