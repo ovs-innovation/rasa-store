@@ -53,8 +53,15 @@ const getEmailLogoUrl = async () => {
   return `${base}/favicon.png`;
 };
 
+/**
+ * Idempotent order notifications.
+ * Each channel is claimed with findOneAndUpdate BEFORE send so concurrent
+ * verify+webhook cannot double-email. Send failure releases the claim.
+ */
 const sendOrderNotifications = async (order) => {
+  if (!order?._id) return;
   try {
+    const orderId = order._id;
     const globalSetting = await Setting.findOne({ name: "globalSetting" });
     const shopName = globalSetting?.setting?.shop_name || "RASA";
     const contactEmail = globalSetting?.setting?.email || "support@rasastore.com";
@@ -62,102 +69,140 @@ const sendOrderNotifications = async (order) => {
     const logo = await getEmailLogoUrl();
     const customerEmail = getRealEmail(order.user_info?.email);
 
-    // 1) Customer confirmation: Email if real email else SMS
-    if (customerEmail && !order.confirmationEmailSent) {
-      const emailOption = {
-        name: order.user_info.name,
-        invoice: order.invoice,
-        total: order.total,
-        currency: currency,
-        date: new Date(order.createdAt).toLocaleDateString(),
-        paymentStatus: order.paymentMethod === "Cash On Delivery" ? "Pending" : "Confirmed",
-        status: order.status || "Pending",
-        trackingUrl: `${process.env.STORE_URL}/user/dashboard`,
-        contact_email: contactEmail,
-        shop_name: shopName,
-        logo,
-      };
-
-      const emailBody = {
-        to: customerEmail,
-        replyTo: contactEmail,
-        subject: `${shopName} – Order #${order.invoice} confirmed`,
-        html: orderConfirmationBody(emailOption),
-        emailType: "order-confirmation",
-      };
-
-      try {
-        await sendEmail(emailBody);
+    // 1) Customer confirmation email — atomic claim
+    if (customerEmail) {
+      const claimedEmail = await Order.findOneAndUpdate(
+        { _id: orderId, confirmationEmailSent: { $ne: true } },
+        { $set: { confirmationEmailSent: true } },
+        { new: false }
+      );
+      if (claimedEmail && !claimedEmail.confirmationEmailSent) {
+        try {
+          const emailOption = {
+            name: order.user_info.name,
+            invoice: order.invoice,
+            total: order.total,
+            currency: currency,
+            date: new Date(order.createdAt).toLocaleDateString(),
+            paymentStatus:
+              order.paymentMethod === "Cash On Delivery" ? "Pending" : "Confirmed",
+            status: order.status || "Pending",
+            trackingUrl: `${process.env.STORE_URL}/user/dashboard`,
+            contact_email: contactEmail,
+            shop_name: shopName,
+            logo,
+          };
+          await sendEmail({
+            to: customerEmail,
+            replyTo: contactEmail,
+            subject: `${shopName} – Order #${order.invoice} confirmed`,
+            html: orderConfirmationBody(emailOption),
+            emailType: "order-confirmation",
+          });
+          order.confirmationEmailSent = true;
+        } catch (err) {
+          console.error("Order confirmation email failed:", err.message);
+          await Order.updateOne(
+            { _id: orderId },
+            { $set: { confirmationEmailSent: false } }
+          ).catch(() => {});
+        }
+      } else {
         order.confirmationEmailSent = true;
-      } catch (err) {
-        console.error("Order confirmation email failed:", err.message);
       }
     }
 
-    if (!customerEmail && !order.confirmationSmsSent && order.user_info.contact) {
-      const smsMessage = `Hi ${order.user_info.name}, your order #${order.invoice} of ${currency}${order.total} has been placed successfully at ${shopName}. Track here: ${process.env.STORE_URL}/user/dashboard`;
-      
-      const variables = {
-        name: order.user_info.name,
-        orderid: order.invoice,
-        amount: order.total,
-      };
-
-      const smsSent = await sendSMS(order.user_info.contact, smsMessage, variables);
-      if (smsSent) {
+    // SMS only when no real email — atomic claim
+    if (!customerEmail && order.user_info?.contact) {
+      const claimedSms = await Order.findOneAndUpdate(
+        { _id: orderId, confirmationSmsSent: { $ne: true } },
+        { $set: { confirmationSmsSent: true } },
+        { new: false }
+      );
+      if (claimedSms && !claimedSms.confirmationSmsSent) {
+        const smsMessage = `Hi ${order.user_info.name}, your order #${order.invoice} of ${currency}${order.total} has been placed successfully at ${shopName}. Track here: ${process.env.STORE_URL}/user/dashboard`;
+        const variables = {
+          name: order.user_info.name,
+          orderid: order.invoice,
+          amount: order.total,
+        };
+        const smsSent = await sendSMS(order.user_info.contact, smsMessage, variables);
+        if (smsSent) {
+          order.confirmationSmsSent = true;
+        } else {
+          await Order.updateOne(
+            { _id: orderId },
+            { $set: { confirmationSmsSent: false } }
+          ).catch(() => {});
+        }
+      } else {
         order.confirmationSmsSent = true;
       }
     }
 
-    // 2) Company/admin notification email for every order
-    if (contactEmail && !order.adminNewOrderEmailSent) {
-      try {
-        const adminBody = {
-          to: contactEmail,
-          subject: `New Order #${order.invoice} – ${shopName}`,
-          html: newOrderAdminEmailBody({
-            shop_name: shopName,
-            logo,
-            invoice: order.invoice,
-            currency,
-            total: order.total,
-            paymentMethod: order.paymentMethod,
-            createdAt: new Date(order.createdAt).toLocaleString(),
-            customerName: order.user_info?.name,
-            customerPhone: order.user_info?.contact,
-            customerEmail,
-            address: order.user_info?.address,
-            trackingUrl: `${process.env.STORE_URL}/admin/orders`,
-            cart: order.cart || [],
-          }),
-          emailType: "admin-new-order",
-        };
-        await sendEmail(adminBody);
+    // 2) Admin notification — atomic claim
+    if (contactEmail) {
+      const claimedAdmin = await Order.findOneAndUpdate(
+        { _id: orderId, adminNewOrderEmailSent: { $ne: true } },
+        { $set: { adminNewOrderEmailSent: true } },
+        { new: false }
+      );
+      if (claimedAdmin && !claimedAdmin.adminNewOrderEmailSent) {
+        try {
+          await sendEmail({
+            to: contactEmail,
+            subject: `New Order #${order.invoice} – ${shopName}`,
+            html: newOrderAdminEmailBody({
+              shop_name: shopName,
+              logo,
+              invoice: order.invoice,
+              currency,
+              total: order.total,
+              paymentMethod: order.paymentMethod,
+              createdAt: new Date(order.createdAt).toLocaleString(),
+              customerName: order.user_info?.name,
+              customerPhone: order.user_info?.contact,
+              customerEmail,
+              address: order.user_info?.address,
+              trackingUrl: `${process.env.STORE_URL}/admin/orders`,
+              cart: order.cart || [],
+            }),
+            emailType: "admin-new-order",
+          });
+          order.adminNewOrderEmailSent = true;
+        } catch (err) {
+          console.error("Admin order email failed:", err.message);
+          await Order.updateOne(
+            { _id: orderId },
+            { $set: { adminNewOrderEmailSent: false } }
+          ).catch(() => {});
+        }
+      } else {
         order.adminNewOrderEmailSent = true;
-      } catch (err) {
-        console.error("Admin order email failed:", err.message);
       }
     }
 
-    // 3. Initialize Tracking History if empty
-    if (!order.trackingHistory || order.trackingHistory.length === 0) {
-      order.trackingHistory = [{
-        status: "Order Placed",
-        message: "Your order has been successfully placed.",
-        timestamp: new Date()
-      }];
-    }
-
-    await Order.updateOne({ _id: order._id }, { 
-      $set: { 
-        confirmationEmailSent: order.confirmationEmailSent,
-        confirmationSmsSent: order.confirmationSmsSent,
-        invoiceEmailSent: order.invoiceEmailSent,
-        adminNewOrderEmailSent: order.adminNewOrderEmailSent,
-        trackingHistory: order.trackingHistory
-      } 
-    });
-
+    // 3) Tracking history — only if still empty (race-safe push once)
+    await Order.updateOne(
+      {
+        _id: orderId,
+        $or: [
+          { trackingHistory: { $exists: false } },
+          { trackingHistory: { $size: 0 } },
+        ],
+      },
+      {
+        $set: {
+          trackingHistory: [
+            {
+              status: "Order Placed",
+              message: "Your order has been successfully placed.",
+              timestamp: new Date(),
+            },
+          ],
+        },
+      }
+    ).catch(() => {});
   } catch (error) {
     console.error("sendOrderNotifications error:", error.message);
   }

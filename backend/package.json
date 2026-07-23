@@ -14,7 +14,9 @@
     "backup": "node script/backupMongo.js",
     "test:email": "node script/verifyEmail.js",
     "test:phonepe": "node script/testPhonePeIntegration.js",
-    "test:hardening": "node script/testPaymentHardening.js"
+    "test:hardening": "node script/testPaymentHardening.js",
+    "test:payment": "node script/testPaymentRegression.js",
+    "test:payment-log": "node script/testPaymentLogObjectId.js"
   },
   "author": "HtmlLover",
   "license": "Regular",

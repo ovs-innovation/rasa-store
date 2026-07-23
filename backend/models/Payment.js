@@ -27,6 +27,21 @@ const paymentSchema = new mongoose.Schema(
       default: "Created",
       index: true,
     },
+    /**
+     * Separate from gateway `status` — serializes fulfillment work.
+     * Atomic claim: none|failed → processing → completed
+     * Stale `processing` locks older than FULFILL_LOCK_TTL_MS may be reclaimed.
+     */
+    fulfillmentStatus: {
+      type: String,
+      enum: ["none", "processing", "completed", "failed"],
+      default: "none",
+      index: true,
+    },
+    fulfillmentStartedAt: { type: Date },
+    fulfillmentCompletedAt: { type: Date },
+    fulfillmentError: { type: String, default: "" },
+    fulfillmentSource: { type: String, default: "" },
     amount: { type: Number, required: true }, // INR
     amountPaise: { type: Number, required: true },
     currency: { type: String, default: "INR" },
@@ -34,15 +49,17 @@ const paymentSchema = new mongoose.Schema(
     redirectUrl: { type: String, default: "" },
     stockReduced: { type: Boolean, default: false },
     notificationsSent: { type: Boolean, default: false },
+    notificationClaimedAt: { type: Date },
     correlationId: { type: String, default: "", index: true },
     paidAt: { type: Date },
     failedAt: { type: Date },
-    rawGatewayResponse: { type: Object, default: {} },
-    meta: { type: Object, default: {} },
+    rawGatewayResponse: { type: mongoose.Schema.Types.Mixed, default: {} },
+    meta: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
   { timestamps: true }
 );
 
 paymentSchema.index({ status: 1, createdAt: -1 });
+paymentSchema.index({ fulfillmentStatus: 1, fulfillmentStartedAt: 1 });
 
 module.exports = mongoose.model("Payment", paymentSchema);

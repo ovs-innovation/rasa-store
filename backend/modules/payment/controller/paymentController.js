@@ -27,7 +27,9 @@ const {
   writeAuditLog,
   registerWebhookEvent,
   markWebhookProcessed,
+  markWebhookFailed,
 } = require("../service/auditService");
+const { logPaymentStep, startTimer } = require("../service/structuredLogger");
 
 const paymentLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -213,9 +215,10 @@ const createPhonePeCheckout = async (req, res) => {
       amountPaise,
       currency: "INR",
       correlationId,
+      fulfillmentStatus: "none",
       meta: {
         invoice: order.invoice,
-        userId: req.user?._id || null,
+        userId: req.user?._id ? String(req.user._id) : null,
       },
     });
 
@@ -397,6 +400,7 @@ const createPhonePeCheckout = async (req, res) => {
 
 const verifyPhonePePayment = async (req, res) => {
   const { ip, userAgent } = getClientMeta(req);
+  const elapsed = startTimer();
   const correlationId =
     req.body?.correlationId ||
     req.query?.cid ||
@@ -414,6 +418,13 @@ const verifyPhonePePayment = async (req, res) => {
       });
     }
 
+    logPaymentStep({
+      step: "verify_start",
+      merchantOrderId,
+      correlationId,
+      message: "verify endpoint called",
+    });
+
     const result = await verifyAndFulfillFromGateway({
       merchantOrderId,
       source: "Verify",
@@ -422,9 +433,18 @@ const verifyPhonePePayment = async (req, res) => {
       correlationId,
     });
 
+    const payment = result.payment;
+    const order = result.order;
+    const fullyPaid =
+      Boolean(result.paid) &&
+      payment?.status === "Success" &&
+      payment?.stockReduced === true &&
+      order?.paymentStatus === "Paid";
+
     if (!result.ok && result.code === "PAYMENT_NOT_FOUND") {
       return sendError(res, 404, "PAYMENT_NOT_FOUND", "Payment not found.", {
         correlationId,
+        paid: false,
       });
     }
 
@@ -434,64 +454,132 @@ const verifyPhonePePayment = async (req, res) => {
         409,
         "AMOUNT_MISMATCH",
         "Payment amount mismatch. Our team has been notified.",
-        { correlationId, status: "Failed" }
+        { correlationId, status: "Failed", paid: false }
       );
     }
 
     if (!result.ok && result.code === "FULFILL_FAILED") {
+      // PhonePe may have taken money, but critical backend steps failed.
+      // NEVER tell frontend SUCCESS.
       return sendError(
         res,
         500,
         "PAYMENT_FULFILL_FAILED",
         "Payment received but order fulfillment needs retry. Support has been notified.",
-        { correlationId }
+        {
+          correlationId,
+          paid: false,
+          paymentStatus: payment?.status || "Pending",
+          orderId: order?._id,
+        }
       );
     }
 
-    const payment = result.payment;
-    const order = result.order;
+    if (!result.ok && result.code === "GATEWAY_STATUS_FAILED") {
+      return sendError(
+        res,
+        502,
+        "GATEWAY_STATUS_FAILED",
+        "Unable to confirm payment with PhonePe right now. Please wait and retry.",
+        { correlationId, paid: false }
+      );
+    }
+
+    if (!result.ok && result.code === "FULFILL_IN_PROGRESS") {
+      return res.send({
+        success: true,
+        ok: true,
+        pending: true,
+        paid: false,
+        state: "PROCESSING",
+        paymentStatus: payment?.status || "Pending",
+        orderStatus: order?.status,
+        orderId: order?._id,
+        invoice: order?.invoice,
+        correlationId,
+        message: "Payment confirmation in progress.",
+      });
+    }
+
+    if (result.pending || !fullyPaid) {
+      const isFailed = payment?.status === "Failed";
+      return res.send({
+        success: !isFailed,
+        ok: !isFailed,
+        pending: !isFailed,
+        paid: false,
+        alreadyProcessed: Boolean(result.alreadyProcessed),
+        state: result.state || payment?.status,
+        paymentStatus: payment?.status,
+        orderStatus: order?.status,
+        orderId: order?._id,
+        invoice: order?.invoice,
+        correlationId,
+        message: isFailed
+          ? "Payment failed."
+          : "Payment is still processing.",
+      });
+    }
+
+    logPaymentStep({
+      step: "verify_success",
+      paymentId: payment?._id,
+      orderId: order?._id,
+      merchantOrderId,
+      correlationId,
+      durationMs: elapsed(),
+      message: "frontend may show SUCCESS",
+    });
 
     return res.send({
       success: true,
       ok: true,
-      pending: Boolean(result.pending),
+      pending: false,
       alreadyProcessed: Boolean(result.alreadyProcessed),
-      state: result.state || payment?.status,
-      paymentStatus: payment?.status,
-      orderStatus: order?.status,
-      orderId: order?._id,
-      invoice: order?.invoice,
-      paid: payment?.status === "Success",
+      state: "COMPLETED",
+      paymentStatus: payment.status,
+      orderStatus: order.status,
+      orderId: order._id,
+      invoice: order.invoice,
+      paid: true,
+      stockReduced: true,
       correlationId,
     });
   } catch (err) {
     console.error("verifyPhonePePayment error:", err);
     await writePaymentLog({
-      merchantOrderId: req.body?.merchantOrderId || "",
+      merchantOrderId: req.body?.merchantOrderId || req.query?.moid || "",
       correlationId,
       source: "Error",
       action: "verify_exception",
+      step: "verify",
       success: false,
       message: err.message,
+      error: err,
       response: err?.response?.data || {},
       ip,
       userAgent,
+      durationMs: elapsed(),
     });
     return sendError(
       res,
       500,
       "PAYMENT_VERIFICATION_FAILED",
       "Payment verification failed.",
-      { correlationId }
+      { correlationId, paid: false }
     );
   }
 };
 
 /**
- * PhonePe S2S webhook — auth + replay protection + status re-verify.
+ * PhonePe S2S webhook — SHA256 auth + replay protection + gateway re-verify.
+ * Always ACK with 200 after auth (PhonePe retry contract), but only mark
+ * WebhookEvent.processed after critical fulfillment succeeds (or intentional fail).
+ * Unprocessed duplicates are re-attempted (idempotent fulfillment).
  */
 const handlePhonePeWebhook = async (req, res) => {
   const { ip, userAgent } = getClientMeta(req);
+  const elapsed = startTimer();
   const authHeader =
     req.headers.authorization ||
     req.headers.Authorization ||
@@ -502,6 +590,7 @@ const handlePhonePeWebhook = async (req, res) => {
     await writePaymentLog({
       source: "Webhook",
       action: "auth_failed",
+      step: "webhook_auth",
       success: false,
       message: "Invalid webhook authorization",
       request: { hasAuth: Boolean(authHeader) },
@@ -511,6 +600,7 @@ const handlePhonePeWebhook = async (req, res) => {
     return sendError(res, 401, "UNAUTHORIZED", "Unauthorized");
   }
 
+  let replayEventId = "";
   try {
     const body = req.body || {};
     const event = body.event || body.type || "";
@@ -536,66 +626,116 @@ const handlePhonePeWebhook = async (req, res) => {
       merchantOrderId,
       payload: body,
     });
+    replayEventId = replay.eventId;
 
-    if (replay.duplicate) {
+    // Fully processed duplicate → no-op
+    if (replay.duplicate && replay.processed) {
       await writePaymentLog({
         merchantOrderId,
         source: "Webhook",
         action: "replay_ignored",
+        step: "webhook_dedupe",
         success: true,
-        message: `Duplicate webhook ignored: ${replay.eventId}`,
+        message: `Duplicate webhook ignored (already processed): ${replay.eventId}`,
+        ip,
+        userAgent,
+        durationMs: elapsed(),
+      });
+      return res.status(200).send({ received: true, duplicate: true, processed: true });
+    }
+
+    // Duplicate but NOT processed → re-attempt fulfillment (idempotent)
+    if (replay.duplicate && !replay.processed) {
+      await writePaymentLog({
+        merchantOrderId,
+        source: "Webhook",
+        action: "replay_retry",
+        step: "webhook_dedupe",
+        success: true,
+        message: `Unprocessed duplicate — retrying: ${replay.eventId}`,
         ip,
         userAgent,
       });
-      return res.status(200).send({ received: true, duplicate: true });
+    } else {
+      await writePaymentLog({
+        merchantOrderId,
+        source: "Webhook",
+        action: "received",
+        step: "webhook_received",
+        success: true,
+        message: `event=${event} state=${state}`,
+        request: { event, eventId: replay.eventId },
+        response: { state, orderId: payload.orderId },
+        ip,
+        userAgent,
+      });
     }
 
-    await writePaymentLog({
-      merchantOrderId,
-      source: "Webhook",
-      action: "received",
-      success: true,
-      message: `event=${event} state=${state}`,
-      request: { event, eventId: replay.eventId },
-      response: { state, orderId: payload.orderId },
-      ip,
-      userAgent,
-    });
-
     if (!merchantOrderId) {
-      await markWebhookProcessed(replay.eventId);
+      await markWebhookProcessed(replay.eventId, { success: true });
       return res.status(200).send({ received: true, ignored: true });
     }
 
-    if (state === "COMPLETED" || String(event).includes("completed")) {
-      await verifyAndFulfillFromGateway({
+    let result = null;
+    if (state === "COMPLETED" || String(event).toLowerCase().includes("completed")) {
+      result = await verifyAndFulfillFromGateway({
         merchantOrderId,
         source: "Webhook",
         ip,
         userAgent,
       });
-    } else if (state === "FAILED" || String(event).includes("failed")) {
-      await markPaymentFailed({
+
+      if (result?.paid) {
+        await markWebhookProcessed(replay.eventId, { success: true });
+      } else if (result?.code === "AMOUNT_MISMATCH") {
+        // Intentional terminal failure — do not retry forever
+        await markWebhookProcessed(replay.eventId, {
+          success: false,
+          error: "AMOUNT_MISMATCH",
+        });
+      } else {
+        // Critical fulfill failed or still pending — leave unprocessed for retry
+        await markWebhookFailed(
+          replay.eventId,
+          result?.code || result?.message || "fulfill_incomplete"
+        );
+      }
+    } else if (state === "FAILED" || String(event).toLowerCase().includes("failed")) {
+      result = await markPaymentFailed({
         merchantOrderId,
         gatewayPayload: payload,
         source: "Webhook",
         ip,
         userAgent,
       });
+      await markWebhookProcessed(replay.eventId, { success: true });
+    } else {
+      // Intermediate state — acknowledge, leave unprocessed so COMPLETED can process
+      await markWebhookFailed(replay.eventId, `intermediate_state:${state}`);
     }
 
-    await markWebhookProcessed(replay.eventId);
-    return res.status(200).send({ received: true });
+    return res.status(200).send({
+      received: true,
+      paid: Boolean(result?.paid),
+      code: result?.code || null,
+    });
   } catch (err) {
     console.error("PhonePe webhook error:", err);
+    if (replayEventId) {
+      await markWebhookFailed(replayEventId, err.message);
+    }
     await writePaymentLog({
       source: "Webhook",
       action: "exception",
+      step: "webhook",
       success: false,
       message: err.message,
+      error: err,
       ip,
       userAgent,
+      durationMs: elapsed(),
     });
+    // Still 200 so PhonePe retries later; event left unprocessed
     return res.status(200).send({ received: true, error: true });
   }
 };
