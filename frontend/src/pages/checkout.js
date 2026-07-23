@@ -67,18 +67,7 @@ const Checkout = () => {
   const sessionUser = sessionData?.user?.token ? sessionData.user : null;
   const userInfo = state?.userInfo || sessionUser || readUserInfoFromCookie();
   const { showingTranslateValue, currency } = useUtilsFunction();
-  const [authReady, setAuthReady] = useState(false);
-
-  useEffect(() => {
-    setAuthReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (!authReady) return;
-    if (!userInfo?.token) {
-      router.replace("/auth/login?redirectUrl=checkout");
-    }
-  }, [authReady, userInfo, router]);
+  const isLoggedIn = !!userInfo?.token;
 
   useEffect(() => {
     setPortalReady(true);
@@ -365,59 +354,77 @@ const Checkout = () => {
   const handleAddressSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (!userInfo || !userInfo._id) {
-        notifyError("User ID not found in session");
+      const phone = String(addressForm.phone || "").replace(/\D/g, "").slice(-10);
+      if (!addressForm.name?.trim() || addressForm.name.trim().length < 2) {
+        notifyError("Please enter full name");
+        return;
+      }
+      if (!/^[6-9]\d{9}$/.test(phone)) {
+        notifyError("Please enter a valid 10-digit mobile number");
+        return;
+      }
+      if (!addressForm.address?.trim() || addressForm.address.trim().length < 8) {
+        notifyError("Please enter a complete address");
+        return;
+      }
+      if (!addressForm.city?.trim()) {
+        notifyError("Please enter city");
+        return;
+      }
+      if (!/^\d{6}$/.test(String(addressForm.zipCode || "").replace(/\D/g, ""))) {
+        notifyError("Please enter a valid 6-digit pincode");
         return;
       }
 
-      let response;
-      if (editingAddress && editingAddress._id) {
-        // Update existing address
-        response = await CustomerServices.updateShippingAddress({
-          userId: userInfo._id,
-          shippingId: editingAddress._id,
-          shippingAddressData: addressForm
+      const nameParts = String(addressForm.name || "").trim().split(/\s+/).filter(Boolean);
+      const zipCode = String(addressForm.zipCode || "").replace(/\D/g, "").slice(0, 6);
+      const applyToForm = () => {
+        setValue("firstName", nameParts[0] || "", { shouldValidate: true });
+        setValue("lastName", nameParts.slice(1).join(" ") || "", { shouldValidate: true });
+        setValue("contact", phone, { shouldValidate: true });
+        setValue("address", addressForm.address || "", { shouldValidate: true });
+        setValue("city", addressForm.city || "", { shouldValidate: true });
+        setValue("country", addressForm.country || "India", { shouldValidate: true });
+        setValue("zipCode", zipCode, { shouldValidate: true });
+        if (!getDisplayEmail(userInfo) && !watch("email")) {
+          /* guest fills email in main form */
+        }
+        setSelectedAddress({
+          ...addressForm,
+          phone,
+          zipCode,
+          name: addressForm.name.trim(),
+          _id: editingAddress?._id || `guest_${Date.now()}`,
         });
-      } else {
-        // Add new address
-        response = await CustomerServices.addShippingAddress({
-          userId: userInfo._id,
-          shippingAddressData: addressForm
-        });
+      };
+
+      // Guest checkout — apply locally, no account save
+      if (!userInfo?._id) {
+        applyToForm();
+        setShowAddressModal(false);
+        notifySuccess("Delivery details saved for this order");
+        return;
       }
 
-      if (response.success || response.message) {
-        setShowAddressModal(false);
-        setEditingAddress(null);
-        // Reset form
-        setAddressForm({
-          name: "",
-          address: "",
-          city: "",
-          country: "",
-          zipCode: "",
-          phone: "",
-          addressType: "Home",
-          isDefault: false
+      if (editingAddress) {
+        await CustomerServices.updateShippingAddress({
+          userId: userInfo._id,
+          shippingId: editingAddress._id || editingAddress.id,
+          shippingAddressData: { ...addressForm, phone, zipCode },
         });
-        // Refetch addresses to get the latest
-        await refetchAddresses();
-        // If this was set as default or is first address, select it
-        if (addressForm.isDefault || shippingAddresses.length === 0) {
-          const updatedResponse = await CustomerServices.getShippingAddress({ userId: userInfo._id });
-          const updatedAddresses = Array.isArray(updatedResponse?.shippingAddress) 
-            ? updatedResponse.shippingAddress 
-            : [];
-          const newDefault = updatedAddresses.find(addr => addr.isDefault) || updatedAddresses[updatedAddresses.length - 1];
-          if (newDefault) setSelectedAddress(newDefault);
-        }
-        notifySuccess(editingAddress ? "Address updated successfully" : "Address added successfully");
+        notifySuccess("Address updated successfully");
       } else {
-        notifyError(response.message || "Failed to save address");
+        await CustomerServices.addShippingAddress({
+          userId: userInfo._id,
+          shippingAddressData: { ...addressForm, phone, zipCode },
+        });
+        notifySuccess("Address added successfully");
       }
-    } catch (error) {
-      console.error("Error saving address:", error);
-      notifyError(error?.response?.data?.message || error?.message || "Failed to save address");
+      applyToForm();
+      setShowAddressModal(false);
+      refetchAddresses();
+    } catch (err) {
+      notifyError(err?.response?.data?.message || err?.message || "Failed to save address");
     }
   };
 
@@ -629,7 +636,20 @@ const Checkout = () => {
             <div className="w-full lg:w-3/5 flex flex-col min-w-0">
               <div className="mt-2 lg:mt-0">
                 <form ref={formRef} onSubmit={handleSubmit(submitHandler)}>
-                  {hasShippingAddress && (
+                  {!isLoggedIn && (
+                    <div className="mb-4 flex flex-col gap-2 rounded-xl border border-neutral-800 bg-[#0D0D0D] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs text-neutral-400 sm:text-sm">
+                        Checkout as guest — no login required.
+                      </p>
+                      <Link
+                        href="/auth/login?redirectUrl=checkout"
+                        className="text-xs font-bold uppercase tracking-wider text-[#D4AF37] hover:underline sm:text-sm"
+                      >
+                        Sign in instead
+                      </Link>
+                    </div>
+                  )}
+                  {hasShippingAddress && isLoggedIn && (
                     <div className="flex justify-end my-2">
                       <SwitchToggle
                         id="shipping-address"
@@ -643,8 +663,110 @@ const Checkout = () => {
                     <h2 className="font-semibold font-serif text-base text-white pb-3">
                       {showingTranslateValue(
                         storeCustomizationSetting?.checkout?.personal_details
-                      )}
+                      ) || "Delivery Details"}
                     </h2>
+
+                    {/* Guest / no-saved-address: inline contact + shipping form */}
+                    {(!isLoggedIn || !shippingAddresses.length) ? (
+                      <div className="bg-[#0D0D0D] border border-neutral-800 rounded-2xl p-3 sm:p-6 space-y-4">
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <InputArea
+                              register={register}
+                              label="Full Name"
+                              name="firstName"
+                              type="text"
+                              placeholder="Your full name"
+                              required
+                            />
+                            <Error errorName={errors.firstName} />
+                          </div>
+                          <div>
+                            <InputArea
+                              register={register}
+                              label="Email"
+                              name="email"
+                              type="email"
+                              placeholder="name@example.com"
+                              required
+                              pattern={/^[^\s@]+@[^\s@]+\.[^\s@]+$/}
+                              patternMessage="Enter a valid email"
+                            />
+                            <Error errorName={errors.email} />
+                          </div>
+                          <div>
+                            <InputArea
+                              register={register}
+                              label="Mobile Number"
+                              name="contact"
+                              type="tel"
+                              placeholder="10-digit mobile"
+                              required
+                              maxLength={10}
+                              pattern={/^[6-9]\d{9}$/}
+                              patternMessage="Enter valid 10-digit mobile"
+                              onInput={(e) => {
+                                e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                              }}
+                            />
+                            <Error errorName={errors.contact} />
+                          </div>
+                          <div>
+                            <InputArea
+                              register={register}
+                              label="Pincode"
+                              name="zipCode"
+                              type="tel"
+                              placeholder="6-digit pincode"
+                              required
+                              maxLength={6}
+                              pattern={/^\d{6}$/}
+                              patternMessage="Enter 6-digit pincode"
+                              onInput={(e) => {
+                                e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                              }}
+                            />
+                            <Error errorName={errors.zipCode} />
+                          </div>
+                          <div className="sm:col-span-2">
+                            <InputArea
+                              register={register}
+                              label="Delivery Address"
+                              name="address"
+                              type="text"
+                              placeholder="House no., street, landmark"
+                              required
+                            />
+                            <Error errorName={errors.address} />
+                          </div>
+                          <div>
+                            <InputArea
+                              register={register}
+                              label="City"
+                              name="city"
+                              type="text"
+                              placeholder="City"
+                              required
+                            />
+                            <Error errorName={errors.city} />
+                          </div>
+                          <div>
+                            <InputArea
+                              register={register}
+                              label="State"
+                              name="country"
+                              type="text"
+                              placeholder="State"
+                              required={false}
+                            />
+                            <Error errorName={errors.country} />
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-neutral-500">
+                          We’ll use these details for delivery and order updates. Payment opens only after all fields are valid.
+                        </p>
+                      </div>
+                    ) : (
                     <div className="bg-[#0D0D0D] border border-neutral-800 rounded-2xl p-3 sm:p-6">
                       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-4">
                         <h3 className="text-sm font-medium text-white">Select Delivery Address</h3>
@@ -788,6 +910,7 @@ const Checkout = () => {
                         </div>
                       )}
                     </div>
+                    )}
                   </div>
 
                   {/* Cart Items Section */}
@@ -1102,21 +1225,26 @@ const Checkout = () => {
                 <div className="mt-5 sm:mt-6 bg-[#0F0F0F] border border-neutral-800 rounded-xl p-3 sm:p-4">
                   {/* Payment Method Selection */}
                   <div className="mb-4">
-                    {/* Hidden inputs so address/payment values always submit with RHF */}
-                    <input type="hidden" {...register("contact")} />
-                    <input type="hidden" {...register("address")} />
-                    <input type="hidden" {...register("zipCode")} />
-                    <input type="hidden" {...register("firstName")} />
-                    <input type="hidden" {...register("lastName")} />
-                    <input type="hidden" {...register("city")} />
-                    <input type="hidden" {...register("country")} />
+                    {/* Hidden payment method so RHF always has the value */}
                     <input
                       type="hidden"
                       {...register("paymentMethod", {
                         required: "Payment Method is required!",
                       })}
                     />
-                    
+                    {/* Keep delivery values in sync when using saved addresses */}
+                    {isLoggedIn && shippingAddresses.length > 0 && (
+                      <>
+                        <input type="hidden" {...register("contact")} />
+                        <input type="hidden" {...register("address")} />
+                        <input type="hidden" {...register("zipCode")} />
+                        <input type="hidden" {...register("firstName")} />
+                        <input type="hidden" {...register("lastName")} />
+                        <input type="hidden" {...register("email")} />
+                        <input type="hidden" {...register("city")} />
+                        <input type="hidden" {...register("country")} />
+                      </>
+                    )}
                     <div className="relative">
                       {/* Main Select Trigger Button */}
                       <button

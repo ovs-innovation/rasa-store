@@ -26,7 +26,7 @@ router.post("/add/razorpay", isAuthOptional, addRazorpayOrder);
 router.post("/create/razorpay", isAuthOptional, createOrderByRazorPay);
 
 //get a order by id
-router.get("/:id", isAuth, getOrderById);
+router.get("/:id", isAuthOptional, getOrderById);
 
 //get all order by a user
 router.get("/", isAuth, getOrderCustomer);

@@ -50,11 +50,21 @@ const validateCreatePhonePeCheckout = (body = {}) => {
     if (!isNonEmptyString(body.user_info.contact, 10, 15)) {
       errors.push("Valid 10-digit phone number is required.");
     }
+    const email = String(body.user_info.email || "").trim().toLowerCase();
+    body.user_info.email = email;
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.push("Valid email is required.");
+    }
     if (!isNonEmptyString(body.user_info.address, 5, 500)) {
       errors.push("Valid address is required.");
     }
-    if (!isNonEmptyString(body.user_info.zipCode || body.user_info.zipcode || "", 4, 12)) {
-      errors.push("Valid pincode/zipCode is required.");
+    if (!isNonEmptyString(body.user_info.city || "", 2, 120)) {
+      errors.push("Valid city is required.");
+    }
+    const zip = String(body.user_info.zipCode || body.user_info.zipcode || "").replace(/\D/g, "");
+    body.user_info.zipCode = zip;
+    if (!/^\d{6}$/.test(zip)) {
+      errors.push("Valid 6-digit pincode is required.");
     }
   }
 

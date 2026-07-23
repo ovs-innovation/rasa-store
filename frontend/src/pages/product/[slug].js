@@ -1354,12 +1354,8 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
       // Replace entire cart with only this product (Flipkart style - Buy Now replaces cart)
       setItems([newItem]);
 
-      // Flipkart-style: login first if needed, then existing checkout page
+      // Go straight to checkout — login is optional, not forced
       setTimeout(() => {
-        if (!userInfo?.token) {
-          router.push("/auth/login?redirectUrl=checkout");
-          return;
-        }
         router.push("/checkout");
       }, 150);
     } catch (error) {

@@ -4,7 +4,6 @@ import { useCart } from "react-use-cart";
 import { IoBagCheckOutline, IoClose, IoBagHandle } from "react-icons/io5";
 
 //internal import
-import { getUserSession } from "@lib/auth";
 import CartItem from "@components/cart/CartItem";
 import { SidebarContext } from "@context/SidebarContext";
 import useUtilsFunction from "@hooks/useUtilsFunction";
@@ -15,22 +14,17 @@ const Cart = () => {
   const { isEmpty, items, cartTotal } = useCart();
   const { closeCartDrawer } = useContext(SidebarContext);
   const { currency } = useUtilsFunction();
-  const userInfo = getUserSession();
   const { storeCustomizationSetting } = useGetSetting();
   const storeColor = storeCustomizationSetting?.theme?.color || "green";
 
   const handleCheckout = () => {
     if (items?.length <= 0) {
       closeCartDrawer();
-    } else {
-      if (!userInfo?.token) {
-        router.push(`/auth/login?redirectUrl=checkout`);
-        closeCartDrawer();
-      } else {
-        router.push("/checkout");
-        closeCartDrawer();
-      }
+      return;
     }
+    // Guest checkout allowed — login is optional
+    router.push("/checkout");
+    closeCartDrawer();
   };
 
   return (

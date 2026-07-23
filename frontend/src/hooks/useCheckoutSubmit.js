@@ -93,14 +93,41 @@ const useCheckoutSubmit = (storeSetting) => {
 
   // Keep delivery fields registered so setValue() values are included on submit
   useEffect(() => {
-    register("firstName");
+    register("firstName", {
+      required: "Full name is required",
+      minLength: { value: 2, message: "Enter your full name" },
+    });
     register("lastName");
-    register("email");
-    register("contact", { required: "Phone number is required" });
-    register("address", { required: "Address is required" });
-    register("city");
+    register("email", {
+      required: "Email is required",
+      pattern: {
+        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        message: "Enter a valid email address",
+      },
+    });
+    register("contact", {
+      required: "Phone number is required",
+      pattern: {
+        value: /^[6-9]\d{9}$/,
+        message: "Enter a valid 10-digit mobile number",
+      },
+    });
+    register("address", {
+      required: "Address is required",
+      minLength: { value: 8, message: "Enter a complete delivery address" },
+    });
+    register("city", {
+      required: "City is required",
+      minLength: { value: 2, message: "Enter your city" },
+    });
     register("country");
-    register("zipCode", { required: "Pincode is required" });
+    register("zipCode", {
+      required: "Pincode is required",
+      pattern: {
+        value: /^\d{6}$/,
+        message: "Enter a valid 6-digit pincode",
+      },
+    });
     register("shippingOption");
   }, [register]);
 
@@ -109,6 +136,9 @@ const useCheckoutSubmit = (storeSetting) => {
     if (digits.length >= 10) return digits.slice(-10);
     return digits;
   };
+
+  const isValidEmail = (email) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
 
   const resolveContact = (formData = {}) => {
     const raw =
@@ -122,6 +152,26 @@ const useCheckoutSubmit = (storeSetting) => {
   };
 
   useEffect(() => {
+    // Restore guest shipping details from cookie
+    try {
+      const saved = Cookies.get("shippingAddress");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.firstName) setValue("firstName", parsed.firstName);
+        if (parsed?.lastName) setValue("lastName", parsed.lastName);
+        if (parsed?.email) setValue("email", parsed.email);
+        if (parsed?.contact || parsed?.phone) {
+          setValue("contact", normalizePhone(parsed.contact || parsed.phone));
+        }
+        if (parsed?.address) setValue("address", parsed.address);
+        if (parsed?.city) setValue("city", parsed.city);
+        if (parsed?.country) setValue("country", parsed.country);
+        if (parsed?.zipCode) setValue("zipCode", parsed.zipCode);
+      }
+    } catch {
+      /* ignore bad cookie */
+    }
+
     if (Cookies.get("couponInfo")) {
       const coupon = JSON.parse(Cookies.get("couponInfo"));
       setCouponInfo(coupon);
@@ -129,12 +179,17 @@ const useCheckoutSubmit = (storeSetting) => {
       setMinimumAmount(coupon.minimumAmount);
     }
     const displayEmail = getDisplayEmail(userInfo);
-    if (displayEmail) {
+    if (displayEmail && !getValues("email")) {
       setValue("email", displayEmail);
     }
     // Prefill phone from logged-in user if form contact empty
     if (userInfo?.phone && !getValues("contact")) {
       setValue("contact", normalizePhone(userInfo.phone), { shouldValidate: true });
+    }
+    if (userInfo?.name && !getValues("firstName")) {
+      const parts = String(userInfo.name).trim().split(/\s+/);
+      setValue("firstName", parts[0] || "");
+      if (parts.length > 1) setValue("lastName", parts.slice(1).join(" "));
     }
   }, [setValue, getValues, userInfo]);
 
@@ -259,8 +314,19 @@ const useCheckoutSubmit = (storeSetting) => {
   const submitHandler = async (data) => {
     try {
       const contact = resolveContact(data);
-      if (!contact || contact.length < 10) {
-        notifyError("Please enter a valid 10-digit phone number.");
+      if (!contact || !/^[6-9]\d{9}$/.test(contact)) {
+        notifyError("Please enter a valid 10-digit mobile number.");
+        setIsCheckoutSubmit(false);
+        return;
+      }
+
+      const email = String(
+        data.email || getValues("email") || getDisplayEmail(userInfo) || ""
+      )
+        .trim()
+        .toLowerCase();
+      if (!isValidEmail(email)) {
+        notifyError("Please enter a valid email address.");
         setIsCheckoutSubmit(false);
         return;
       }
@@ -270,23 +336,35 @@ const useCheckoutSubmit = (storeSetting) => {
           data.lastName || getValues("lastName") || ""
         }`.trim() ||
         userInfo?.name ||
-        "Customer";
+        "";
 
-      const address =
-        data.address || getValues("address") || "";
-      const zipCode =
-        data.zipCode || getValues("zipCode") || "";
-      const city = data.city || getValues("city") || "";
-      const country =
-        data.country || getValues("country") || "India";
-
-      if (!address || address.trim().length < 5) {
-        notifyError("Please select or enter a delivery address.");
+      if (!fullName || fullName.length < 2) {
+        notifyError("Please enter your full name.");
         setIsCheckoutSubmit(false);
         return;
       }
-      if (!zipCode || String(zipCode).trim().length < 4) {
-        notifyError("Please enter a valid pincode.");
+
+      const address =
+        data.address || getValues("address") || "";
+      const zipCode = String(
+        data.zipCode || getValues("zipCode") || ""
+      ).replace(/\D/g, "");
+      const city = String(data.city || getValues("city") || "").trim();
+      const country =
+        data.country || getValues("country") || "India";
+
+      if (!address || address.trim().length < 8) {
+        notifyError("Please enter a complete delivery address.");
+        setIsCheckoutSubmit(false);
+        return;
+      }
+      if (!city || city.length < 2) {
+        notifyError("Please enter your city.");
+        setIsCheckoutSubmit(false);
+        return;
+      }
+      if (!/^\d{6}$/.test(zipCode)) {
+        notifyError("Please enter a valid 6-digit pincode.");
         setIsCheckoutSubmit(false);
         return;
       }
@@ -324,8 +402,8 @@ const useCheckoutSubmit = (storeSetting) => {
         return;
       }
 
-      dispatch({ type: "SAVE_SHIPPING_ADDRESS", payload: { ...data, contact } });
-      Cookies.set("shippingAddress", JSON.stringify({ ...data, contact }));
+      dispatch({ type: "SAVE_SHIPPING_ADDRESS", payload: { ...data, contact, email } });
+      Cookies.set("shippingAddress", JSON.stringify({ ...data, contact, email, zipCode, city }));
       setIsCheckoutSubmit(true);
       setError("");
 
@@ -333,8 +411,8 @@ const useCheckoutSubmit = (storeSetting) => {
         name: fullName,
         contact,
         phone: contact,
-        email: data.email || getValues("email") || getDisplayEmail(userInfo) || "",
-        address,
+        email,
+        address: address.trim(),
         country,
         city,
         zipCode,
