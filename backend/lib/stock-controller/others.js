@@ -145,67 +145,80 @@ const hasVariantSelection = (item) =>
           item.variant.sku))
   );
 
-const handleProductQuantity = async (cart) => {
+const handleProductQuantity = async (cart, options = {}) => {
   try {
-    for (const p of cart) {
-      const productId = resolveProductId(p);
-      if (!productId) {
-        console.error("handleProductQuantity: invalid product id", p?.id || p?._id);
-        continue;
-      }
-
-      const product = await Product.findById(productId);
-      if (!product) {
-        console.error(`handleProductQuantity: product not found ${productId}`);
-        continue;
-      }
-
-      if (hasVariantSelection(p)) {
-        const available = getVariantQuantity(product, p.variant);
-        if (available === null || available < p.quantity) {
-          console.error(
-            `Failed to decrease stock for combination product ${productId}. Insufficient variant stock.`
-          );
-          continue;
-        }
-
-        const updated = decrementVariantStock(product, p.variant, p.quantity);
-        if (!updated) {
-          console.error(
-            `Failed to decrease stock for combination product ${productId}. Variant not found.`
-          );
-          continue;
-        }
-
-        product.stock = Math.max(0, Number(product.stock || 0) - p.quantity);
-        product.sales = Number(product.sales || 0) + p.quantity;
-        product.markModified("variants");
-        product.markModified("variantFilters");
-        await product.save();
-      } else {
-        const updatedProduct = await Product.findOneAndUpdate(
-          {
-            _id: productId,
-            stock: { $gte: p.quantity },
-          },
-          {
-            $inc: {
-              stock: -p.quantity,
-              sales: p.quantity,
-            },
-          },
-          { new: true }
-        );
-        if (!updatedProduct) {
-          console.error(
-            `Failed to decrease stock for product ${productId}. Insufficient stock.`
-          );
-        }
-      }
-    }
+    return await reduceStockAtomic(cart, options);
   } catch (err) {
     console.log("err on handleProductQuantity", err.message);
+    if (options.throwOnError) throw err;
+    return { ok: false, error: err.message };
   }
+};
+
+/**
+ * Atomic inventory reduction. Throws if any line cannot be fulfilled.
+ * Supports optional mongoose session for multi-doc transactions.
+ */
+const reduceStockAtomic = async (cart, { session = null } = {}) => {
+  if (!Array.isArray(cart) || cart.length === 0) {
+    throw new Error("Cannot reduce stock for empty cart.");
+  }
+
+  const queryOpts = session ? { session } : {};
+
+  for (const p of cart) {
+    const productId = resolveProductId(p);
+    const qty = Number(p.quantity || p.qty || 0);
+    if (!productId || !Number.isFinite(qty) || qty <= 0) {
+      throw new Error(`Invalid cart line for stock reduction.`);
+    }
+
+    if (hasVariantSelection(p)) {
+      const product = await Product.findById(productId, null, queryOpts);
+      if (!product) {
+        throw new Error(`Product not found for stock reduction: ${productId}`);
+      }
+
+      const available = getVariantQuantity(product, p.variant);
+      if (available === null || available < qty) {
+        throw new Error(
+          `Insufficient variant stock for product ${productId}. Available=${available}, requested=${qty}`
+        );
+      }
+
+      const updated = decrementVariantStock(product, p.variant, qty);
+      if (!updated) {
+        throw new Error(`Variant not found while reducing stock for ${productId}`);
+      }
+
+      product.stock = Math.max(0, Number(product.stock || 0) - qty);
+      product.sales = Number(product.sales || 0) + qty;
+      product.markModified("variants");
+      product.markModified("variantFilters");
+      await product.save(queryOpts);
+    } else {
+      const updatedProduct = await Product.findOneAndUpdate(
+        {
+          _id: productId,
+          stock: { $gte: qty },
+        },
+        {
+          $inc: {
+            stock: -qty,
+            sales: qty,
+          },
+        },
+        { new: true, ...(session ? { session } : {}) }
+      );
+      if (!updatedProduct) {
+        throw new Error(
+          `Insufficient stock for product ${productId}. Requested=${qty}`
+        );
+      }
+    }
+  }
+
+  return { ok: true };
 };
 
 const checkStock = async (cart) => {
@@ -315,6 +328,7 @@ const handleProductAttribute = async (key, value, multi) => {
 
 module.exports = {
   handleProductQuantity,
+  reduceStockAtomic,
   handleProductAttribute,
   checkStock,
 };

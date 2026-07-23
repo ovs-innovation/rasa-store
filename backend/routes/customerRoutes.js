@@ -46,6 +46,7 @@ const {
 const {
   passwordVerificationLimit,
   emailVerificationLimit,
+  emailLoginOtpLimit,
 } = require("../lib/email-sender/sender");
 const { isAuth, isAdmin } = require("../config/auth");
 
@@ -55,7 +56,7 @@ router.post("/send-phone-otp", sendPhoneEmailOTP);
 router.post("/verify-phone-otp", verifyPhoneEmailOTP);
 
 //login with email OTP
-router.post("/send-email-otp", sendEmailOtpLogin);
+router.post("/send-email-otp", emailLoginOtpLimit, sendEmailOtpLogin);
 router.post("/verify-email-otp", verifyEmailOtpLogin);
 
 // shipping address send to array

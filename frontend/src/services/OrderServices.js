@@ -17,13 +17,25 @@ const OrderServices = {
     return requests.post("/order/create/razorpay", body);
   },
 
+  getPhonePeStatus: async () => {
+    return requests.get("/payment/phonepe/status");
+  },
+
+  createPhonePeCheckout: async (body) => {
+    return requests.post("/payment/phonepe/create", body);
+  },
+
+  verifyPhonePePayment: async (body) => {
+    return requests.post("/payment/phonepe/verify", body);
+  },
+
   getOrderCustomer: async ({ page = 1, limit = 8 }) => {
     return requests.get(`/order?limit=${limit}&page=${page}`);
   },
+
   getOrderById: async (id, body) => {
     return requests.get(`/order/${id}`, body);
   },
-
 };
 
 export default OrderServices;

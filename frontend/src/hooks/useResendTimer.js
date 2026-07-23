@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-export default function useResendTimer(seconds = 60) {
+export default function useResendTimer(defaultSeconds = 60) {
   const [remaining, setRemaining] = useState(0);
 
   useEffect(() => {
@@ -11,9 +11,16 @@ export default function useResendTimer(seconds = 60) {
     return () => clearInterval(id);
   }, [remaining]);
 
-  const startTimer = useCallback(() => {
-    setRemaining(seconds);
-  }, [seconds]);
+  const startTimer = useCallback(
+    (overrideSeconds) => {
+      const secs =
+        typeof overrideSeconds === "number" && overrideSeconds > 0
+          ? Math.ceil(overrideSeconds)
+          : defaultSeconds;
+      setRemaining(secs);
+    },
+    [defaultSeconds]
+  );
 
   const resetTimer = useCallback(() => {
     setRemaining(0);

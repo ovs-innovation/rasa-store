@@ -231,7 +231,11 @@ const sendPhoneEmailOTP = async (req, res) => {
     if (user.lastLoginOtpSentAt && (Date.now() - user.lastLoginOtpSentAt < 60 * 1000)) {
       const remainingSeconds = Math.ceil(60 - (Date.now() - user.lastLoginOtpSentAt) / 1000);
       return res.status(429).send({
+        success: false,
+        code: "OTP_COOLDOWN",
         message: `Please wait ${remainingSeconds} seconds before requesting a new OTP.`,
+        remainingSeconds,
+        resendAfter: remainingSeconds,
       });
     }
 
@@ -242,8 +246,7 @@ const sendPhoneEmailOTP = async (req, res) => {
 
     user.loginOtp = hashedOtp;
     user.loginOtpExpires = otpExpires;
-    user.loginOtpAttempts = 0; // Reset attempts on new OTP request
-    user.lastLoginOtpSentAt = new Date();
+    user.loginOtpAttempts = 0;
     await user.save();
 
     // Send OTP to registered email
@@ -275,7 +278,10 @@ const sendPhoneEmailOTP = async (req, res) => {
       console.warn("[OTP] SMS failed, falling back to email:", smsResult.error);
       try {
         await sendEmail(body);
+        user.lastLoginOtpSentAt = new Date();
+        await user.save();
         return res.send({
+          success: true,
           message: `SMS could not be sent. 4-digit OTP sent to your email: ${user.email.replace(/(.{2})(.*)(@.*)/, "$1***$3")}`,
           channel: "email",
           email: user.email,
@@ -283,14 +289,23 @@ const sendPhoneEmailOTP = async (req, res) => {
         });
       } catch (emailErr) {
         console.error("[OTP] Email fallback failed:", emailErr.message);
-        return res.status(500).send({
+        user.loginOtp = undefined;
+        user.loginOtpExpires = undefined;
+        user.loginOtpAttempts = 0;
+        await user.save();
+        return res.status(503).send({
+          success: false,
+          code: "OTP_DELIVERY_FAILED",
           message: "Could not send OTP by SMS or email. Please try again later.",
         });
       }
     }
 
-    const maskedPhone = String(smsPhone).replace(/\d(?=\d{4})/g, "*");
+    user.lastLoginOtpSentAt = new Date();
+    await user.save();
+
     res.send({
+      success: true,
       message: `4-digit OTP sent to +91${String(smsPhone).replace(/\D/g, "").slice(-10)}`,
       channel: "sms",
       phone: smsPhone,
@@ -299,7 +314,11 @@ const sendPhoneEmailOTP = async (req, res) => {
 
   } catch (err) {
     console.error("sendPhoneEmailOTP error:", err);
-    res.status(500).send({ message: err.message });
+    res.status(500).send({
+      success: false,
+      code: "OTP_SEND_FAILED",
+      message: "Unable to send OTP. Please try again.",
+    });
   }
 };
 
@@ -2111,11 +2130,15 @@ const sendEmailOtpLogin = async (req, res) => {
       }
     }
 
-    // Check resend cooldown (60 seconds)
+    // Check resend cooldown (60 seconds) — only if a previous OTP was actually sent
     if (user.lastLoginOtpSentAt && (Date.now() - user.lastLoginOtpSentAt < 60 * 1000)) {
       const remainingSeconds = Math.ceil(60 - (Date.now() - user.lastLoginOtpSentAt) / 1000);
       return res.status(429).send({
+        success: false,
+        code: "OTP_COOLDOWN",
         message: `Please wait ${remainingSeconds} seconds before requesting a new OTP.`,
+        remainingSeconds,
+        resendAfter: remainingSeconds,
       });
     }
 
@@ -2124,19 +2147,19 @@ const sendEmailOtpLogin = async (req, res) => {
     const hashedOtp = bcrypt.hashSync(otp, 10);
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
+    // Save OTP first, but do NOT set cooldown until email actually sends
     user.loginOtp = hashedOtp;
     user.loginOtpExpires = otpExpires;
-    user.loginOtpAttempts = 0; // Reset attempts on new OTP request
-    user.lastLoginOtpSentAt = new Date();
+    user.loginOtpAttempts = 0;
     await user.save();
 
-    // Send OTP to email
     const globalSetting = await Setting.findOne({ name: "globalSetting" });
+    const shopName = globalSetting?.setting?.shop_name || "RASA";
     const option = {
       name: user.name,
       email: user.email,
       otp: otp,
-      shop_name: globalSetting?.setting?.shop_name || "RASA",
+      shop_name: shopName,
     };
 
     const otpMail = simpleOtpEmail({
@@ -2146,14 +2169,35 @@ const sendEmailOtpLogin = async (req, res) => {
     });
     const body = {
       to: user.email,
-      subject: `${option.shop_name} login code`,
+      subject: `${shopName} login code`,
       html: otpMail.html,
       text: otpMail.text,
       emailType: "login-otp",
     };
 
-    await sendEmail(body);
+    try {
+      await sendEmail(body);
+    } catch (emailErr) {
+      console.error("sendEmailOtpLogin mail failed:", emailErr.message);
+      // Allow immediate retry — clear OTP so user isn't locked with undelivered code
+      user.loginOtp = undefined;
+      user.loginOtpExpires = undefined;
+      user.loginOtpAttempts = 0;
+      // Do not touch lastLoginOtpSentAt
+      await user.save();
+      return res.status(503).send({
+        success: false,
+        code: "OTP_DELIVERY_FAILED",
+        message:
+          "Could not send OTP email right now. Please try again in a moment.",
+      });
+    }
+
+    user.lastLoginOtpSentAt = new Date();
+    await user.save();
+
     res.send({
+      success: true,
       message: `4-digit OTP sent to your email: ${user.email}`,
       email: user.email,
       resendAfter: 60,
@@ -2161,7 +2205,11 @@ const sendEmailOtpLogin = async (req, res) => {
 
   } catch (err) {
     console.error("sendEmailOtpLogin error:", err);
-    res.status(500).send({ message: err.message });
+    res.status(500).send({
+      success: false,
+      code: "OTP_SEND_FAILED",
+      message: "Unable to send OTP. Please try again.",
+    });
   }
 };
 
@@ -2172,7 +2220,19 @@ const verifyEmailOtpLogin = async (req, res) => {
 
     const otpCode = String(otp || "").trim();
     if (!email || !otpCode) {
-      return res.status(400).send({ message: "Email and OTP are required." });
+      return res.status(400).send({
+        success: false,
+        code: "OTP_REQUIRED",
+        message: "Email and OTP are required.",
+      });
+    }
+
+    if (!/^\d{4}$/.test(otpCode)) {
+      return res.status(400).send({
+        success: false,
+        code: "OTP_INVALID",
+        message: "Enter the 4-digit OTP from your email.",
+      });
     }
 
     const emailNorm = String(email).toLowerCase().trim();
@@ -2180,11 +2240,12 @@ const verifyEmailOtpLogin = async (req, res) => {
 
     if (!user) {
       return res.status(404).send({
+        success: false,
         message:
           intent === "login"
             ? "No account found with this email. Please sign up first."
             : "Please request an OTP first.",
-        code: intent === "login" ? "EMAIL_NOT_REGISTERED" : undefined,
+        code: intent === "login" ? "EMAIL_NOT_REGISTERED" : "OTP_NOT_FOUND",
       });
     }
 
@@ -2195,12 +2256,20 @@ const verifyEmailOtpLogin = async (req, res) => {
       if (isRecentAuth(user) && user.emailVerified) {
         return sendCustomerAuthResponse(res, user, "Login Successful!");
       }
-      return res.status(400).send({ message: "OTP has expired or not found. Please request a new one." });
+      return res.status(400).send({
+        success: false,
+        code: "OTP_EXPIRED",
+        message: "OTP has expired or not found. Please request a new one.",
+      });
     }
 
     // Check attempt limits
     if (user.loginOtpAttempts >= 5) {
-      return res.status(403).send({ message: "Too many failed attempts. Please request a new OTP." });
+      return res.status(403).send({
+        success: false,
+        code: "OTP_ATTEMPTS_EXCEEDED",
+        message: "Too many failed attempts. Please request a new OTP.",
+      });
     }
 
     // Verify OTP
@@ -2209,7 +2278,15 @@ const verifyEmailOtpLogin = async (req, res) => {
     if (!isMatch) {
       user.loginOtpAttempts += 1;
       await user.save();
-      return res.status(400).send({ message: "Invalid OTP code." });
+      const left = Math.max(0, 5 - user.loginOtpAttempts);
+      return res.status(400).send({
+        success: false,
+        code: "OTP_INVALID",
+        message:
+          left > 0
+            ? `Invalid OTP code. ${left} attempt${left === 1 ? "" : "s"} left.`
+            : "Invalid OTP code. Please request a new OTP.",
+      });
     }
 
     const isNewUser = !wasVerified;

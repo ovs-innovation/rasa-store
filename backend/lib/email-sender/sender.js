@@ -79,56 +79,58 @@ const sendViaResend = async (mail) => {
   return data;
 };
 
-const sendEmail = (body) => {
-  return new Promise((resolve, reject) => {
-    let mail;
+const sendEmailOnce = async (mail) => {
+  if (isResendConfigured()) {
     try {
-      mail = prepareMailOptions(body);
+      const data = await sendViaResend(mail);
+      console.log(
+        `[email] Resend → ${mail.to} | ${mail.subject} | id=${data?.id || "ok"}`
+      );
+      return data;
     } catch (err) {
-      return reject(err);
+      console.error("Resend API error:", err.response?.data || err.message);
+      throw new Error(
+        err.response?.data?.message ||
+          err.message ||
+          "Resend failed to send email"
+      );
     }
+  }
 
-    if (isResendConfigured()) {
-      sendViaResend(mail)
-        .then((data) => {
-          console.log(
-            `[email] Resend → ${mail.to} | ${mail.subject} | id=${data?.id || "ok"}`
-          );
-          resolve(data);
-        })
-        .catch((err) => {
-          console.error("Resend API error:", err.response?.data || err.message);
-          reject(
-            new Error(
-              err.response?.data?.message ||
-                err.message ||
-                "Resend failed to send email"
-            )
-          );
-        });
-      return;
+  console.warn(
+    "[email] Using SMTP (Gmail) — transactional mail often lands in spam. Set RESEND_API_KEY."
+  );
+
+  try {
+    const info = await getTransporter().sendMail(mail);
+    return info;
+  } catch (err) {
+    console.error("Error sending email:", err);
+    if (err.code === "EAUTH") {
+      throw new Error(
+        "SMTP authentication failed. Use Resend (RESEND_API_KEY) instead of Gmail. " +
+          err.message
+      );
     }
+    throw err;
+  }
+};
 
-    console.warn(
-      "[email] Using SMTP (Gmail) — transactional mail often lands in spam. Set RESEND_API_KEY."
-    );
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-    getTransporter().sendMail(mail, (err, info) => {
-      if (err) {
-        console.error("Error sending email:", err);
-        if (err.code === "EAUTH") {
-          return reject(
-            new Error(
-              "SMTP authentication failed. Use Resend (RESEND_API_KEY) instead of Gmail. " +
-                err.message
-            )
-          );
-        }
-        return reject(err);
-      }
-      return resolve(info);
-    });
-  });
+const sendEmail = async (body) => {
+  const mail = prepareMailOptions(body);
+  let lastErr;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      return await sendEmailOnce(mail);
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[email] attempt ${attempt} failed:`, err.message);
+      if (attempt < 2) await sleep(800);
+    }
+  }
+  throw lastErr;
 };
 
 const minutes = 30;
@@ -171,7 +173,25 @@ const phoneVerificationLimit = rateLimit({
   handler: (req, res) => {
     res.status(429).send({
       success: false,
+      code: "RATE_LIMITED",
       message: "Too many OTP requests. Please wait 5 minutes and try again.",
+      remainingSeconds: 300,
+    });
+  },
+});
+
+// Per-IP limiter for email login OTP (prevents spam without locking one user forever)
+const emailLoginOtpLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 12,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    res.status(429).send({
+      success: false,
+      code: "RATE_LIMITED",
+      message: "Too many OTP requests from this device. Please wait a few minutes and try again.",
+      remainingSeconds: 900,
     });
   },
 });
@@ -182,4 +202,5 @@ module.exports = {
   passwordVerificationLimit,
   supportMessageLimit,
   phoneVerificationLimit,
+  emailLoginOtpLimit,
 };

@@ -72,9 +72,54 @@ const useCheckoutSubmit = (storeSetting) => {
     register,
     handleSubmit,
     setValue,
+    getValues,
     watch,
     formState: { errors },
-  } = useForm();
+  } = useForm({
+    shouldUnregister: false,
+    defaultValues: {
+      paymentMethod: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      contact: "",
+      address: "",
+      city: "",
+      country: "India",
+      zipCode: "",
+      shippingOption: "",
+    },
+  });
+
+  // Keep delivery fields registered so setValue() values are included on submit
+  useEffect(() => {
+    register("firstName");
+    register("lastName");
+    register("email");
+    register("contact", { required: "Phone number is required" });
+    register("address", { required: "Address is required" });
+    register("city");
+    register("country");
+    register("zipCode", { required: "Pincode is required" });
+    register("shippingOption");
+  }, [register]);
+
+  const normalizePhone = (value) => {
+    const digits = String(value || "").replace(/\D/g, "");
+    if (digits.length >= 10) return digits.slice(-10);
+    return digits;
+  };
+
+  const resolveContact = (formData = {}) => {
+    const raw =
+      formData.contact ||
+      formData.phone ||
+      getValues("contact") ||
+      userInfo?.phone ||
+      userInfo?.contact ||
+      "";
+    return normalizePhone(raw);
+  };
 
   useEffect(() => {
     if (Cookies.get("couponInfo")) {
@@ -87,7 +132,11 @@ const useCheckoutSubmit = (storeSetting) => {
     if (displayEmail) {
       setValue("email", displayEmail);
     }
-  }, [setValue, userInfo]);
+    // Prefill phone from logged-in user if form contact empty
+    if (userInfo?.phone && !getValues("contact")) {
+      setValue("contact", normalizePhone(userInfo.phone), { shouldValidate: true });
+    }
+  }, [setValue, getValues, userInfo]);
 
   //remove coupon if total value less then minimum amount of coupon
   useEffect(() => {
@@ -209,19 +258,50 @@ const useCheckoutSubmit = (storeSetting) => {
 
   const submitHandler = async (data) => {
     try {
+      const contact = resolveContact(data);
+      if (!contact || contact.length < 10) {
+        notifyError("Please enter a valid 10-digit phone number.");
+        setIsCheckoutSubmit(false);
+        return;
+      }
+
+      const fullName =
+        `${data.firstName || getValues("firstName") || ""} ${
+          data.lastName || getValues("lastName") || ""
+        }`.trim() ||
+        userInfo?.name ||
+        "Customer";
+
+      const address =
+        data.address || getValues("address") || "";
+      const zipCode =
+        data.zipCode || getValues("zipCode") || "";
+      const city = data.city || getValues("city") || "";
+      const country =
+        data.country || getValues("country") || "India";
+
+      if (!address || address.trim().length < 5) {
+        notifyError("Please select or enter a delivery address.");
+        setIsCheckoutSubmit(false);
+        return;
+      }
+      if (!zipCode || String(zipCode).trim().length < 4) {
+        notifyError("Please enter a valid pincode.");
+        setIsCheckoutSubmit(false);
+        return;
+      }
+
       // Keep the old checkout flow: take details on checkout itself
       // and (if needed) complete the customer profile in the background.
       if (userInfo?.token && !isProfileComplete(userInfo)) {
         try {
           const profilePayload = {
-            name:
-              `${data.firstName || ""} ${data.lastName || ""}`.trim() ||
-              userInfo?.name,
-            phone: data.contact,
-            address: data.address,
-            city: data.city,
-            country: data.country,
-            zipCode: data.zipCode,
+            name: fullName,
+            phone: contact,
+            address,
+            city,
+            country,
+            zipCode,
           };
 
           await CustomerServices.completeProfile(profilePayload);
@@ -244,19 +324,20 @@ const useCheckoutSubmit = (storeSetting) => {
         return;
       }
 
-      dispatch({ type: "SAVE_SHIPPING_ADDRESS", payload: data });
-      Cookies.set("shippingAddress", JSON.stringify(data));
+      dispatch({ type: "SAVE_SHIPPING_ADDRESS", payload: { ...data, contact } });
+      Cookies.set("shippingAddress", JSON.stringify({ ...data, contact }));
       setIsCheckoutSubmit(true);
       setError("");
 
       const userDetails = {
-        name: `${data.firstName || ""} ${data.lastName || ""}`.trim() || userInfo?.name || "A customer",
-        contact: data.contact,
-        email: data.email,
-        address: data.address,
-        country: data.country,
-        city: data.city,
-        zipCode: data.zipCode,
+        name: fullName,
+        contact,
+        phone: contact,
+        email: data.email || getValues("email") || getDisplayEmail(userInfo) || "",
+        address,
+        country,
+        city,
+        zipCode,
       };
 
       // 1. Pre-check stock before any payment processing
@@ -283,20 +364,26 @@ const useCheckoutSubmit = (storeSetting) => {
 
       let orderInfo = {
         user_info: userDetails,
-        shippingOption: data.shippingOption,
+        shippingOption: data.shippingOption || getValues("shippingOption") || "Standard",
         paymentMethod: data.paymentMethod,
         status: "Pending",
         cart: items,
-        subTotal: cartTotal,
-        shippingCost: shippingCost,
-        discount: discountAmount,
+        subTotal: Number(cartTotal) || 0,
+        shippingCost: Number(shippingCost) || 0,
+        discount: Number(discountAmount) || 0,
         coupon: couponInfo?.couponCode ? {
           couponCode: couponInfo.couponCode,
-          discountAmount: discountAmount,
+          discountAmount: Number(discountAmount) || 0,
         } : null,
         taxSummary,
-        total: total,
+        total: Number(total) || 0,
       };
+
+      if (!orderInfo.total || orderInfo.total < 1) {
+        notifyError("Cart total is invalid. Please refresh and try again.");
+        setIsCheckoutSubmit(false);
+        return;
+      }
 
       if (userInfo?.id) {
         await CustomerServices.addShippingAddress({
@@ -309,9 +396,9 @@ const useCheckoutSubmit = (storeSetting) => {
 
       // Handle payment based on method
       switch (data.paymentMethod) {
+        case "PhonePe":
         case "RazorPay":
-          // User requested to hide the Razorpay gateway and directly place the order successfully
-          await handleCashPayment(orderInfo);
+          await handlePaymentWithPhonePe(orderInfo);
           break;
         case "Cash":
           await handleCashPayment(orderInfo);
@@ -471,146 +558,45 @@ const useCheckoutSubmit = (storeSetting) => {
     await handleOrderSuccess(orderResponse, orderInfo);
   };
 
-  //handle razorpay payment
-  const handlePaymentWithRazorpay = async (orderInfo) => {
+  // PhonePe Standard Checkout — redirect flow; success only after backend verify/webhook
+  const handlePaymentWithPhonePe = async (orderInfo) => {
     try {
-      // Validate storeSetting and Razorpay configuration
-      if (!storeSetting) {
-        notifyError("Store settings not loaded. Please refresh the page.");
-        setIsCheckoutSubmit(false);
-        return;
-      }
-
-      if (!storeSetting?.razorpay_status) {
-        notifyError("Razorpay payment gateway is not enabled.");
-        setIsCheckoutSubmit(false);
-        return;
-      }
-
-      if (!storeSetting?.razorpay_id) {
-        notifyError("Razorpay is not configured. Please contact administrator.");
-        setIsCheckoutSubmit(false);
-        return;
-      }
-
-      // Create Razorpay order
-      const amountToSend = Math.round(orderInfo.total);
-      if (isNaN(amountToSend) || amountToSend <= 0) {
-        notifyError("Invalid order total. Please check your cart.");
-        setIsCheckoutSubmit(false);
-        return;
-      }
-
-      const razorpayOrderResponse = await OrderServices.createOrderByRazorPay({
-        amount: amountToSend.toString(),
-        cart: orderInfo.cart,
-      });
-
-      if (!razorpayOrderResponse || !razorpayOrderResponse.id) {
-        notifyError("Failed to create payment order. Please try again.");
-        setIsCheckoutSubmit(false);
-        return;
-      }
-
-      const { amount, id, currency } = razorpayOrderResponse;
-
-      // Validate Razorpay SDK
-      if (!Razorpay || typeof Razorpay !== "function") {
-        notifyError("Razorpay SDK is not loaded. Please refresh the page.");
-        setIsCheckoutSubmit(false);
-        return;
-      }
-
-      const options = {
-        key: storeSetting.razorpay_id,
-        amount: amount,
-        currency: currency || "INR",
-        name: storeSetting?.store_name || "Rasa Store",
-        description:
-          storeSetting?.store_description ||
-          "This is the total cost of your purchase",
-        order_id: id,
-        handler: async (response) => {
-          try {
-            if (!response || !response.razorpay_payment_id) {
-              notifyError("Invalid payment response. Please try again.");
-              setIsCheckoutSubmit(false);
-              return;
-            }
-
-            const razorpayDetails = {
-              amount: orderInfo.total,
-              razorpayPaymentId: response.razorpay_payment_id,
-              razorpayOrderId: response.razorpay_order_id,
-              razorpaySignature: response.razorpay_signature,
-            };
-
-            const orderData = { ...orderInfo, razorpay: razorpayDetails };
-            const orderResponse = await OrderServices.addRazorpayOrder(orderData);
-            await handleOrderSuccess(orderResponse, orderInfo);
-          } catch (err) {
-            console.error("Razorpay order save error:", err);
-            const errorData = err?.response?.data;
-            console.log("Error Data from Server (Save Order):", errorData);
-
-            if (errorData?.outOfStockItems) {
-              errorData.outOfStockItems.forEach((item) => {
-                removeItem(item.id || item._id);
-                notifyError(`${item.title} is out of stock and removed from cart.`);
-              });
-              setIsCheckoutSubmit(false);
-              toggleCartDrawer();
-              return;
-            }
-            notifyError(
-              errorData?.message ||
-              "Failed to save order. Please contact support."
-            );
-            setIsCheckoutSubmit(false);
-          }
-        },
-        prefill: {
-          name: orderInfo?.user_info?.name || "Customer",
-          email: orderInfo?.user_info?.email || "customer@example.com",
-          contact: orderInfo?.user_info?.contact || "0000000000",
-        },
-        theme: { color: storeSetting?.razorpay_color || "#EC4899" },
-        modal: {
-          ondismiss: () => {
-            setIsCheckoutSubmit(false);
-          },
-        },
+      const payload = {
+        ...orderInfo,
+        paymentMethod: "PhonePe",
+        status: "Pending Payment",
       };
 
-      try {
-        const rzpay = new Razorpay(options);
-        rzpay.open();
-      } catch (openErr) {
-        console.error("Error opening Razorpay:", openErr);
-        notifyError(
-          openErr?.message || "Error in opening checkout. Please try again."
-        );
-        setIsCheckoutSubmit(false);
-      }
-    } catch (err) {
-      console.error("Razorpay payment error:", err);
-      const errorData = err?.response?.data;
-      console.log("Error Data from Server:", errorData);
+      const response = await OrderServices.createPhonePeCheckout(payload);
 
-      if (errorData?.outOfStockItems) {
-        errorData.outOfStockItems.forEach((item) => {
-          removeItem(item.id || item._id);
-          notifyError(`${item.title} is out of stock and removed from cart.`);
-        });
+      if (!response?.redirectUrl) {
+        notifyError(response?.message || "Unable to start PhonePe payment.");
         setIsCheckoutSubmit(false);
-        toggleCartDrawer();
         return;
       }
 
-      const errorMessage = errorData?.message || err?.message || "Failed to process payment. Please try again.";
-      notifyError(errorMessage);
+      // Persist merchant order id for return page fallback
+      if (typeof window !== "undefined" && response.merchantOrderId) {
+        sessionStorage.setItem("phonepe_moid", response.merchantOrderId);
+        sessionStorage.setItem("phonepe_order_id", response.orderId || "");
+      }
+
+      notifySuccess("Redirecting to secure PhonePe checkout...");
+      window.location.href = response.redirectUrl;
+    } catch (err) {
+      console.error("PhonePe checkout error:", err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "PhonePe payment failed to start. Please try again.";
+      notifyError(msg);
       setIsCheckoutSubmit(false);
     }
+  };
+
+  //handle razorpay payment (legacy — kept but unused; PhonePe is primary online gateway)
+  const handlePaymentWithRazorpay = async (orderInfo) => {
+    return handlePaymentWithPhonePe(orderInfo);
   };
 
   const handleShippingCost = (value) => {
@@ -620,34 +606,39 @@ const useCheckoutSubmit = (storeSetting) => {
 
   //handle default shipping address
   const handleDefaultShippingAddress = (value) => {
-    // console.log("handle default shipping", value);
     setUseExistingAddress(value);
     if (value) {
-      const address = data;
-      const nameParts = address?.name?.split(" "); // Split the name into parts
-      const firstName = nameParts[0]; // First name is the first element
-      const lastName =
-        nameParts?.length > 1 ? nameParts[nameParts?.length - 1] : ""; // Last name is the last element, if it exists
-      // console.log("address", address.name.split(" "), "value", value);
+      // `data` from query may be a single address object OR an array
+      const address = Array.isArray(data)
+        ? data.find((a) => a?.isDefault) || data[0]
+        : data;
 
-      setValue("firstName", firstName);
-      setValue("lastName", lastName);
+      if (!address || typeof address !== "object") {
+        notifyError("No saved address found.");
+        setUseExistingAddress(false);
+        return;
+      }
 
-      setValue("address", address.address);
-      setValue("contact", address.contact);
-      // setValue("email", address.email);
-      setValue("city", address.city);
-      setValue("country", address.country);
-      setValue("zipCode", address.zipCode);
+      const nameParts = String(address?.name || "").trim().split(/\s+/).filter(Boolean);
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+      const phone = normalizePhone(address.phone || address.contact || userInfo?.phone || "");
+
+      setValue("firstName", firstName, { shouldValidate: true });
+      setValue("lastName", lastName, { shouldValidate: true });
+      setValue("address", address.address || "", { shouldValidate: true });
+      setValue("contact", phone, { shouldValidate: true });
+      setValue("city", address.city || "", { shouldValidate: true });
+      setValue("country", address.country || "India", { shouldValidate: true });
+      setValue("zipCode", address.zipCode || "", { shouldValidate: true });
     } else {
-      setValue("firstName");
-      setValue("lastName");
-      setValue("address");
-      setValue("contact");
-      // setValue("email");
-      setValue("city");
-      setValue("country");
-      setValue("zipCode");
+      setValue("firstName", "");
+      setValue("lastName", "");
+      setValue("address", "");
+      setValue("contact", normalizePhone(userInfo?.phone || ""));
+      setValue("city", "");
+      setValue("country", "India");
+      setValue("zipCode", "");
     }
   };
   const handleCouponCode = async (e) => {

@@ -92,7 +92,7 @@ function MyApp({ Component, pageProps }) {
   return (
     <>
       <QueryClientProvider client={queryClient}>
-        <SessionProvider>
+        <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
           <UserProvider>
             <Provider store={store}>
               <SidebarProvider>

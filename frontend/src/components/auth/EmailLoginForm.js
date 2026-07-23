@@ -107,6 +107,7 @@ const EmailLoginForm = ({ variant = "login" }) => {
   const [otp, setOtp] = useState(Array(emailLogin.otpLength).fill(""));
   const otpInputRefs = useRef([]);
   const verifyingRef = useRef(false);
+  const sendingRef = useRef(false);
   const [emailAddress, setEmailAddress] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState(isSignup ? STREETWEAR_AVATARS.boys[0].url : "");
 
@@ -121,13 +122,26 @@ const EmailLoginForm = ({ variant = "login" }) => {
       emailLogin.setError("Enter a valid email address");
       throw new Error("Enter a valid email address");
     }
+    if (sendingRef.current || emailLogin.loading) {
+      throw new Error("OTP request already in progress");
+    }
     emailLogin.setError("");
-    const response = await emailLogin.sendOtp(trimmed, selectedAvatar);
-    const len = response?.otpLength || emailLogin.otpLength;
-    resetOtpInputs(len);
-    setStep("otp");
-    startTimer();
-    notifySuccess(response?.message || "OTP sent to your email");
+    sendingRef.current = true;
+    try {
+      const response = await emailLogin.sendOtp(trimmed, selectedAvatar);
+      const len = response?.otpLength || emailLogin.otpLength;
+      resetOtpInputs(len);
+      setStep("otp");
+      startTimer(response?.resendAfter || 60);
+      notifySuccess(response?.message || "OTP sent to your email");
+    } catch (err) {
+      if (err?.remainingSeconds > 0) {
+        startTimer(err.remainingSeconds);
+      }
+      throw err;
+    } finally {
+      sendingRef.current = false;
+    }
   };
 
   const handleSendOTP = async (e) => {
@@ -135,16 +149,16 @@ const EmailLoginForm = ({ variant = "login" }) => {
     try {
       await sendOtpRequest();
     } catch {
-      /* inline */
+      /* inline friendly error */
     }
   };
 
   const handleResendOTP = async () => {
-    if (!canResend || emailLogin.loading) return;
+    if (!canResend || emailLogin.loading || sendingRef.current) return;
     try {
       await sendOtpRequest();
     } catch {
-      /* inline */
+      /* inline friendly error */
     }
   };
 
@@ -216,6 +230,7 @@ const EmailLoginForm = ({ variant = "login" }) => {
   const goBackToEmail = () => {
     setStep("email");
     resetOtpInputs(emailLogin.otpLength);
+    emailLogin.resetOtpSession?.();
     emailLogin.setError("");
     resetTimer();
   };

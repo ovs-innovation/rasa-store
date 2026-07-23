@@ -3,8 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const path = require("path");
-// const http = require("http");
-// const { Server } = require("socket.io");
+const crypto = require("crypto");
 
 const { connectDB } = require("../config/db");
 const productRoutes = require("../routes/productRoutes");
@@ -29,12 +28,16 @@ const locationRoutes = require("../routes/locationRoutes");
 const pushNotificationRoutes = require("../routes/pushNotificationRoutes");
 const customerNotificationRoutes = require("../routes/customerNotificationRoutes");
 const webhookRoutes = require("../routes/webhookRoutes");
-
-const { isAuth, isAdmin } = require("../config/auth");
-// const {
-//   getGlobalSetting,
-//   getStoreCustomizationSetting,
-// } = require("../lib/notification/setting");
+const paymentRoutes = require("../modules/payment/routes/paymentRoutes");
+const {
+  handlePhonePeWebhook,
+} = require("../modules/payment/controller/paymentController");
+const { createCorsOptions } = require("../middleware/corsConfig");
+const {
+  errorHandler,
+  notFoundHandler,
+} = require("../middleware/errorHandler");
+const { initSentry } = require("../lib/monitoring/sentry");
 
 connectDB().catch((err) => {
   console.error(
@@ -44,69 +47,50 @@ connectDB().catch((err) => {
 });
 const app = express();
 
-// We are using this for the express-rate-limit middleware
-// See: https://github.com/nfriedly/express-rate-limit
-// app.enable('trust proxy');
 app.set("trust proxy", 1);
 
-// CORS configuration - allow frontend domain + localhost for dev
-const allowedOrigins = process.env.FRONTEND_URL
-  ? [
-      process.env.FRONTEND_URL,
-      process.env.ADMIN_URL,
-      process.env.STORE_URL,
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://localhost:4100",
-      "http://127.0.0.1:4100",
-      "http://localhost:5055",
-      "http://127.0.0.1:5055",
-      "exp://192.168.1.6:8081",
-      "exp://192.168.1.6:8082",
-    ].filter(Boolean)
-  : [
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "http://localhost:4100",
-      "http://127.0.0.1:4100",
-      "http://localhost:5055",
-      "*",
-    ];
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (
-      !origin ||
-      allowedOrigins.includes("*") ||
-      allowedOrigins.some((o) => origin.startsWith(o))
-    ) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-};
-
-app.options("*", cors(corsOptions)); // include before other routes
-app.use(cors(corsOptions));
-
-app.use(express.json({ limit: "10mb" })); // Increased for review images
-app.use(express.urlencoded({ limit: "10mb", extended: true }));
+// Security headers first
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
     crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: false, // API-only; storefront CSP is frontend's job
   }),
 );
 
-//root route
+// Optional Sentry (enabled only when SENTRY_DSN is set)
+initSentry(app);
+
+// CORS whitelist (no "*" in production)
+const corsOptions = createCorsOptions();
+app.options("*", cors(corsOptions));
+app.use(cors(corsOptions));
+
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
+
+// Attach correlation id to every request
+app.use((req, res, next) => {
+  const incoming = req.headers["x-correlation-id"];
+  req.correlationId =
+    (typeof incoming === "string" && incoming.trim()) ||
+    `req_${Date.now().toString(36)}_${crypto.randomBytes(3).toString("hex")}`;
+  res.setHeader("X-Correlation-Id", req.correlationId);
+  next();
+});
+
 app.get("/", (req, res) => {
   res.send("App works properly!");
 });
 
-// Short redirect for QR codes (keeps QR content small)
-// Example: http://localhost:8090/o/69819e2bff190a2118afe968  ->  http://localhost:3000/order/69819e2bff190a2118afe968
+app.get("/health", (req, res) => {
+  res.json({
+    success: true,
+    status: "ok",
+    time: new Date().toISOString(),
+    correlationId: req.correlationId,
+  });
+});
 
 app.get("/o/:id", (req, res) => {
   const frontendBaseUrl = (
@@ -120,7 +104,6 @@ app.get("/o/:id", (req, res) => {
   return res.redirect(302, `${frontendBaseUrl}/order/${req.params.id}`);
 });
 
-//this for route will need for store front, also for admin dashboard
 app.use("/api/products", productRoutes);
 app.use("/api/category", categoryRoutes);
 app.use("/api/coupon", couponRoutes);
@@ -141,29 +124,16 @@ app.use("/api/location", locationRoutes);
 app.use("/api/push-notification", pushNotificationRoutes);
 app.use("/api/customer-notifications", customerNotificationRoutes);
 app.use("/api/webhooks", webhookRoutes);
-//if you not use admin dashboard then these two route will not needed.
+app.post("/api/webhooks/phonepe", handlePhonePeWebhook);
+app.use("/api/payment", paymentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/orders", orderRoutes);
 
-// Use express's default error handling middleware
-app.use((err, req, res, next) => {
-  if (res.headersSent) return next(err);
-  res.status(400).json({ message: err.message });
-});
-
-// Serve static files from the "public" directory
 app.use("/static", express.static(path.join(__dirname, "../public")));
-
-// Serve uploaded files (static uploads)
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// 404 Handler for undefined routes
-app.use((req, res) => {
-  console.log(`404 - Route Not Found: ${req.method} ${req.originalUrl}`);
-  res.status(404).json({
-    message: `Route ${req.originalUrl} not found`,
-  });
-});
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 

@@ -98,6 +98,7 @@ const orderSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
+        "Pending Payment",
         "Order Placed",
         "Pending",
         "Scheduled",
@@ -115,6 +116,38 @@ const orderSchema = new mongoose.Schema(
         "Failed"
       ],
       default: "Order Placed",
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["Unpaid", "Pending", "Paid", "Failed", "Refunded"],
+      default: "Unpaid",
+      index: true,
+    },
+    merchantOrderId: {
+      type: String,
+      default: "",
+      index: true,
+    },
+    paymentRef: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payment",
+      required: false,
+    },
+    correlationId: {
+      type: String,
+      default: "",
+      index: true,
+    },
+    cartSnapshot: {
+      type: Array,
+      default: [],
+    },
+    pricingSnapshot: {
+      subTotal: { type: Number },
+      shippingCost: { type: Number },
+      discount: { type: Number },
+      total: { type: Number },
+      calculatedAt: { type: Date },
     },
     statusHistory: [
       {

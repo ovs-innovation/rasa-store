@@ -615,4 +615,5 @@ module.exports = {
   createOrderByRazorPay,
   addRazorpayOrder,
   sendEmailInvoiceToCustomer,
+  sendOrderNotifications,
 };

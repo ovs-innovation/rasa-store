@@ -32,6 +32,7 @@ import InputPayment from "@components/form/InputPayment";
 import useCheckoutSubmit from "@hooks/useCheckoutSubmit";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import SettingServices from "@services/SettingServices";
+import OrderServices from "@services/OrderServices";
 import CustomerServices from "@services/CustomerServices";
 import LocationServices from "@services/LocationServices";
 import SwitchToggle from "@components/form/SwitchToggle";
@@ -47,6 +48,7 @@ const Checkout = () => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [isLocationLoading, setIsLocationLoading] = useState(false);
+  const [phonePeEnabled, setPhonePeEnabled] = useState(true);
   const formRef = useRef(null);
   const [isPaymentDropdownOpen, setIsPaymentDropdownOpen] = useState(false);
   const [portalReady, setPortalReady] = useState(false);
@@ -117,6 +119,20 @@ const Checkout = () => {
       ? [shippingAddressesResponse] 
       : [];
 
+  useEffect(() => {
+    let mounted = true;
+    OrderServices.getPhonePeStatus()
+      .then((res) => {
+        if (mounted) setPhonePeEnabled(res?.enabled !== false);
+      })
+      .catch(() => {
+        if (mounted) setPhonePeEnabled(true);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Set default selected address on load
   React.useEffect(() => {
     if (shippingAddresses && shippingAddresses.length > 0 && !selectedAddress) {
@@ -163,17 +179,21 @@ const Checkout = () => {
   // Update form values when selected address changes
   React.useEffect(() => {
     if (selectedAddress && setValue) {
-      const nameParts = (selectedAddress.name || "").split(" ");
-      setValue("firstName", nameParts[0] || "");
-      setValue("lastName", nameParts.slice(1).join(" ") || "");
-      setValue("email", getDisplayEmail(userInfo) || "");
-      setValue("contact", selectedAddress.phone || "");
-      setValue("address", selectedAddress.address || "");
+      const nameParts = String(selectedAddress.name || "").trim().split(/\s+/).filter(Boolean);
+      const phone = String(
+        selectedAddress.phone || selectedAddress.contact || userInfo?.phone || ""
+      ).replace(/\D/g, "").slice(-10);
+
+      setValue("firstName", nameParts[0] || "", { shouldValidate: true });
+      setValue("lastName", nameParts.slice(1).join(" ") || "", { shouldValidate: true });
+      setValue("email", getDisplayEmail(userInfo) || "", { shouldValidate: true });
+      setValue("contact", phone, { shouldValidate: true });
+      setValue("address", selectedAddress.address || "", { shouldValidate: true });
       setValue("address2", "");
-      setValue("city", selectedAddress.city || "");
+      setValue("city", selectedAddress.city || "", { shouldValidate: true });
       setValue("state", selectedAddress.country || "");
-      setValue("country", selectedAddress.country || "India");
-      setValue("zipCode", selectedAddress.zipCode || "");
+      setValue("country", selectedAddress.country || "India", { shouldValidate: true });
+      setValue("zipCode", selectedAddress.zipCode || "", { shouldValidate: true });
     }
   }, [selectedAddress, setValue, userInfo]);
 
@@ -655,17 +675,20 @@ const Checkout = () => {
                                 onClick={() => {
                                   setSelectedAddress(address);
                                   // Update form values immediately when address is selected
-                                  const nameParts = (address.name || "").split(" ");
-                                  setValue("firstName", nameParts[0] || "");
-                                  setValue("lastName", nameParts.slice(1).join(" ") || "");
-                                  setValue("email", getDisplayEmail(userInfo) || "");
-                                  setValue("contact", address.phone || "");
-                                  setValue("address", address.address || "");
+                                  const nameParts = String(address.name || "").trim().split(/\s+/).filter(Boolean);
+                                  const phone = String(
+                                    address.phone || address.contact || userInfo?.phone || ""
+                                  ).replace(/\D/g, "").slice(-10);
+                                  setValue("firstName", nameParts[0] || "", { shouldValidate: true });
+                                  setValue("lastName", nameParts.slice(1).join(" ") || "", { shouldValidate: true });
+                                  setValue("email", getDisplayEmail(userInfo) || "", { shouldValidate: true });
+                                  setValue("contact", phone, { shouldValidate: true });
+                                  setValue("address", address.address || "", { shouldValidate: true });
                                   setValue("address2", "");
-                                  setValue("city", address.city || "");
+                                  setValue("city", address.city || "", { shouldValidate: true });
                                   setValue("state", address.country || "");
-                                  setValue("country", address.country || "India");
-                                  setValue("zipCode", address.zipCode || "");
+                                  setValue("country", address.country || "India", { shouldValidate: true });
+                                  setValue("zipCode", address.zipCode || "", { shouldValidate: true });
                                 }}
                                 className={`border rounded-xl p-3 sm:p-4 cursor-pointer transition-all ${
                                   isSelected
@@ -683,17 +706,20 @@ const Checkout = () => {
                                         checked={isSelected}
                                         onChange={() => {
                                           setSelectedAddress(address);
-                                          const nameParts = (address.name || "").split(" ");
-                                          setValue("firstName", nameParts[0] || "");
-                                          setValue("lastName", nameParts.slice(1).join(" ") || "");
-                                          setValue("email", getDisplayEmail(userInfo) || "");
-                                          setValue("contact", address.phone || "");
-                                          setValue("address", address.address || "");
+                                          const nameParts = String(address.name || "").trim().split(/\s+/).filter(Boolean);
+                                          const phone = String(
+                                            address.phone || address.contact || userInfo?.phone || ""
+                                          ).replace(/\D/g, "").slice(-10);
+                                          setValue("firstName", nameParts[0] || "", { shouldValidate: true });
+                                          setValue("lastName", nameParts.slice(1).join(" ") || "", { shouldValidate: true });
+                                          setValue("email", getDisplayEmail(userInfo) || "", { shouldValidate: true });
+                                          setValue("contact", phone, { shouldValidate: true });
+                                          setValue("address", address.address || "", { shouldValidate: true });
                                           setValue("address2", "");
-                                          setValue("city", address.city || "");
+                                          setValue("city", address.city || "", { shouldValidate: true });
                                           setValue("state", address.country || "");
-                                          setValue("country", address.country || "India");
-                                          setValue("zipCode", address.zipCode || "");
+                                          setValue("country", address.country || "India", { shouldValidate: true });
+                                          setValue("zipCode", address.zipCode || "", { shouldValidate: true });
                                         }}
                                         className="h-5 w-5 text-store-600 focus:ring-store-500 border-gray-300 cursor-pointer"
                                       />
@@ -1076,7 +1102,14 @@ const Checkout = () => {
                 <div className="mt-5 sm:mt-6 bg-[#0F0F0F] border border-neutral-800 rounded-xl p-3 sm:p-4">
                   {/* Payment Method Selection */}
                   <div className="mb-4">
-                    {/* Hidden input to register with react-hook-form */}
+                    {/* Hidden inputs so address/payment values always submit with RHF */}
+                    <input type="hidden" {...register("contact")} />
+                    <input type="hidden" {...register("address")} />
+                    <input type="hidden" {...register("zipCode")} />
+                    <input type="hidden" {...register("firstName")} />
+                    <input type="hidden" {...register("lastName")} />
+                    <input type="hidden" {...register("city")} />
+                    <input type="hidden" {...register("country")} />
                     <input
                       type="hidden"
                       {...register("paymentMethod", {
@@ -1100,10 +1133,10 @@ const Checkout = () => {
                           <div className="flex-grow">
                             <p className="text-[10px] text-neutral-300 uppercase tracking-wider font-semibold">Pay using</p>
                             <p className="text-sm font-semibold text-[#D4AF37]">
-                              {selectedPaymentMethod === 'Cash' 
-                                ? 'Cash on Delivery' 
-                                : selectedPaymentMethod === 'RazorPay' 
-                                  ? 'UPI / RazorPay' 
+                              {selectedPaymentMethod === 'Cash'
+                                ? 'Cash on Delivery'
+                                : selectedPaymentMethod === 'PhonePe' || selectedPaymentMethod === 'RazorPay'
+                                  ? 'UPI / PhonePe'
                                   : 'Select Payment Method'}
                             </p>
                           </div>
@@ -1137,21 +1170,21 @@ const Checkout = () => {
                               )}
                             </button>
                           )}
-                          {storeSetting?.razorpay_status && (
+                          {(phonePeEnabled || storeSetting?.razorpay_status) && (
                             <button
                               type="button"
                               onClick={() => {
-                                setValue("paymentMethod", "RazorPay", { shouldValidate: true });
+                                setValue("paymentMethod", "PhonePe", { shouldValidate: true });
                                 setIsPaymentDropdownOpen(false);
                               }}
                               className={`w-full px-4 py-3 text-left text-sm font-semibold flex items-center justify-between transition-colors ${
-                                selectedPaymentMethod === 'RazorPay'
+                                selectedPaymentMethod === 'PhonePe' || selectedPaymentMethod === 'RazorPay'
                                   ? 'bg-[#D4AF37]/10 text-[#D4AF37]'
                                   : 'text-white hover:bg-neutral-900'
                               }`}
                             >
-                              <span>UPI / RazorPay</span>
-                              {selectedPaymentMethod === 'RazorPay' && (
+                              <span>UPI / PhonePe</span>
+                              {(selectedPaymentMethod === 'PhonePe' || selectedPaymentMethod === 'RazorPay') && (
                                 <span className="text-[#D4AF37] font-bold">✓</span>
                               )}
                             </button>

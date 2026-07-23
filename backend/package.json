@@ -10,12 +10,16 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "data:import": "node script/seed.js",
     "product": "node script/product.js",
-    "generate-password": "node script/script.js"
+    "generate-password": "node script/script.js",
+    "backup": "node script/backupMongo.js",
+    "test:phonepe": "node script/testPhonePeIntegration.js",
+    "test:hardening": "node script/testPaymentHardening.js"
   },
   "author": "HtmlLover",
   "license": "Regular",
   "dependencies": {
     "@paypal/checkout-server-sdk": "^1.0.3",
+    "@sentry/node": "^10.67.0",
     "axios": "^1.6.7",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",

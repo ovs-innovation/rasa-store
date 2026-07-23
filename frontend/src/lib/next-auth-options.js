@@ -17,8 +17,10 @@ const queryClient = new QueryClient({
   },
 });
 
+const hasOAuthCreds = (id, secret) =>
+  Boolean(String(id || "").trim() && String(secret || "").trim());
+
 export const getDynamicAuthOptions = async () => {
-  // Fetch store settings from the cache or trigger a fetch if not cached
   const storeSetting = await queryClient.fetchQuery({
     queryKey: ["storeSetting"],
     queryFn: async () => {
@@ -26,27 +28,41 @@ export const getDynamicAuthOptions = async () => {
         return await SettingServices.getStoreSetting();
       } catch (error) {
         console.error("Error fetching store settings:", error);
-        return {}; // Return an empty object as a fallback
+        return {};
       }
     },
-    staleTime: 4 * 60 * 1000, // Api request after 4 minutes
+    staleTime: 4 * 60 * 1000,
   });
 
-  // console.log("storeSetting", storeSetting);
+  const providers = [];
 
-  const providers = [
-    Google({
-      clientId: storeSetting?.google_id || "",
-      clientSecret: storeSetting?.google_secret || "",
-    }),
-    GitHub({
-      clientId: storeSetting?.github_id || "",
-      clientSecret: storeSetting?.github_secret || "",
-    }),
-    Facebook({
-      clientId: storeSetting?.facebook_id || "",
-      clientSecret: storeSetting?.facebook_secret || "",
-    }),
+  // Only register OAuth providers with real credentials — empty IDs crash NextAuth
+  if (hasOAuthCreds(storeSetting?.google_id, storeSetting?.google_secret)) {
+    providers.push(
+      Google({
+        clientId: storeSetting.google_id,
+        clientSecret: storeSetting.google_secret,
+      })
+    );
+  }
+  if (hasOAuthCreds(storeSetting?.github_id, storeSetting?.github_secret)) {
+    providers.push(
+      GitHub({
+        clientId: storeSetting.github_id,
+        clientSecret: storeSetting.github_secret,
+      })
+    );
+  }
+  if (hasOAuthCreds(storeSetting?.facebook_id, storeSetting?.facebook_secret)) {
+    providers.push(
+      Facebook({
+        clientId: storeSetting.facebook_id,
+        clientSecret: storeSetting.facebook_secret,
+      })
+    );
+  }
+
+  providers.push(
     Credentials({
       name: "Credentials",
       credentials: {
@@ -58,27 +74,29 @@ export const getDynamicAuthOptions = async () => {
           const userInfo = await CustomerServices.loginCustomer(credentials);
           return userInfo;
         } catch (error) {
-          // Handle custom error from backend
           const message =
             error.response?.data?.message || "Login failed! Please try again.";
-          throw new Error(message); // Propagate error to client
+          throw new Error(message);
         }
       },
-    }),
-  ];
+    })
+  );
 
   const authOptions = {
     providers,
+    pages: {
+      signIn: "/auth/login",
+      error: "/auth/login",
+    },
+    session: {
+      strategy: "jwt",
+      maxAge: 24 * 60 * 60,
+    },
     callbacks: {
       async signIn({ user, account }) {
         if (account.provider !== "credentials") {
           try {
             const res = await CustomerServices.signUpWithOauthProvider(user);
-
-            // if (error) {
-            //   console.error("OAuth sign-in error:", error);
-            //   return false;
-            // }
 
             if (res.token) {
               user.token = res.token;
@@ -129,11 +147,17 @@ export const getDynamicAuthOptions = async () => {
         return session;
       },
       async redirect({ url, baseUrl }) {
-        // console.log("url", url, "baseUrl", baseUrl);
         return url.startsWith(baseUrl) ? url : `${baseUrl}/user/dashboard`;
       },
     },
     secret: process.env.NEXTAUTH_SECRET,
+    logger: {
+      error(code, metadata) {
+        // Avoid console spam for missing session when user uses cookie JWT login
+        if (code === "CLIENT_FETCH_ERROR") return;
+        console.error("[next-auth]", code, metadata);
+      },
+    },
   };
 
   return authOptions;
