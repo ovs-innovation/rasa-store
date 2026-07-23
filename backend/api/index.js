@@ -1,4 +1,9 @@
 require("../config/env");
+const { validateRequiredEnv, getPublicConfigStatus } = require("../config/validateEnv");
+
+// Fail closed before Express boots — never run half-configured in production.
+validateRequiredEnv({ exit: true });
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -89,6 +94,19 @@ app.get("/health", (req, res) => {
     status: "ok",
     time: new Date().toISOString(),
     correlationId: req.correlationId,
+  });
+});
+
+/**
+ * Non-secret config probe for deploy verification / load balancers.
+ * Never returns credentials.
+ */
+app.get("/api/system/config", (req, res) => {
+  const status = getPublicConfigStatus();
+  res.json({
+    phonepeConfigured: status.phonepeConfigured,
+    resendConfigured: status.resendConfigured,
+    smtpConfigured: status.smtpConfigured,
   });
 });
 

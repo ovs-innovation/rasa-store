@@ -1,4 +1,10 @@
-version: '3.8'
+# Compose — production deploy for RASA store
+# Secrets live on the VPS host in backend/.env (never commit).
+# Docs: docs/DEPLOYMENT_SECRETS.md
+#
+# After ANY change to backend/.env you MUST recreate (restart is NOT enough):
+#   docker compose up -d --build --force-recreate backend
+# Or: ./scripts/deploy-backend.sh
 
 services:
   frontend:
@@ -6,7 +12,7 @@ services:
     container_name: rasa_frontend
     restart: always
     ports:
-      - "3050:3018" # Maps VPS port 3050 to Next.js port 3018 in container
+      - "3050:3018"
     env_file:
       - ./frontend/.env
 
@@ -15,15 +21,34 @@ services:
     container_name: rasa_backend
     restart: always
     ports:
-      - "3051:5000" # Maps VPS port 3051 to Express port 5000
+      - "3051:5000"
+    # Injected into the container at create/recreate time from the host file.
     env_file:
       - ./backend/.env
+    # Optional second file (repo-root). Uncomment if ops store secrets there:
+    # - ./backend.env
+    environment:
+      # Override local-dev PORT=8092 so container matches published 3051:5000
+      PORT: "5000"
+      NODE_ENV: production
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:5000/api/system/config').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
 
   admin:
     build: ./admin
     container_name: rasa_admin
     restart: always
     ports:
-      - "3052:80" # Maps VPS port 3052 to Nginx port 80 in container
+      - "3052:80"
     env_file:
       - ./admin/.env

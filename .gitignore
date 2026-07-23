@@ -1,0 +1,5 @@
+# Root secrets that must never be committed
+backend.env
+frontend.env
+admin.env
+.env

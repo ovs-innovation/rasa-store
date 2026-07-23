@@ -16,7 +16,8 @@
     "test:phonepe": "node script/testPhonePeIntegration.js",
     "test:hardening": "node script/testPaymentHardening.js",
     "test:payment": "node script/testPaymentRegression.js",
-    "test:payment-log": "node script/testPaymentLogObjectId.js"
+    "test:payment-log": "node script/testPaymentLogObjectId.js",
+    "validate:env": "node -e \"require('./config/env'); require('./config/validateEnv').validateRequiredEnv({exit:true})\""
   },
   "author": "HtmlLover",
   "license": "Regular",
