@@ -2178,7 +2178,12 @@ const sendEmailOtpLogin = async (req, res) => {
     try {
       await sendEmail(body);
     } catch (emailErr) {
-      console.error("sendEmailOtpLogin mail failed:", emailErr.message);
+      console.error("sendEmailOtpLogin mail failed:", {
+        code: emailErr.code,
+        message: emailErr.message,
+        details: emailErr.details,
+        correlationId: req.correlationId,
+      });
       // Allow immediate retry — clear OTP so user isn't locked with undelivered code
       user.loginOtp = undefined;
       user.loginOtpExpires = undefined;
@@ -2188,6 +2193,7 @@ const sendEmailOtpLogin = async (req, res) => {
       return res.status(503).send({
         success: false,
         code: "OTP_DELIVERY_FAILED",
+        reason: emailErr.code || "EMAIL_SEND_FAILED",
         message:
           "Could not send OTP email right now. Please try again in a moment.",
       });

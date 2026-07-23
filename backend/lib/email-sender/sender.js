@@ -13,6 +13,9 @@ const getEmailPassword = () =>
     .replace(/^["']|["']$/g, "")
     .trim();
 
+const isSmtpConfigured = () =>
+  Boolean(process.env.EMAIL_USER && getEmailPassword());
+
 const getTransporter = () => {
   if (transporter) return transporter;
 
@@ -29,11 +32,17 @@ const getTransporter = () => {
       port: Number(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === "true",
       auth: { user, pass },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
     });
   } else if (process.env.SERVICE === "gmail") {
     transporter = nodemailer.createTransport({
       service: "gmail",
       auth: { user, pass },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
     });
   } else {
     transporter = nodemailer.createTransport({
@@ -41,6 +50,9 @@ const getTransporter = () => {
       port: 465,
       secure: true,
       auth: { user, pass },
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 20000,
     });
   }
 
@@ -60,8 +72,11 @@ const sendViaResend = async (mail) => {
     payload.reply_to = mail.replyTo;
   }
 
-  if (mail.headers && Object.keys(mail.headers).length > 0) {
-    payload.headers = mail.headers;
+  // Resend is picky — only pass a small safe subset of headers
+  if (mail.headers && mail.headers["X-Entity-Ref-ID"]) {
+    payload.headers = {
+      "X-Entity-Ref-ID": mail.headers["X-Entity-Ref-ID"],
+    };
   }
 
   if (mail.emailType) {
@@ -79,59 +94,112 @@ const sendViaResend = async (mail) => {
   return data;
 };
 
-const sendEmailOnce = async (mail) => {
-  if (isResendConfigured()) {
-    try {
-      const data = await sendViaResend(mail);
-      console.log(
-        `[email] Resend → ${mail.to} | ${mail.subject} | id=${data?.id || "ok"}`
-      );
-      return data;
-    } catch (err) {
-      console.error("Resend API error:", err.response?.data || err.message);
-      throw new Error(
-        err.response?.data?.message ||
-          err.message ||
-          "Resend failed to send email"
-      );
-    }
-  }
+const sendViaSmtp = async (mail) => {
+  const smtpMail = {
+    from: `"${process.env.EMAIL_FROM_NAME || "RASA"}" <${process.env.EMAIL_USER}>`,
+    to: mail.to,
+    subject: mail.subject,
+    html: mail.html,
+    text: mail.text,
+    replyTo: mail.replyTo,
+  };
+  return getTransporter().sendMail(smtpMail);
+};
 
-  console.warn(
-    "[email] Using SMTP (Gmail) — transactional mail often lands in spam. Set RESEND_API_KEY."
-  );
-
-  try {
-    const info = await getTransporter().sendMail(mail);
-    return info;
-  } catch (err) {
-    console.error("Error sending email:", err);
-    if (err.code === "EAUTH") {
-      throw new Error(
-        "SMTP authentication failed. Use Resend (RESEND_API_KEY) instead of Gmail. " +
-          err.message
-      );
-    }
-    throw err;
+const classifyEmailError = (err) => {
+  const msg = String(err?.message || err || "").toLowerCase();
+  const code = err?.code || err?.response?.status;
+  if (msg.includes("must be set") || msg.includes("resend_from")) {
+    return "EMAIL_NOT_CONFIGURED";
   }
+  if (err?.code === "EAUTH" || msg.includes("invalid login") || msg.includes("authentication")) {
+    return "SMTP_AUTH_FAILED";
+  }
+  if (msg.includes("resend") || err?.response?.data) {
+    return "RESEND_FAILED";
+  }
+  if (code === "ETIMEDOUT" || code === "ESOCKET" || msg.includes("timeout")) {
+    return "EMAIL_TIMEOUT";
+  }
+  return "EMAIL_SEND_FAILED";
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Send transactional email with provider fallback:
+ * 1) Prefer Resend when configured
+ * 2) Fall back to SMTP/Gmail if Resend fails (or is not configured)
+ * One retry per provider.
+ */
 const sendEmail = async (body) => {
   const mail = prepareMailOptions(body);
-  let lastErr;
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
-    try {
-      return await sendEmailOnce(mail);
-    } catch (err) {
-      lastErr = err;
-      console.warn(`[email] attempt ${attempt} failed:`, err.message);
-      if (attempt < 2) await sleep(800);
+  const errors = [];
+
+  const tryResend = async () => {
+    if (!isResendConfigured()) return null;
+    const data = await sendViaResend(mail);
+    console.log(
+      `[email] Resend → ${mail.to} | ${mail.subject} | id=${data?.id || "ok"}`
+    );
+    return data;
+  };
+
+  const trySmtp = async () => {
+    if (!isSmtpConfigured()) return null;
+    console.warn(
+      "[email] Using SMTP — for production prefer RESEND_API_KEY + RESEND_FROM."
+    );
+    const info = await sendViaSmtp(mail);
+    console.log(
+      `[email] SMTP → ${mail.to} | ${mail.subject} | id=${info?.messageId || "ok"}`
+    );
+    return info;
+  };
+
+  const providers = isResendConfigured()
+    ? [
+        { name: "resend", run: tryResend },
+        { name: "smtp", run: trySmtp },
+      ]
+    : [
+        { name: "smtp", run: trySmtp },
+        { name: "resend", run: tryResend },
+      ];
+
+  for (const provider of providers) {
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        const result = await provider.run();
+        if (result) return result;
+        // Provider not configured — skip silently
+        break;
+      } catch (err) {
+        const classified = classifyEmailError(err);
+        console.error(
+          `[email] ${provider.name} attempt ${attempt} failed (${classified}):`,
+          err.response?.data || err.message
+        );
+        errors.push({ provider: provider.name, classified, message: err.message });
+        if (attempt < 2) await sleep(600);
+      }
     }
   }
-  throw lastErr;
+
+  const last = errors[errors.length - 1];
+  const fail = new Error(
+    last?.message ||
+      "No email provider succeeded. Set RESEND_API_KEY+RESEND_FROM or EMAIL_USER+EMAIL_PASS."
+  );
+  fail.code = last?.classified || "EMAIL_SEND_FAILED";
+  fail.details = errors;
+  throw fail;
 };
+
+const getEmailProviderStatus = () => ({
+  resend: isResendConfigured(),
+  smtp: isSmtpConfigured(),
+});
 
 const minutes = 30;
 const emailVerificationLimit = rateLimit({
@@ -198,6 +266,7 @@ const emailLoginOtpLimit = rateLimit({
 
 module.exports = {
   sendEmail,
+  getEmailProviderStatus,
   emailVerificationLimit,
   passwordVerificationLimit,
   supportMessageLimit,
