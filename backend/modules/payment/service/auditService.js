@@ -25,18 +25,18 @@ const writeAuditLog = async ({
       actorName: String(actorName || ""),
       action,
       entityType,
-      entityId: String(entityId || ""),
-      correlationId: String(correlationId || ""),
-      before,
-      after,
-      meta,
-      ip,
-      userAgent: String(userAgent || "").slice(0, 500),
-      success,
-      message: String(message || "").slice(0, 2000),
-    });
+    entityId: String(entityId || ""),
+    correlationId: String(correlationId || ""),
+    before: before && typeof before === "object" ? before : {},
+    after: after && typeof after === "object" ? after : {},
+    meta: meta && typeof meta === "object" ? meta : {},
+    ip: String(ip || ""),
+    userAgent: String(userAgent || "").slice(0, 500),
+    success,
+    message: String(message || "").slice(0, 2000),
+  });
   } catch (err) {
-    console.error("AuditLog write failed:", err.message);
+    console.error("AuditLog write failed (non-fatal):", err.message);
   }
 };
 

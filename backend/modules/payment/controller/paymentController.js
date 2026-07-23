@@ -224,23 +224,29 @@ const createPhonePeCheckout = async (req, res) => {
 
     await writePaymentLog({
       payment: payment._id,
+      order: order._id,
       merchantOrderId,
       correlationId,
       source: "API",
       action: "create_checkout_start",
       success: true,
       message: "Creating PhonePe payment session",
-      request: { total, amountPaise, orderId: String(order._id), snapshotItems: priced.snapshot.length },
+      request: {
+        total,
+        amountPaise,
+        orderId: String(order._id),
+        snapshotItems: priced.snapshot.length,
+      },
       ip,
       userAgent,
     });
 
     await writeAuditLog({
       actorType: "Customer",
-      actorId: req.user?._id || "",
+      actorId: req.user?._id ? String(req.user._id) : "",
       action: "checkout.created",
       entityType: "Order",
-      entityId: order._id,
+      entityId: String(order._id),
       correlationId,
       after: {
         total,
@@ -286,6 +292,7 @@ const createPhonePeCheckout = async (req, res) => {
 
       await writePaymentLog({
         payment: payment._id,
+        order: order._id,
         merchantOrderId,
         correlationId,
         source: "API",
@@ -315,6 +322,7 @@ const createPhonePeCheckout = async (req, res) => {
 
     await writePaymentLog({
       payment: payment._id,
+      order: order._id,
       merchantOrderId,
       correlationId,
       source: "API",

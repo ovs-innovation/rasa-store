@@ -101,6 +101,7 @@ const fulfillSuccessfulPayment = async ({
 
     await writePaymentLog({
       payment: payment._id,
+      order: order._id,
       merchantOrderId,
       correlationId: corr,
       source,
@@ -115,7 +116,7 @@ const fulfillSuccessfulPayment = async ({
       actorType: source === "Webhook" ? "Webhook" : "System",
       action: "payment.amount_mismatch",
       entityType: "Payment",
-      entityId: payment._id,
+      entityId: String(payment._id),
       correlationId: corr,
       before: { amountPaise: payment.amountPaise },
       after: { gatewayAmount },
@@ -185,6 +186,7 @@ const fulfillSuccessfulPayment = async ({
   } catch (err) {
     await writePaymentLog({
       payment: payment._id,
+      order: order?._id,
       merchantOrderId,
       correlationId: corr,
       source,
@@ -198,7 +200,7 @@ const fulfillSuccessfulPayment = async ({
       actorType: "System",
       action: "payment.fulfill_failed",
       entityType: "Payment",
-      entityId: payment._id,
+      entityId: String(payment._id),
       correlationId: corr,
       success: false,
       message: err.message,
@@ -218,6 +220,7 @@ const fulfillSuccessfulPayment = async ({
     } catch (notifyErr) {
       await writePaymentLog({
         payment: payment._id,
+        order: order._id,
         merchantOrderId,
         correlationId: corr,
         source,
@@ -232,6 +235,7 @@ const fulfillSuccessfulPayment = async ({
 
   await writePaymentLog({
     payment: payment._id,
+    order: order._id,
     merchantOrderId,
     correlationId: corr,
     source,
@@ -241,9 +245,11 @@ const fulfillSuccessfulPayment = async ({
       ? "Payment fulfilled (transaction)"
       : "Payment fulfilled (non-transaction fallback)",
     response: {
-      orderId: order._id,
+      orderId: String(order._id),
       invoice: order.invoice,
       stockReduced: payment.stockReduced,
+      paymentStatus: payment.status,
+      orderPaymentStatus: order.paymentStatus,
     },
     ip,
     userAgent,
@@ -253,7 +259,7 @@ const fulfillSuccessfulPayment = async ({
     actorType: source === "Webhook" ? "Webhook" : "Gateway",
     action: "payment.success",
     entityType: "Order",
-    entityId: order._id,
+    entityId: String(order._id),
     correlationId: corr,
     after: {
       paymentStatus: "Paid",
@@ -302,6 +308,7 @@ const markPaymentFailed = async ({
 
   await writePaymentLog({
     payment: payment._id,
+    order: order?._id,
     merchantOrderId,
     correlationId: corr,
     source,
@@ -317,7 +324,7 @@ const markPaymentFailed = async ({
     actorType: source === "Webhook" ? "Webhook" : "System",
     action: "payment.failed",
     entityType: "Payment",
-    entityId: payment._id,
+    entityId: String(payment._id),
     correlationId: corr,
     after: { status: "Failed" },
     ip,
