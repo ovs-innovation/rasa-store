@@ -107,6 +107,7 @@ const BrandDrawer = ({ id }) => {
                   setImageUrl={setLogoUrl}
                   folder="brand"
                   useOriginalSize={true}
+                  uniquePublicId={true}
                 />
               </div>
             </div>
@@ -120,6 +121,7 @@ const BrandDrawer = ({ id }) => {
                   folder="brand"
                   targetWidth={800}
                   targetHeight={400}
+                  uniquePublicId={true}
                 />
               </div>
             </div>

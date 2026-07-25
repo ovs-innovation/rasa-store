@@ -61,7 +61,7 @@ const Uploader = ({
   useOriginalSize = false,
   accept,
   maxSize = 20971520,
-  uniquePublicId = false,
+  uniquePublicId = true,
   onUploadComplete,
   onRemove,
 }) => {
