@@ -26,14 +26,17 @@ const buildAllowedOrigins = () => {
   ];
 
   const isProd =
-    String(process.env.NODE_ENV || "").toLowerCase() === "production" ||
-    String(process.env.PHONEPE_ENV || "").toLowerCase() === "production";
+    String(process.env.NODE_ENV || "").toLowerCase() === "production";
 
   if (isProd) {
     const origins = [...new Set(fromEnv.map((o) => o.replace(/\/+$/, "")))];
     // Always allow therasastore if not listed
     if (!origins.some((o) => o.includes("therasastore"))) {
-      origins.push("https://therasastore.in", "https://www.therasastore.in");
+      origins.push(
+        "https://therasastore.in",
+        "https://www.therasastore.in",
+        "https://admin.therasastore.in"
+      );
     }
     return origins;
   }

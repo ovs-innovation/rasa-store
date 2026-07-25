@@ -196,28 +196,7 @@ const NavbarPromo = () => {
               </div>
             </div>
 
-            {storeCustomizationSetting?.navbar?.privacy_policy_status && (
-              <Link
-                onClick={() => setIsLoading(!isLoading)}
-                href="/privacy-policy"
-                className={`font-serif mx-4 py-2 text-sm font-medium hover:text-store-600`}
-              >
-                {showingTranslateValue(
-                  storeCustomizationSetting?.navbar?.privacy_policy
-                )}
-              </Link>
-            )}
-            {storeCustomizationSetting?.navbar?.term_and_condition_status && (
-              <Link
-                onClick={() => setIsLoading(!isLoading)}
-                href="/terms-and-conditions"
-                className={`font-serif mx-4 py-2 text-sm font-medium hover:text-store-600`}
-              >
-                {showingTranslateValue(
-                  storeCustomizationSetting?.navbar?.term_and_condition
-                )}
-              </Link>
-            )}
+
           </div>
         </div>
       </div>

@@ -1373,23 +1373,7 @@ const Checkout = () => {
                       className="mt-1 h-4 w-4 text-store-600 focus:ring-store-500 border-gray-300 rounded cursor-pointer"
                     />
                     <label htmlFor="agreeToTerms" className="text-xs sm:text-sm text-gray-300 font-medium cursor-pointer leading-relaxed">
-                      By placing the order, you agree to our{" "}
-                      <Link href="/terms-and-conditions" className="text-[#D4AF37] hover:text-[#bfa032] hover:underline font-bold">
-                        Terms & Conditions
-                      </Link>
-                      ,{" "}
-                      <Link href="/privacy-policy" className="text-[#D4AF37] hover:text-[#bfa032] hover:underline font-bold">
-                        Privacy Policy
-                      </Link>
-                      ,{" "}
-                      <Link href="/return-refund-policy" className="text-[#D4AF37] hover:text-[#bfa032] hover:underline font-bold">
-                        Return & Exchange Policy
-                      </Link>
-                      , and{" "}
-                      <Link href="/shipping-delivery-policy" className="text-[#D4AF37] hover:text-[#bfa032] hover:underline font-bold">
-                        Shipping Policy
-                      </Link>
-                      .
+                      By placing the order, you agree to complete your purchase.
                     </label>
                   </div>
                 </div>

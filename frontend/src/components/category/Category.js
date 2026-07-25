@@ -42,11 +42,6 @@ const Category = () => {
     { title: "About Us", href: "/about-us", icon: FiUsers },
     { title: "Careers", href: "/careers", icon: FiBriefcase },
     { title: "Contact Us", href: "/contact-us", icon: FiPhoneCall },
-    // { title: "FAQs", href: "/faq", icon: FiHelpCircle },
-    { title: "Return & Exchange Policy", href: "/return-refund-policy", icon: FiRefreshCw },
-    { title: "Shipping & Delivery Policy", href: "/shipping-delivery-policy", icon: FiTruck },
-    { title: "Terms & Conditions", href: "/terms-and-conditions", icon: FiFileText },
-    { title: "Privacy Policy", href: "/privacy-policy", icon: FiShield },
   ];
 
   return (

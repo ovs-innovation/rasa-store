@@ -335,7 +335,6 @@ const AboutUs = () => {
           </h2>
           <div className="max-w-lg mx-auto text-sm text-neutral-400 leading-7 space-y-1">
             <p><strong className="text-white">Rachana Dharmesh Kelawala</strong></p>
-            <p>Bangalore, Karnataka, India — 570037</p>
             <p>
               <a href="mailto:workwithrasa@gmail.com" className="text-[#D4AF37] hover:underline">
                 workwithrasa@gmail.com
@@ -345,15 +344,6 @@ const AboutUs = () => {
                 +91 9731308713
               </a>
             </p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-3 mt-8 text-[10px] uppercase tracking-wider font-bold">
-            <Link href="/privacy-policy" className="text-neutral-500 hover:text-white transition-colors">Privacy Policy</Link>
-            <span className="text-neutral-700">·</span>
-            <Link href="/terms-and-conditions" className="text-neutral-500 hover:text-white transition-colors">Terms & Conditions</Link>
-            <span className="text-neutral-700">·</span>
-            <Link href="/return-refund-policy" className="text-neutral-500 hover:text-white transition-colors">Return & Exchange</Link>
-            <span className="text-neutral-700">·</span>
-            <Link href="/shipping-delivery-policy" className="text-neutral-500 hover:text-white transition-colors">Shipping Policy</Link>
           </div>
         </div>
       </div>

@@ -61,7 +61,6 @@ const ReturnRefundPolicy = () => {
 <p>Exchange/Replacement deliveries will be done within <strong>5–7 business days</strong>.</p>
 <h2>Contact Us</h2>
 <p><strong>Business Name:</strong> Rachana Dharmesh Kelawala<br/>
-<strong>Address:</strong> Bangalore, Karnataka, India - 570037<br/>
 <strong>Email:</strong> workwithrasa@gmail.com<br/>
 <strong>Phone:</strong> +91 9731308713</p>`
                     }

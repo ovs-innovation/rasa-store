@@ -26,10 +26,6 @@ const ContactUs = () => {
               <p className="text-sm text-neutral-400 leading-7">
                 <strong className="text-neutral-200">Rachana Dharmesh Kelawala</strong>
                 <br />
-                Bangalore, Karnataka, India
-                <br />
-                Pincode: 570037
-                <br />
                 <span className="text-neutral-500 text-xs mt-2 inline-block">
                   Support: Mon–Sat, 10:00 AM – 7:00 PM IST
                 </span>
@@ -68,14 +64,6 @@ const ContactUs = () => {
                 </a>
               </p>
             </div>
-          </div>
-
-          <div className="max-w-4xl mx-auto mt-8 text-center border border-neutral-900 bg-[#0A0A0A] rounded-2xl px-6 py-5">
-            <p className="text-sm text-neutral-400 leading-7">
-              Bangalore, Karnataka
-              <br />
-              Pincode: 570037
-            </p>
           </div>
         </div>
       </div>

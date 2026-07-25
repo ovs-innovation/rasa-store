@@ -31,10 +31,6 @@ const Footer = () => {
     { title: "About Us", href: "/about-us" },
     { title: "Contact", href: "/contact-us" },
     { title: "FAQs", href: "/faq" },
-    { title: "Privacy Policy", href: "/privacy-policy" },
-    { title: "Terms & Conditions", href: "/terms-and-conditions" },
-    { title: "Return & Exchange", href: "/return-refund-policy" },
-    { title: "Shipping & Delivery", href: "/shipping-delivery-policy" },
   ];
 
   const block3Links = [];
@@ -140,11 +136,7 @@ const Footer = () => {
                   {email}
                 </a>
               </div>
-              <p className="text-neutral-500 leading-relaxed pt-1 border-t border-neutral-900/80">
-                Bangalore, Karnataka
-                <br />
-                Pincode: 570037
-              </p>
+
             </div>
             {block3Links.length > 0 && (
               <ul className="text-[10px] uppercase tracking-wider font-bold flex flex-col space-y-3 pt-2 border-t border-neutral-900/80">

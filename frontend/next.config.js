@@ -22,11 +22,33 @@ const nextConfig = {
 
   images: {
     domains: [
+      "localhost",
+      "127.0.0.1",
       "res.cloudinary.com",
       "i.postimg.cc",
       "img.youtube.com",
       "placehold.co",
       "images.unsplash.com",
+    ],
+    remotePatterns: [
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "8092",
+      },
+      {
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "8092",
+      },
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
+      },
     ],
   },
 
