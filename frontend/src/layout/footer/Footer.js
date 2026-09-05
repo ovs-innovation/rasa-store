@@ -157,7 +157,7 @@ const Footer = () => {
         <div className="py-6 border-t border-neutral-900/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <p className="text-[9px] uppercase tracking-[0.15em] text-neutral-600 font-medium mb-1">
-              © {new Date().getFullYear()} RASA Store — Rachana Dharmesh Kelawala. All rights reserved.
+              © {new Date().getFullYear()} RASA Store. All rights reserved.
             </p>
             <p className="text-[9px] text-neutral-700 leading-relaxed max-w-2xl">
               All trademarks and brand names belong to their respective owners. Product listings are for identification only.
