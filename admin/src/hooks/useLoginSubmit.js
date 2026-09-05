@@ -19,8 +19,8 @@ const useLoginSubmit = () => {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      email: "admin@rasastore.com",
-      password: "RasaStore@123",
+      email: "admin@therasastore.com",
+      password: "RasaStore@Admin2026",
     },
   });
 

@@ -3,13 +3,15 @@
  * Run: node backend/script/setupAdminCredentials.js
  */
 require("../config/env");
+const dns = require("dns");
+try { dns.setServers(["8.8.8.8", "8.8.4.4"]); } catch (e) {}
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const { connectDB } = require("../config/db");
 const Admin = require("../models/Admin");
 
-const NEW_ADMIN_EMAIL = "admin@rasastore.com";
-const NEW_ADMIN_PASSWORD = "RasaStoreSecure2026!";
+const NEW_ADMIN_EMAIL = "admin@therasastore.com";
+const NEW_ADMIN_PASSWORD = "RasaStore@Admin2026";
 
 const access_list = [
   "dashboard",

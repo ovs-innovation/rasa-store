@@ -1,6 +1,8 @@
+require("../config/env");
+const dns = require("dns");
+try { dns.setServers(["8.8.8.8", "8.8.4.4"]); } catch (e) {}
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-require("dotenv").config();
 const Admin = require("../models/Admin");
 
 const createAdmin = async () => {
@@ -11,8 +13,8 @@ const createAdmin = async () => {
     });
     console.log("Connected to MongoDB...");
 
-    const email = "admin@rasastore.com";
-    const password = "RasaStore@123";
+    const email = "admin@therasastore.com";
+    const password = "RasaStore@Admin2026";
 
     let admin = await Admin.findOne({ email });
     if (admin) {
@@ -46,7 +48,7 @@ const createAdmin = async () => {
         "customer-order",
       ];
       await admin.save();
-      console.log("Admin user admin@rasastore.com updated with password RasaStore@123");
+      console.log(`Admin user ${email} updated with password ${password}`);
     } else {
       admin = new Admin({
         name: { en: "Super Admin" },
@@ -84,7 +86,7 @@ const createAdmin = async () => {
         ]
       });
       await admin.save();
-      console.log("Admin user admin@rasastore.com created with password RasaStore@123");
+      console.log(`Admin user ${email} created with password ${password}`);
     }
     process.exit(0);
   } catch (error) {

@@ -175,7 +175,7 @@ const Login = () => {
                 })}
                 type="email"
                 autoComplete="username"
-                placeholder="admin@rasastore.com"
+                placeholder="admin@therasastore.com"
                 id="login-email"
                 style={{
                   width: "100%",

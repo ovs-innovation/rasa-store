@@ -20,7 +20,7 @@ async function run() {
   }
 
   const creds = [
-    { email: "admin@rasastore.com", password: "RasaStore@123" },
+    { email: "admin@therasastore.com", password: "RasaStore@Admin2026" },
     { email: "admin@gmail.com", password: "12345678" },
     { email: "admin@gmail.com", password: "Admin@123" },
   ];
