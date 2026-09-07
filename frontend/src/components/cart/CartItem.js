@@ -121,6 +121,22 @@ const CartItem = ({ item, currency = "₹", variant = "default" }) => {
               {item.title}
             </Link>
 
+            {(item.color || item.size) && (
+              <div className="flex flex-wrap items-center gap-2 mt-1 text-xs">
+                {item.color && (
+                  <span className="text-neutral-400">
+                    Color: <span className="text-white font-medium">{item.color}</span>
+                  </span>
+                )}
+                {item.color && item.size && <span className="text-neutral-600">|</span>}
+                {item.size && (
+                  <span className="text-neutral-400">
+                    Size: <span className="text-white font-medium">{item.size}</span>
+                  </span>
+                )}
+              </div>
+            )}
+
             {originalPrice > currentPrice && (
               <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                 <span className="text-[11px] sm:text-xs text-neutral-400 line-through">
@@ -171,10 +187,26 @@ const CartItem = ({ item, currency = "₹", variant = "default" }) => {
         <Link
           href={`/product/${item.slug || item.id || item._id}`}
           onClick={closeCartDrawer}
-          className="truncate text-sm md:text-base font-semibold text-gray-800 hover:text-emerald-600 transition-colors duration-200 line-clamp-2 mb-1.5"
+          className="truncate text-sm md:text-base font-semibold text-gray-800 hover:text-emerald-600 transition-colors duration-200 line-clamp-2 mb-1"
         >
           {item.title}
         </Link>
+
+        {(item.color || item.size) && (
+          <div className="flex flex-wrap items-center gap-2 mb-1.5 text-xs text-gray-600">
+            {item.color && (
+              <span>
+                Color: <strong className="text-gray-900">{item.color}</strong>
+              </span>
+            )}
+            {item.color && item.size && <span className="text-gray-300">|</span>}
+            {item.size && (
+              <span>
+                Size: <strong className="text-gray-900">{item.size}</strong>
+              </span>
+            )}
+          </div>
+        )}
 
         {originalPrice > currentPrice && (
           <div className="flex flex-wrap items-center gap-2 mb-2">

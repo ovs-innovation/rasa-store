@@ -56,9 +56,9 @@ const Uploader = ({
   imageUrl,
   product,
   folder = "rasa",
-  targetWidth = 800, // Set default fixed width
-  targetHeight = 800, // Set default fixed height
-  useOriginalSize = false,
+  targetWidth = 1200,
+  targetHeight = 1200,
+  useOriginalSize = true,
   accept,
   maxSize = 20971520,
   uniquePublicId = true,
@@ -111,11 +111,21 @@ const Uploader = ({
     },
   });
 
-  const resizeImageToFixedDimensions = async (file, width, height) => {
+  const resizeImageToFixedDimensions = async (file, maxWidth, maxHeight) => {
     const img = new Image();
     img.src = URL.createObjectURL(file);
 
     await img.decode();
+
+    let width = img.naturalWidth || img.width;
+    let height = img.naturalHeight || img.height;
+
+    // Proportionally scale to fit within maxWidth/maxHeight without distortion
+    if (width > maxWidth || height > maxHeight) {
+      const ratio = Math.min(maxWidth / width, maxHeight / height);
+      width = Math.max(1, Math.round(width * ratio));
+      height = Math.max(1, Math.round(height * ratio));
+    }
 
     const canvas = document.createElement("canvas");
     canvas.width = width;

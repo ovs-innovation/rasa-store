@@ -45,14 +45,14 @@ function MyApp({ Component, pageProps }) {
       try {
         const regs = await navigator.serviceWorker.getRegistrations();
         await Promise.all(regs.map((r) => r.unregister()));
-      } catch (_) {}
+      } catch (_) { }
 
       try {
         if ("caches" in window) {
           const keys = await caches.keys();
           await Promise.all(keys.map((k) => caches.delete(k)));
         }
-      } catch (_) {}
+      } catch (_) { }
     })();
   }, []);
 
@@ -66,28 +66,29 @@ function MyApp({ Component, pageProps }) {
         });
 
         setStoreSetting(settings);
-
-        // Initialize Google Analytics
-        if (settings?.google_analytic_status) {
-          ReactGA.initialize(settings?.google_analytic_key || "");
-          handlePageView();
-
-          const handleRouteChange = (url) => {
-            handlePageView(`/${router.pathname}`, "Rasa Store");
-          };
-
-          router.events.on("routeChangeComplete", handleRouteChange);
-          return () => {
-            router.events.off("routeChangeComplete", handleRouteChange);
-          };
-        }
       } catch (error) {
         console.error("Failed to fetch store settings:", error);
       }
     };
 
     fetchStoreSettings();
-  }, [router]);
+  }, []);
+
+  useEffect(() => {
+    if (storeSetting?.google_analytic_status && storeSetting?.google_analytic_key) {
+      ReactGA.initialize(storeSetting.google_analytic_key);
+      handlePageView();
+
+      const handleRouteChange = () => {
+        handlePageView(`/${router.pathname}`, "Rasa Store");
+      };
+
+      router.events.on("routeChangeComplete", handleRouteChange);
+      return () => {
+        router.events.off("routeChangeComplete", handleRouteChange);
+      };
+    }
+  }, [storeSetting, router.pathname]);
 
   return (
     <>

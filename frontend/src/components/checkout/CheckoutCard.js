@@ -32,15 +32,29 @@ const CheckoutCard = ({ item }) => {
       </div>
       <div className="flex flex-col w-full overflow-hidden">
         <div className="flex items-center justify-between">
-          <p className="mb-0">
-            <span className="text-sm font-medium text-gray-700 text-heading line-clamp-1">
-              {item?.title?.substring(0, 5)}
+          <div className="mb-0 min-w-0 flex-1 pr-3">
+            <span className="text-sm font-medium text-gray-800 text-heading line-clamp-2 leading-snug">
+              {item?.title}
             </span>
-            <span className="text-xs text-gray-400 mb-2">
-              Item Price{currency}
-              {item.price.toFixed(2)}
+            {(item.color || item.size) && (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 my-1">
+                {item.color && (
+                  <span>
+                    Color: <strong className="text-gray-800">{item.color}</strong>
+                  </span>
+                )}
+                {item.color && item.size && <span className="text-gray-300">|</span>}
+                {item.size && (
+                  <span>
+                    Size: <strong className="text-gray-800">{item.size}</strong>
+                  </span>
+                )}
+              </div>
+            )}
+            <span className="text-xs text-gray-500 block mb-1">
+              Item Price: {currency}{item.price.toFixed(2)}
             </span>
-          </p>
+          </div>
           <div className="h-8 w-20 flex flex-wrap items-center justify-evenly p-1 border border-gray-100 bg-white text-gray-600 rounded-md">
             <div
               className={`cursor-pointer ${item.quantity <= 1 ? "opacity-50 pointer-events-none" : ""}`}

@@ -542,6 +542,29 @@ const sanitizeFaqSection = (faqSection = {}) => {
   return sanitizeListSection(faqSection, "FAQ");
 };
 
+// Helper to guarantee unique slugs and avoid collisions
+const ensureUniqueSlug = async (baseSlug, productId = null) => {
+  let cleanSlug = (baseSlug || "product")
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (!cleanSlug) cleanSlug = "product";
+  let slug = cleanSlug;
+  let counter = 1;
+  while (true) {
+    const query = { slug };
+    if (productId) {
+      query._id = { $ne: productId };
+    }
+    const exists = await Product.findOne(query).select("_id");
+    if (!exists) return slug;
+    counter++;
+    slug = `${cleanSlug}-${counter}`;
+  }
+};
+
 const addProduct = async (req, res) => {
   try {
     if (req.body.prices) {
@@ -554,6 +577,7 @@ const addProduct = async (req, res) => {
 
     const payload = {
       ...req.body,
+      slug: await ensureUniqueSlug(req.body.slug || req.body.title?.en || "product"),
       ...taxFields,
       ...mediaFields,
       status: normalizeProductStatus(req.body.status),
@@ -700,7 +724,15 @@ const getAllProducts = async (req, res) => {
 
 const getProductBySlug = async (req, res) => {
   try {
-    const product = await Product.findOne({ slug: req.params.slug, status: "show" });
+    const targetSlug = req.params.slug;
+    let query = { slug: targetSlug, status: "show" };
+    if (targetSlug === "sneakers-") {
+      query = { $or: [{ slug: "sneakers-" }, { slug: "onitsuka-sneakers" }], status: "show" };
+    }
+    let product = await Product.findOne(query);
+    if (!product && mongoose.Types.ObjectId.isValid(targetSlug)) {
+      product = await Product.findOne({ _id: targetSlug, status: "show" });
+    }
     if (!product) {
       return res.status(404).send({ message: "Product not found" });
     }
@@ -755,7 +787,9 @@ const updateProduct = async (req, res) => {
       product.productId = req.body.productId;
       product.sku = req.body.sku;
       product.barcode = req.body.barcode;
-      product.slug = req.body.slug;
+      if (req.body.slug) {
+        product.slug = await ensureUniqueSlug(req.body.slug, product._id);
+      }
       product.categories = req.body.categories;
       product.category = req.body.category;
       product.brand = req.body.brand;
@@ -1041,7 +1075,13 @@ const getShowingStoreProducts = async (req, res) => {
     let rasaHomepagePayload = null;
 
     if (slug) {
-      queryObject.slug = slug;
+      if (slug === "sneakers-") {
+        queryObject.$or = [{ slug: "sneakers-" }, { slug: "onitsuka-sneakers" }];
+      } else if (mongoose.Types.ObjectId.isValid(slug)) {
+        queryObject.$or = [{ slug: slug }, { _id: slug }];
+      } else {
+        queryObject.slug = slug;
+      }
       queryObject.status = "show";
       products = await Product.find(queryObject)
         .populate({ path: "category", select: "name _id" })

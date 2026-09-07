@@ -102,11 +102,20 @@ const Order = ({ params }) => {
                 {data.cart.map((item, index) => (
                   <div
                     key={`${item._id || item.productId || index}`}
-                    className="flex justify-between gap-3 text-sm"
+                    className="flex justify-between gap-3 text-sm py-1"
                   >
-                    <span className="text-neutral-300">
-                      {item.title} × {item.quantity || 1}
-                    </span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-neutral-300">
+                        {item.title} × {item.quantity || 1}
+                      </span>
+                      {(item.color || item.size) && (
+                        <span className="text-xs text-neutral-400">
+                          {item.color && `Color: ${item.color}`}
+                          {item.color && item.size && " | "}
+                          {item.size && `Size: ${item.size}`}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-white font-medium shrink-0">
                       {currency}
                       {getNumberTwo(item.itemTotal || item.price * (item.quantity || 1))}

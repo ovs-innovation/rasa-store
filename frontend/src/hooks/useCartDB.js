@@ -67,7 +67,13 @@ const useCartDB = () => {
                 const dbId = resolveDbProductId(product);
                 if (dbId) {
                     try {
-                        await CustomerServices.addToCartDB(customerId, dbId, quantity);
+                        await CustomerServices.addToCartDB(
+                            customerId,
+                            dbId,
+                            quantity,
+                            product.color || "",
+                            product.size || ""
+                        );
                     } catch (err) {
                         console.error("[useCartDB] addToCartDB failed:", err?.message || err);
                     }

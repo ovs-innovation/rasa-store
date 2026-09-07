@@ -1958,9 +1958,11 @@ const ProductDrawer = ({ id }) => {
                   <div className="col-span-8 sm:col-span-4">
                     <Textarea
                       {...register("description", { required: "Short description is required!" })}
-                      rows="2"
-                      placeholder="Provide a quick summary of the product."
+                      rows="5"
+                      placeholder={"Swipe right for more colors...\n\nFIRST COPY Unisex Sneaker\nSizes: UK 3 to UK 6"}
+                      className="font-mono text-sm leading-relaxed"
                     />
+                    <p className="text-[11px] text-gray-400 mt-1">Each line will be displayed on a separate line on the store.</p>
                     <Error errorName={errors.description} />
                   </div>
                 </div>
@@ -1969,9 +1971,11 @@ const ProductDrawer = ({ id }) => {
                   <div className="col-span-8 sm:col-span-4">
                     <Textarea
                       {...register("highlights")}
-                      rows="4"
+                      rows="5"
                       placeholder="Detailed product information."
+                      className="font-mono text-sm leading-relaxed"
                     />
+                    <p className="text-[11px] text-gray-400 mt-1">Each line will be displayed on a separate line on the store.</p>
                   </div>
                 </div>
               </div>

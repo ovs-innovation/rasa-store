@@ -11,6 +11,7 @@ import {
   FiShare2,
   FiHeart,
   FiShuffle,
+  FiArrowLeft,
 } from "react-icons/fi";
 import { AiFillStar } from "react-icons/ai";
 import {
@@ -86,38 +87,73 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   const { setItems, addItem } = useCart();
   const { storeCustomizationSetting, globalSetting } = useGetSetting();
 
+  const handleSafeNavigate = (e, targetUrl) => {
+    if (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+    }
+    if (typeof window !== "undefined") {
+      if (window.location.pathname === targetUrl) {
+        window.location.href = targetUrl;
+        return;
+      }
+    }
+    router.push(targetUrl).catch(() => {
+      window.location.href = targetUrl;
+    });
+    setTimeout(() => {
+      if (
+        typeof window !== "undefined" &&
+        (window.location.pathname.startsWith("/product") ||
+          router.pathname.startsWith("/product"))
+      ) {
+        window.location.href = targetUrl;
+      }
+    }, 200);
+  };
+
+  // Resume previous location / listing context
+  const [returnListingUrl, setReturnListingUrl] = useState("/search");
+  const [returnListingLabel, setReturnListingLabel] = useState("All Products");
+
+  // Customer-entered Color and Size
+  const [customColor, setCustomColor] = useState("");
+  const [customSize, setCustomSize] = useState("");
+  const [colorError, setColorError] = useState(false);
+  const [sizeError, setSizeError] = useState(false);
+
   // Handle Product View Tracking
   useEffect(() => {
     if (product?._id) {
-       // 1. Backend Tracking (fire and forget)
-       ProductServices.addProductView({ productId: product._id }).catch(err => 
-         console.error("Tracking view failed", err)
-       );
+      // 1. Backend Tracking (fire and forget)
+      ProductServices.addProductView({ productId: product._id }).catch(err =>
+        console.error("Tracking view failed", err)
+      );
 
-       // 2. Guest LocalStorage Tracking
-       if (!session?.user && typeof window !== "undefined") {
-          try {
-             let history = [];
-             const stored = localStorage.getItem("recentlyViewed");
-             if (stored) history = JSON.parse(stored);
-             
-             // Remove if exists (to move to top)
-             history = history.filter(p => p._id !== product._id);
-             
-             // Add current
-             history.unshift({
-               _id: product._id,
-               viewedAt: Date.now()
-             });
-             
-             // Limit to 10
-             if(history.length > 10) history = history.slice(0, 10);
-             
-             localStorage.setItem("recentlyViewed", JSON.stringify(history));
-          } catch(e) {
-             console.error("LS Error", e);
-          }
-       }
+      // 2. Guest LocalStorage Tracking
+      if (!session?.user && typeof window !== "undefined") {
+        try {
+          let history = [];
+          const stored = localStorage.getItem("recentlyViewed");
+          if (stored) history = JSON.parse(stored);
+
+          // Remove if exists (to move to top)
+          history = history.filter(p => p._id !== product._id);
+
+          // Add current
+          history.unshift({
+            _id: product._id,
+            viewedAt: Date.now()
+          });
+
+          // Limit to 10
+          if (history.length > 10) history = history.slice(0, 10);
+
+          localStorage.setItem("recentlyViewed", JSON.stringify(history));
+        } catch (e) {
+          console.error("LS Error", e);
+        }
+      }
     }
   }, [product, session]);
 
@@ -188,6 +224,18 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         media.push(url);
       }
     };
+    // Prioritize clean variant images if featuredImage is legacy photo-output
+    const hasPhotoOutput = product?.featuredImage?.includes("photo-output");
+    if (!hasPhotoOutput) {
+      pushUnique(product?.featuredImage);
+    }
+    if (Array.isArray(product?.colorVariants)) {
+      product.colorVariants.forEach((cv) => {
+        if (Array.isArray(cv?.images)) {
+          cv.images.forEach((img) => pushUnique(img));
+        }
+      });
+    }
     pushUnique(product?.featuredImage);
     if (Array.isArray(product?.image)) {
       product.image.forEach((img) => pushUnique(img));
@@ -228,10 +276,10 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
           typeof cv.hasStock === "boolean"
             ? cv.hasStock
             : (product?.variants || []).some(
-                (v) =>
-                  String(v.color || v.colorName || "").trim() === color &&
-                  Number(v.quantity) > 0
-              );
+              (v) =>
+                String(v.color || v.colorName || "").trim() === color &&
+                Number(v.quantity) > 0
+            );
 
         return { color, label: color, image, images, hasStock };
       });
@@ -278,9 +326,9 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     product.variants.forEach((variant) => {
       const color = String(
         variant.color ||
-          variant.colorName ||
-          String(variant.combinationLabel || "").split("/")[0]?.trim() ||
-          ""
+        variant.colorName ||
+        String(variant.combinationLabel || "").split("/")[0]?.trim() ||
+        ""
       ).trim();
       if (!color || map.has(color)) return;
 
@@ -368,17 +416,23 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   }, [originalPrice, product, getNumber]);
 
   const displayRelatedProducts = useMemo(() => {
-    const currentId = product?._id;
-    if (!currentId) return [];
+    const currentIdStr = String(product?._id || "").trim();
+    const currentSlug = String(product?.slug || router.query?.slug || "").trim();
     const seen = new Set();
     return (relatedProducts || [])
       .filter((p) => {
-        if (!p?._id || p._id === currentId || seen.has(p._id)) return false;
-        seen.add(p._id);
+        if (!p) return false;
+        const pId = String(p._id || "").trim();
+        const pSlug = String(p.slug || "").trim();
+        if (!pId || !pSlug) return false;
+        if (pId === currentIdStr || pSlug === currentSlug) return false;
+        if (seen.has(pId) || seen.has(pSlug)) return false;
+        seen.add(pId);
+        seen.add(pSlug);
         return true;
       })
       .slice(0, 12);
-  }, [relatedProducts, product?._id]);
+  }, [relatedProducts, product?._id, product?.slug, router.query?.slug]);
 
   // Keep a sharable URL in sync with current selection (includes query params)
   useEffect(() => {
@@ -460,22 +514,22 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   useEffect(() => {
     // Trigger when we have variants and some selection
     if (!product?.variants || product.variants.length === 0) return;
-    
+
     // Check if we have any attribute selection
     const attributeKeys = selectableAttributeKeys;
     const hasSelection = value || (selectVa && Object.keys(selectVa).length > 0 && attributeKeys.some(key => selectVa[key]));
-    
+
     if (!hasSelection) {
       return;
     }
-    
+
     if (hasSelection) {
       // Merge current selectVa with selectVariant to get complete selection
       const mergedSelection = { ...selectVariant, ...selectVa };
-      
+
       // If we have attribute keys, filter by them; otherwise use all variants
       let result = product?.variants || [];
-      
+
       if (attributeKeys.length > 0) {
         result = product?.variants?.filter((variant) => {
           // Check if variant matches all selected attributes
@@ -517,7 +571,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
       // Find the variant that matches all selected attributes
       let result2 = null;
-      
+
       if (Object.keys(newObj).length > 0) {
         result2 = result?.find((v) =>
           Object.keys(newObj).every((k) => newObj[k] === v[k])
@@ -545,7 +599,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         setSelectVariant(result2);
         setSelectVa(result2);
       }
-      
+
       // Get variant images - prioritize variant images
       let variantImages = [];
       if (Array.isArray(result2?.images) && result2.images.length > 0) {
@@ -553,30 +607,30 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
       } else if (result2?.image) {
         variantImages = [result2.image];
       }
-      
+
       // If variant has video, add it to images array
       if (result2?.video && typeof result2.video === "string" && result2.video.trim() !== "") {
         if (!variantImages.includes(result2.video)) {
           variantImages.push(result2.video);
         }
       }
-      
+
       const combinedImages =
         variantImages.length > 0 ? variantImages : [...productImages];
       const variantImage = combinedImages[0] || productImages[0] || "";
       setActiveImage(variantImage);
-      
+
       setStock(result2?.quantity);
       const price = getNumber(result2?.price);
       const originalPrice = getNumber(result2?.originalPrice);
-      
+
       // Use actual discount percentage from database (variant discount)
       // Check variant discount first, then fallback to product discount
       const variantDiscount = getNumber(result2?.discount ?? result2?.prices?.discount ?? null);
       const productDiscount = getNumber(product?.prices?.discount ?? 0);
       // Use variant discount if available, otherwise use product discount
       const discount = variantDiscount !== null && variantDiscount !== undefined ? variantDiscount : productDiscount;
-      
+
       console.log("Discount Debug (result2):", {
         result2: result2,
         result2Discount: result2?.discount,
@@ -586,18 +640,18 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         productPricesDiscount: product?.prices?.discount,
         finalDiscount: discount
       });
-      
+
       setDiscount(discount);
       console.log("Discount state set to:", discount);
       setPrice(price);
       setOriginalPrice(originalPrice);
-      
+
       // Set dynamic title and description - variant first, then product
       const variantTitleText = showingTranslateValue(result2?.title);
       const variantDescText = showingTranslateValue(result2?.description);
       setDynamicTitle(variantTitleText || showingTranslateValue(product?.title));
       setDynamicDescription(variantDescText || showingTranslateValue(product?.description));
-      
+
       // Set variant-specific dynamic and media sections
       // Always set if array exists, even if sections have isVisible: false
       setVariantDynamicSections(
@@ -632,8 +686,8 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         Array.isArray(pricedVariant?.images) && pricedVariant.images.length > 0
           ? pricedVariant.images
           : pricedVariant?.image
-          ? [pricedVariant.image]
-          : [];
+            ? [pricedVariant.image]
+            : [];
 
       const firstVariantImage =
         firstVariantImageArr[0] || productImages[0] || "";
@@ -648,13 +702,13 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
       const price = getNumber(rawVariantPrice);
       const originalPrice = getNumber(rawVariantOriginal);
-      
+
       // Use actual discount percentage from database (variant or product discount)
       const variantDiscount = getNumber(pricedVariant?.discount ?? pricedVariant?.prices?.discount ?? null);
       const productDiscount = getNumber(product?.prices?.discount ?? 0);
       // Use variant discount if available, otherwise use product discount
       const discount = variantDiscount !== null && variantDiscount !== undefined ? variantDiscount : productDiscount;
-      
+
       console.log("Discount Debug (pricedVariant):", {
         pricedVariantDiscount: pricedVariant?.discount,
         pricedVariantPricesDiscount: pricedVariant?.prices?.discount,
@@ -662,7 +716,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         productDiscount,
         finalDiscount: discount
       });
-      
+
       setDiscount(discount);
       setPrice(price);
       setOriginalPrice(originalPrice);
@@ -702,23 +756,23 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
       const price = getNumber(baseRawPrice);
       const originalPrice = getNumber(baseRawOriginal);
-      
+
       // Use actual discount percentage from database (product discount)
       const discount = getNumber(product?.prices?.discount ?? 0);
-      
+
       console.log("Discount Debug (no variant):", {
         productPricesDiscount: product?.prices?.discount,
         finalDiscount: discount
       });
-      
+
       setDiscount(discount);
       setPrice(price);
       setOriginalPrice(originalPrice);
-      
+
       // Set dynamic title and description - use product title/description when no variant
       setDynamicTitle(showingTranslateValue(product?.title));
       setDynamicDescription(showingTranslateValue(product?.description));
-      
+
       // Reset variant-specific sections when no variant
       setVariantDynamicSections(null);
       setVariantMediaSections(null);
@@ -768,7 +822,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
           globalSetting,
           shippingAddressData
         );
-        
+
         console.log("Delivery time result:", deliveryTime);
         setExpectedDeliveryTime(deliveryTime);
       } catch (error) {
@@ -922,16 +976,16 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   useEffect(() => {
     // Only trigger if we have variants
     if (!product?.variants || product.variants.length === 0) return;
-    
+
     // Get attribute keys (size + color when picture picker is shown)
     const attributeKeys = selectableAttributeKeys;
     if (attributeKeys.length === 0) return;
-    
+
     // Check if selectVa has any attribute selections
     const hasAttributeSelection = selectVa && Object.keys(selectVa).some(key => attributeKeys.includes(key));
-    
+
     if (!hasAttributeSelection) return;
-    
+
     // Find matching variant based on selected attributes
     const matchingVariant = product.variants.find((variant) => {
       return attributeKeys.every((attrKey) => {
@@ -943,13 +997,13 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     });
 
     // Compare by SKU or by checking if attributes match
-    const isDifferent = !selectVariant || 
+    const isDifferent = !selectVariant ||
       matchingVariant?.sku !== selectVariant?.sku ||
       attributeKeys.some(key => matchingVariant[key] !== selectVariant[key]);
-    
+
     if (matchingVariant && isDifferent) {
       setSelectVariant(matchingVariant);
-      
+
       // Update images immediately - prioritize variant images
       let variantImages = [];
       if (Array.isArray(matchingVariant?.images) && matchingVariant.images.length > 0) {
@@ -957,40 +1011,40 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
       } else if (matchingVariant?.image) {
         variantImages = [matchingVariant.image];
       }
-      
+
       // If variant has video, add it to images array
       if (matchingVariant?.video && typeof matchingVariant.video === "string" && matchingVariant.video.trim() !== "") {
         if (!variantImages.includes(matchingVariant.video)) {
           variantImages.push(matchingVariant.video);
         }
       }
-      
+
       const combinedImages =
         variantImages.length > 0 ? variantImages : [...productImages];
       const variantImage = combinedImages[0] || productImages[0] || "";
       setActiveImage(variantImage);
-      
+
       // Update price, stock, etc. immediately
       setStock(matchingVariant?.quantity || 0);
       const price = getNumber(matchingVariant?.price);
       const originalPrice = getNumber(matchingVariant?.originalPrice);
-      
+
       // Use actual discount percentage from database (variant discount)
       const variantDiscount = getNumber(matchingVariant?.discount ?? matchingVariant?.prices?.discount ?? null);
       const productDiscount = getNumber(product?.prices?.discount ?? 0);
       // Use variant discount if available, otherwise use product discount
       const discount = variantDiscount !== null && variantDiscount !== undefined ? variantDiscount : productDiscount;
-      
+
       setDiscount(discount);
       setPrice(price);
       setOriginalPrice(originalPrice);
-      
+
       // Update dynamic title and description immediately
       const variantTitleText = showingTranslateValue(matchingVariant?.title);
       const variantDescText = showingTranslateValue(matchingVariant?.description);
       setDynamicTitle(variantTitleText || showingTranslateValue(product?.title));
       setDynamicDescription(variantDescText || showingTranslateValue(product?.description));
-      
+
       // Update variant-specific dynamic and media sections immediately
       // Always set if array exists, even if sections have isVisible: false
       setVariantDynamicSections(
@@ -1092,8 +1146,8 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
       const values = isSize
         ? UK_SIZE_RANGES
         : [
-            ...new Set(product.variants.map((v) => v[key]).filter(Boolean)),
-          ];
+          ...new Set(product.variants.map((v) => v[key]).filter(Boolean)),
+        ];
 
       const dbAtt = attributes?.find(
         (att) =>
@@ -1181,18 +1235,21 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   const handleAddToCart = (p) => {
     if (stock <= 0) return notifyError("Insufficient stock");
 
-    const hasVariants = product?.variants && product.variants.length > 0;
-    const activeVariant = resolveSelectedVariant();
+    const cleanColor = customColor.trim();
+    const cleanSize = customSize.trim();
 
-    if (hasVariants && selectableAttributeKeys.length > 0) {
-      const allSelected = selectableAttributeKeys.every(
-        (key) => activeVariant?.[key] || selectVa?.[key] || selectVariant?.[key]
-      );
-      if (!allSelected || !activeVariant) {
-        return notifyError("Please select all variants first!");
-      }
-    } else if (hasVariants && !activeVariant) {
-      return notifyError("Please select all variants first!");
+    let hasError = false;
+    if (!cleanColor) {
+      setColorError(true);
+      hasError = true;
+    }
+    if (!cleanSize) {
+      setSizeError(true);
+      hasError = true;
+    }
+
+    if (hasError) {
+      return notifyError("Please enter your desired Color and Size");
     }
 
     const { variants, categories, description, ...updatedProduct } = product;
@@ -1200,46 +1257,38 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     // Ensure we have a valid price
     const currentPrice = price > 0
       ? price
-      : getNumber(selectVariant?.price ?? product?.prices?.price ?? 0);
+      : getNumber(product?.prices?.price ?? product?.price ?? 0);
 
     const currentOriginalPrice = originalPrice > 0
       ? originalPrice
-      : getNumber(selectVariant?.originalPrice ?? product?.prices?.originalPrice ?? currentPrice);
+      : getNumber(product?.prices?.originalPrice ?? currentPrice);
+
+    const colorKey = cleanColor.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    const sizeKey = cleanSize.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    const cartItemId = `${p._id}-${colorKey}-${sizeKey}`;
 
     const newItem = {
       ...updatedProduct,
-      isCombination: hasVariants,
-      id: `${
-        !hasVariants || p.variants.length === 0
-          ? p._id
-          : p._id +
-            "-" +
-            variantTitle?.map((att) => selectVariant[att._id]).join("-")
-      }`,
-
-      title: `${
-        !hasVariants || p.variants.length === 0
-          ? dynamicTitle || showingTranslateValue(product?.title)
-          : (dynamicTitle || showingTranslateValue(product?.title)) +
-            "-" +
-            variantTitle
-              ?.map((att) =>
-                att.variants?.find((v) => v._id === selectVariant[att._id])
-              )
-              .map((el) => showingTranslateValue(el?.name))
-      }`,
+      id: cartItemId,
+      productId: p._id,
+      title: dynamicTitle || showingTranslateValue(product?.title),
+      color: cleanColor,
+      size: cleanSize,
       image: activeImage || product.image?.[0] || product.images?.[0],
-      variant: activeVariant || selectVariant,
       price: currentPrice,
       originalPrice: currentOriginalPrice,
+      variant: {
+        color: cleanColor,
+        size: cleanSize,
+      },
     };
 
-    handleAddItem(newItem, 1);
+    handleAddItem(newItem, item);
   };
 
   const handleAddToWishlist = (p) => {
     if (typeof window === "undefined") return;
-    
+
     try {
       const result = addToWishlist(p);
 
@@ -1262,25 +1311,25 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
   const handleAddToCompare = (p) => {
     if (typeof window === "undefined") return;
-    
+
     try {
       const storedCompare = localStorage.getItem("compare");
       let compare = storedCompare ? JSON.parse(storedCompare) : [];
-      
+
       // Check if product already exists in compare
       const exists = compare.some((item) => item._id === p._id);
-      
+
       if (exists) {
         notifyError("Product already in compare list");
         return;
       }
-      
+
       // Limit compare list to 4 products
       if (compare.length >= 4) {
         notifyError("You can compare maximum 4 products");
         return;
       }
-      
+
       // Add product to compare
       compare.push(p);
       localStorage.setItem("compare", JSON.stringify(compare));
@@ -1293,68 +1342,59 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
   const handleBuyNow = (p) => {
     try {
-      // Check stock first - handle products with and without variants
-      if (stock <= 0) {
-        return notifyError("Insufficient stock");
+      if (stock <= 0) return notifyError("Insufficient stock");
+
+      const cleanColor = customColor.trim();
+      const cleanSize = customSize.trim();
+
+      let hasError = false;
+      if (!cleanColor) {
+        setColorError(true);
+        hasError = true;
+      }
+      if (!cleanSize) {
+        setSizeError(true);
+        hasError = true;
       }
 
-      // Check if variants need to be selected
-      const hasVariants = product?.variants && product.variants.length > 0;
-      const activeVariant = resolveSelectedVariant();
-
-      if (hasVariants && selectableAttributeKeys.length > 0) {
-        const allSelected = selectableAttributeKeys.every(
-          (key) => activeVariant?.[key] || selectVa?.[key] || selectVariant?.[key]
-        );
-        if (!allSelected || !activeVariant) {
-          return notifyError("Please select all variants first!");
-        }
-      } else if (hasVariants && !activeVariant) {
-        return notifyError("Please select all variants first!");
+      if (hasError) {
+        return notifyError("Please enter your desired Color and Size");
       }
 
-      // Prepare product item for direct checkout
       const { variants, categories, description, ...updatedProduct } = product;
 
-      // Ensure we have a valid price
       const currentPrice = price > 0
         ? price
-        : getNumber(selectVariant?.price ?? product?.prices?.price ?? 0);
+        : getNumber(product?.prices?.price ?? product?.price ?? 0);
+
       const currentOriginalPrice = originalPrice > 0
         ? originalPrice
-        : getNumber(selectVariant?.originalPrice ?? product?.prices?.originalPrice ?? currentPrice);
+        : getNumber(product?.prices?.originalPrice ?? currentPrice);
+
+      const colorKey = cleanColor.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+      const sizeKey = cleanSize.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+      const cartItemId = `${p._id}-${colorKey}-${sizeKey}`;
 
       const minQtyBuy = item;
       const newItem = {
         ...updatedProduct,
-        id: `${
-          !hasVariants || (p.variants && p.variants.length <= 1)
-            ? p._id
-            : p._id +
-              variantTitle?.map((att) => selectVariant[att._id]).join("-")
-        }`,
-        title: `${
-          !hasVariants || (p.variants && p.variants.length <= 1)
-            ? dynamicTitle || showingTranslateValue(product?.title)
-            : (dynamicTitle || showingTranslateValue(product?.title)) +
-              "-" +
-              variantTitle
-                ?.map((att) =>
-                  att.variants?.find((v) => v._id === selectVariant[att._id])
-                )
-                .map((el) => showingTranslateValue(el?.name))
-        }`,
+        id: cartItemId,
+        productId: p._id,
+        title: dynamicTitle || showingTranslateValue(product?.title),
+        color: cleanColor,
+        size: cleanSize,
         image: activeImage || product.image?.[0],
-        variant: activeVariant || selectVariant || {},
         price: currentPrice,
         originalPrice: currentOriginalPrice,
         quantity: minQtyBuy,
+        variant: {
+          color: cleanColor,
+          size: cleanSize,
+        },
       };
 
-      // Replace entire cart with only this product (Flipkart style - Buy Now replaces cart)
       setItems([newItem]);
 
-      // Go straight to checkout — login is optional, not forced
       setTimeout(() => {
         router.push("/checkout");
       }, 150);
@@ -1411,6 +1451,123 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     .toLowerCase()
     .replace(/[^A-Z0-9]+/gi, "-");
 
+  // Sync return listing URL from sessionStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = sessionStorage.getItem("lastProductListingUrl");
+        if (stored && stored !== router.asPath && !stored.startsWith("/product/")) {
+          setReturnListingUrl(stored);
+          if (stored.includes("category=")) {
+            const match = stored.match(/category=([^&]+)/);
+            if (match && match[1]) {
+              setReturnListingLabel(decodeURIComponent(match[1]).replace(/-/g, " "));
+            }
+          } else if (stored.includes("brand=")) {
+            const match = stored.match(/brand=([^&]+)/);
+            if (match && match[1]) {
+              setReturnListingLabel(decodeURIComponent(match[1]).replace(/-/g, " "));
+            }
+          } else if (stored.includes("/women")) {
+            setReturnListingLabel("Women");
+          } else if (stored.includes("/men")) {
+            setReturnListingLabel("Men");
+          } else if (stored.includes("/trending")) {
+            setReturnListingLabel("Trending");
+          } else if (stored.includes("/new-arrivals")) {
+            setReturnListingLabel("New Arrivals");
+          }
+        } else if (category_name) {
+          setReturnListingUrl(`/search?category=${category_name}&_id=${product?.category?._id || ""}`);
+          setReturnListingLabel(category_name.replace(/-/g, " "));
+        }
+      } catch (_) { }
+    }
+  }, [category_name, product?.category?._id, router.asPath]);
+
+  const handleSmartBack = (e, fallbackUrl) => {
+    if (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const target =
+      fallbackUrl && !fallbackUrl.startsWith("/product/")
+        ? fallbackUrl
+        : returnListingUrl && !returnListingUrl.startsWith("/product/")
+        ? returnListingUrl
+        : category_name
+        ? `/search?category=${category_name}`
+        : "/search";
+
+    router.push(target).catch(() => {
+      window.location.href = target;
+    });
+
+    setTimeout(() => {
+      if (
+        typeof window !== "undefined" &&
+        (window.location.pathname.startsWith("/product") ||
+          router.pathname.startsWith("/product"))
+      ) {
+        window.location.href = target;
+      }
+    }, 150);
+  };
+
+  // Color suggestions parsed from product data
+  const colorSuggestions = useMemo(() => {
+    const list = new Set();
+    if (Array.isArray(product?.colorVariants)) {
+      product.colorVariants.forEach((cv) => {
+        if (cv?.color) {
+          cv.color.split(",").forEach((c) => {
+            const trimmed = c.trim();
+            if (trimmed) list.add(trimmed);
+          });
+        }
+      });
+    }
+    if (Array.isArray(product?.variants)) {
+      product.variants.forEach((v) => {
+        if (v?.color) {
+          v.color.split(",").forEach((c) => {
+            const trimmed = c.trim();
+            if (trimmed) list.add(trimmed);
+          });
+        }
+      });
+    }
+    return Array.from(list);
+  }, [product]);
+
+  // Size suggestions: standard shoe sizes UK 3 - UK 10 + any product size options
+  const sizeSuggestions = useMemo(() => {
+    const list = new Set();
+    const defaults = ["UK 3", "UK 4", "UK 5", "UK 6", "UK 7", "UK 8", "UK 9", "UK 10"];
+    defaults.forEach((s) => list.add(s));
+    if (Array.isArray(product?.variants)) {
+      product.variants.forEach((v) => {
+        if (v?.size) {
+          const trimmed = v.size.trim();
+          if (trimmed) list.add(trimmed);
+        }
+      });
+    }
+    return Array.from(list);
+  }, [product]);
+
+  const handleSelectColor = (colorName) => {
+    setCustomColor(colorName);
+    setColorError(false);
+    const matched = product?.colorVariants?.find(
+      (cv) => cv.color && cv.color.toLowerCase().includes(colorName.toLowerCase())
+    );
+    if (matched?.images?.[0]) {
+      setActiveImage(matched.images[0]);
+    }
+  };
+
   // Helper to create URL-friendly slugs for attribute/variant names
   const slugify = (str = "") =>
     str
@@ -1448,39 +1605,57 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
             <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-16">
 
-              {/* Breadcrumb — Aisha style */}
+              {/* Back to all products button & Breadcrumb */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 lg:mb-8">
+                <nav className="flex items-center flex-wrap gap-1.5 text-xs sm:text-sm text-neutral-500">
+                  <Link
+                    href="/"
+                    onClick={(e) => handleSafeNavigate(e, "/")}
+                    className="hover:text-[#D4AF37] transition-colors"
+                  >
+                    Home
+                  </Link>
+                  <span className="text-neutral-700">/</span>
+                  <Link
+                    href="/search"
+                    onClick={(e) => handleSafeNavigate(e, "/search")}
+                    className="hover:text-[#D4AF37] transition-colors"
+                  >
+                    All Products
+                  </Link>
+                  {category_name && (
+                    <>
+                      <span className="text-neutral-700">/</span>
+                      <Link
+                        href={`/search?category=${category_name}&_id=${product?.category?._id || ""}`}
+                        onClick={(e) =>
+                          handleSafeNavigate(
+                            e,
+                            `/search?category=${category_name}&_id=${product?.category?._id || ""}`
+                          )
+                        }
+                        className="hover:text-[#D4AF37] transition-colors capitalize"
+                      >
+                        {category_name.replace(/-/g, " ")}
+                      </Link>
+                    </>
+                  )}
+                  <span className="text-neutral-700">/</span>
+                  <span className="text-neutral-300 truncate max-w-[180px] sm:max-w-none">
+                    {dynamicTitle || showingTranslateValue(product?.title)}
+                  </span>
+                </nav>
 
-              <nav className="text-xs sm:text-sm text-neutral-500 mb-6 lg:mb-8">
-
-                <Link href="/" className="hover:text-[#D4AF37] transition-colors">
-
-                  Home
-
-                </Link>
-
-                <span className="mx-1.5 text-neutral-700">/</span>
-
-                <Link
-
-                  href={`/search?category=${category_name}&_id=${product?.category?._id}`}
-
-                  className="hover:text-[#D4AF37] transition-colors capitalize"
-
+                <button
+                  type="button"
+                  onClick={(e) => handleSmartBack(e, returnListingUrl)}
+                  className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-neutral-400 hover:text-[#D4AF37] transition-colors self-start sm:self-auto group capitalize cursor-pointer"
+                  aria-label={`Back to ${returnListingLabel}`}
                 >
-
-                  {category_name.replace(/-/g, " ") || "Shop"}
-
-                </Link>
-
-                <span className="mx-1.5 text-neutral-700">/</span>
-
-                <span className="text-neutral-300">
-
-                  {dynamicTitle || showingTranslateValue(product?.title)}
-
-                </span>
-
-              </nav>
+                  <FiArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                  <span>Back to {returnListingLabel}</span>
+                </button>
+              </div>
 
 
 
@@ -1583,17 +1758,16 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                     </h1>
 
                     {dynamicDescription && (
-                      <p className="mt-3 text-sm text-neutral-400 leading-relaxed">
+                      <div className="mt-3 text-sm text-neutral-400 leading-relaxed whitespace-pre-line">
                         {dynamicDescription}
-                      </p>
+                      </div>
                     )}
 
                     {showingTranslateValue(product?.highlights) && (
                       <div className="mt-4 text-sm text-neutral-400 leading-relaxed whitespace-pre-line">
                         {isReadMore
-                          ? `${showingTranslateValue(product?.highlights).slice(0, 180)}${
-                              showingTranslateValue(product?.highlights).length > 180 ? "..." : ""
-                            }`
+                          ? `${showingTranslateValue(product?.highlights).slice(0, 180)}${showingTranslateValue(product?.highlights).length > 180 ? "..." : ""
+                          }`
                           : showingTranslateValue(product?.highlights)}
                         {showingTranslateValue(product?.highlights).length > 180 && (
                           <button
@@ -1629,60 +1803,120 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
 
 
-                    {showColorPicker && (
-                      <div className="mb-6">
-                        <p className="text-sm text-neutral-400 mb-2">Color</p>
-                        <ColorImagePicker
-                          options={colorOptions}
-                          selectedColor={
-                            selectVa?.color ||
-                            selectVariant?.color ||
-                            selectVariant?.colorName ||
-                            colorOptions[0]?.color ||
-                            ""
-                          }
-                          onSelect={handleColorSelect}
-                        />
+                    {/* Customer-entered Color field */}
+                    <div className="mb-5">
+                      <div className="flex items-center justify-between mb-2">
+                        <label htmlFor="customer-color-input" className="text-sm font-semibold text-neutral-200">
+                          Color <span className="text-red-400">*</span>
+                        </label>
+                        {customColor && (
+                          <span className="text-xs text-[#D4AF37] font-medium truncate max-w-[200px]">
+                            Selected: {customColor}
+                          </span>
+                        )}
                       </div>
-                    )}
-
-                    {/* Size variants */}
-                    {variantTitle?.length > 0 && (
-                      <div className="space-y-5 mb-6">
-                        {variantTitle.map((a, i) => (
-                          <div key={i + 1}>
-                            <p className="text-sm text-neutral-400 mb-2">
-                              {showingTranslateValue(a?.name)}
-                            </p>
-                            <VariantList
-
-                              att={a._id}
-
-                              lang={lang}
-
-                              option={a.option}
-
-                              setValue={setValue}
-
-                              varTitle={variantTitle}
-
-                              setSelectVa={setSelectVa}
-
-                              variants={product.variants}
-
-                              selectVariant={selectVariant}
-
-                              setSelectVariant={setSelectVariant}
-
-                            />
-
+                      <input
+                        id="customer-color-input"
+                        type="text"
+                        value={customColor}
+                        onChange={(e) => {
+                          setCustomColor(e.target.value);
+                          if (colorError) setColorError(false);
+                        }}
+                        placeholder="Enter color (e.g. Maroon, Black, White, Grey)"
+                        className={`w-full h-11 px-3.5 rounded-lg bg-[#0F0F0F] border text-white text-sm placeholder-neutral-500 focus:outline-none focus:ring-1 transition-colors ${colorError
+                          ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                          : "border-neutral-800 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+                          }`}
+                      />
+                      {colorError && (
+                        <p className="text-xs text-red-400 mt-1">Please enter your required color</p>
+                      )}
+                      {colorSuggestions.length > 0 && (
+                        <div className="mt-2.5">
+                          <p className="text-[11px] text-neutral-500 uppercase tracking-wider mb-1.5 font-medium">
+                            Suggested Colors (or type your own above):
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {colorSuggestions.map((c, i) => {
+                              const isSelected = customColor.trim().toLowerCase() === c.toLowerCase();
+                              return (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => handleSelectColor(c)}
+                                  className={`px-3 py-1 text-xs rounded-full border transition-all ${isSelected
+                                    ? "bg-[#D4AF37] text-black font-bold border-[#D4AF37] shadow-sm shadow-[#D4AF37]/30"
+                                    : "bg-[#111111] text-neutral-300 border-neutral-800 hover:border-neutral-700 hover:text-white"
+                                    }`}
+                                >
+                                  {c}
+                                </button>
+                              );
+                            })}
                           </div>
+                        </div>
+                      )}
+                    </div>
 
-                        ))}
-
+                    {/* Customer-entered Size field */}
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <label htmlFor="customer-size-input" className="text-sm font-semibold text-neutral-200">
+                          Size <span className="text-red-400">*</span>
+                        </label>
+                        {customSize && (
+                          <span className="text-xs text-[#D4AF37] font-medium truncate max-w-[200px]">
+                            Selected: {customSize}
+                          </span>
+                        )}
                       </div>
-
-                    )}
+                      <input
+                        id="customer-size-input"
+                        type="text"
+                        value={customSize}
+                        onChange={(e) => {
+                          setCustomSize(e.target.value);
+                          if (sizeError) setSizeError(false);
+                        }}
+                        placeholder="Enter size (e.g. UK 8, UK 9, UK 10)"
+                        className={`w-full h-11 px-3.5 rounded-lg bg-[#0F0F0F] border text-white text-sm placeholder-neutral-500 focus:outline-none focus:ring-1 transition-colors ${sizeError
+                          ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                          : "border-neutral-800 focus:border-[#D4AF37] focus:ring-[#D4AF37]"
+                          }`}
+                      />
+                      {sizeError && (
+                        <p className="text-xs text-red-400 mt-1">Please enter your required size</p>
+                      )}
+                      {sizeSuggestions.length > 0 && (
+                        <div className="mt-2.5">
+                          <p className="text-[11px] text-neutral-500 uppercase tracking-wider mb-1.5 font-medium">
+                            Popular Sizes (or type your own above):
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {sizeSuggestions.map((s, i) => {
+                              const isSelected = customSize.trim().toLowerCase() === s.toLowerCase();
+                              return (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => {
+                                    setCustomSize(s);
+                                    setSizeError(false);
+                                  }}
+                                  className={`px-3 py-1 text-xs rounded-full border transition-all ${isSelected
+                                    ? "bg-[#D4AF37] text-black font-bold border-[#D4AF37] shadow-sm shadow-[#D4AF37]/30"
+                                    : "bg-[#111111] text-neutral-300 border-neutral-800 hover:border-neutral-700 hover:text-white"
+                                    }`}
+                                >
+                                  {s}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
 
 
@@ -1927,16 +2161,30 @@ export const getServerSideProps = async (context) => {
   ]);
 
   const product = slug
-    ? data?.products?.find((p) => p.slug === slug) || {}
+    ? data?.products?.find((p) => p.slug === slug) ||
+    (slug === "sneakers-"
+      ? data?.products?.find(
+        (p) => p.slug === "onitsuka-sneakers" || p.slug === "sneakers-"
+      )
+      : null) ||
+    data?.products?.[0] ||
+    {}
     : {};
-  const currentId = product?._id;
+  const currentSlug = String(product?.slug || slug || "").trim();
+  const currentIdStr = String(product?._id || "").trim();
 
   const mergeUnique = (...lists) => {
     const seen = new Set();
     const merged = [];
     lists.flat().forEach((p) => {
-      if (!p?._id || p._id === currentId || seen.has(String(p._id))) return;
-      seen.add(String(p._id));
+      if (!p) return;
+      const pId = String(p._id || "").trim();
+      const pSlug = String(p.slug || "").trim();
+      if (!pId || !pSlug) return;
+      if (pId === currentIdStr || pSlug === currentSlug) return;
+      if (seen.has(pId) || seen.has(pSlug)) return;
+      seen.add(pId);
+      seen.add(pSlug);
       merged.push(p);
     });
     return merged.slice(0, 12);

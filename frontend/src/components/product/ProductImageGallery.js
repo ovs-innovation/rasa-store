@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
 import { PRODUCT_PLACEHOLDER } from "@utils/brandAssets";
+import { optimizeImageUrl } from "@utils/imageUrl";
 
 const ProductImageGallery = ({ images, productTitle = "Product", buttons }) => {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -122,7 +123,7 @@ const ProductImageGallery = ({ images, productTitle = "Product", buttons }) => {
                     src={
                       isYoutubeUrl(mediaUrl)
                         ? getYoutubeThumbnail(mediaUrl) || placeholder
-                        : mediaUrl || placeholder
+                        : optimizeImageUrl(mediaUrl, 200) || placeholder
                     }
                     alt={`${productTitle} - View ${index + 1}`}
                     className="w-full h-full object-cover"
@@ -171,7 +172,7 @@ const ProductImageGallery = ({ images, productTitle = "Product", buttons }) => {
             ) : (
               <img
                 key={`main-img-${activeIndex}-${activeImage}`}
-                src={activeImage}
+                src={optimizeImageUrl(activeImage, 1200)}
                 alt={productTitle}
                 onError={handleImageError}
                 loading="eager"
@@ -182,6 +183,7 @@ const ProductImageGallery = ({ images, productTitle = "Product", buttons }) => {
                 style={{
                   transform: isZooming ? "scale(1.85)" : "scale(1)",
                   transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                  filter: "brightness(0.97) contrast(0.94) saturate(0.90)",
                   cursor: "zoom-in",
                   transition:
                     "transform 0.18s cubic-bezier(0.22, 1, 0.36, 1)",

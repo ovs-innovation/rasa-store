@@ -12,6 +12,7 @@ import useUtilsFunction from "@hooks/useUtilsFunction";
 import ProductModal from "@components/modal/ProductModal";
 import { handleLogEvent } from "src/lib/analytics";
 import { addToWishlist } from "@lib/wishlist";
+import { optimizeImageUrl, getImageSrcSet } from "@utils/imageUrl";
 
 const ProductCard = ({
   product,
@@ -103,11 +104,47 @@ const ProductCard = ({
 
   const isSoldOut = product.stock < 1;
   const title = showingTranslateValue(product?.title);
-  const primaryImg = product.featuredImage || product.image?.[0];
-  const hoverImg = product.hoverImage || product.image?.[1];
+  
+  // Prefer clean original image if featuredImage is legacy distorted photo-output
+  const variantFirstImg = product?.colorVariants?.[0]?.images?.[0];
+  const rawPrimary = product.featuredImage || product.image?.[0];
+  const primaryImg = (rawPrimary && !rawPrimary.includes("photo-output"))
+    ? rawPrimary
+    : (variantFirstImg || rawPrimary);
+
+  const rawHover = product.hoverImage || product.image?.[1];
+  const hoverImg = (rawHover && rawHover !== primaryImg && !rawHover.includes("photo-output"))
+    ? rawHover
+    : (product?.colorVariants?.[0]?.images?.[1] || (rawHover && rawHover !== primaryImg ? rawHover : null));
 
   const goToProduct = () => {
-    router.push(`/product/${product.slug}`);
+    const slug = product?.slug;
+    if (!slug) return;
+
+    if (typeof window !== "undefined") {
+      try {
+        if (router.asPath && !router.asPath.startsWith("/product/")) {
+          sessionStorage.setItem("lastProductListingUrl", router.asPath);
+        }
+      } catch (_) {}
+    }
+
+    const targetUrl = `/product/${slug}`;
+    if (typeof window !== "undefined" && window.location.pathname === targetUrl) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    router.push(targetUrl).catch(() => {
+      window.location.href = targetUrl;
+    });
+
+    setTimeout(() => {
+      if (typeof window !== "undefined" && window.location.pathname !== targetUrl) {
+        window.location.href = targetUrl;
+      }
+    }, 150);
+
     handleLogEvent("product", `navigated to ${title} product page`);
   };
 
@@ -134,20 +171,26 @@ const ProductCard = ({
           {primaryImg ? (
             <>
               <img
-                src={primaryImg}
+                src={optimizeImageUrl(primaryImg, 480)}
+                srcSet={getImageSrcSet(primaryImg, [360, 480, 720]) || undefined}
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 alt={title}
-                className={`absolute inset-0 h-full w-full object-cover transition-all duration-500 ${
+                style={{ filter: "brightness(0.97) contrast(0.94) saturate(0.90)", imageRendering: "auto" }}
+                className={`absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-300 ${
                   hoverImg
-                    ? "opacity-100 group-hover:opacity-0 group-hover:scale-105"
-                    : "group-hover:scale-105"
+                    ? "opacity-100 sm:group-hover:opacity-0"
+                    : ""
                 }`}
                 loading="lazy"
               />
               {hoverImg && (
                 <img
-                  src={hoverImg}
+                  src={optimizeImageUrl(hoverImg, 480)}
+                  srcSet={getImageSrcSet(hoverImg, [360, 480, 720]) || undefined}
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                   alt={title}
-                  className="absolute inset-0 h-full w-full object-cover opacity-0 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
+                  style={{ filter: "brightness(0.97) contrast(0.94) saturate(0.90)", imageRendering: "auto" }}
+                  className="hidden sm:block absolute inset-0 h-full w-full object-cover object-center opacity-0 transition-opacity duration-300 sm:group-hover:opacity-100"
                   loading="lazy"
                 />
               )}
@@ -155,9 +198,6 @@ const ProductCard = ({
           ) : (
             <Image src="/placeholder.png" fill className="object-cover" alt="product" />
           )}
-
-          {/* Subtle bottom fade */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/40 to-transparent sm:h-16" />
 
           {isSoldOut && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/55 backdrop-blur-[2px]">

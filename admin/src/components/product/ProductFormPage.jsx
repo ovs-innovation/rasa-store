@@ -132,6 +132,17 @@ const ProductFormPage = ({ productId }) => {
                     <Error errorName={errors.description} />
                   </div>
 
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Full Description</label>
+                    <Textarea
+                      {...register("highlights")}
+                      rows="4"
+                      placeholder="Detailed product information."
+                      className="w-full border-gray-200 dark:border-gray-600 dark:bg-gray-700 focus:border-emerald-500 font-mono text-sm"
+                    />
+                    <p className="text-[11px] text-gray-400 mt-1">Each line shows separately on the product page.</p>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Product Type *</label>
                     <Select
@@ -175,6 +186,7 @@ const ProductFormPage = ({ productId }) => {
                   folder="product"
                   imageUrl={imageUrl}
                   setImageUrl={setImageUrl}
+                  useOriginalSize={true}
                 />
               </section>
 

@@ -70,7 +70,7 @@ const MobileBottomNavigation = () => {
         >
           <div className="relative">
             <FiShoppingCart className="w-6 h-6 mb-1" />
-            {totalItems > 0 && (
+            {mounted && totalItems > 0 && (
               <span className="absolute -top-2 -right-2 bg-[#D4AF37] text-black text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
                 {totalItems}
               </span>
@@ -92,7 +92,7 @@ const MobileBottomNavigation = () => {
         <Link href="/wishlist" className={`flex flex-col items-center justify-center w-full ${isActive("/wishlist") ? "text-[#D4AF37]" : "text-neutral-400 hover:text-white"}`}>
           <div className="relative">
             <FiHeart className="w-6 h-6 mb-1" />
-            {wishlistCount > 0 && (
+            {mounted && wishlistCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-[#D4AF37] text-black text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
                 {wishlistCount}
               </span>

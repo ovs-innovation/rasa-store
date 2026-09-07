@@ -129,10 +129,12 @@ const CustomerServices = {
   },
 
   /** Add or increment a product in the DB cart */
-  addToCartDB: async (customerId, productId, quantity = 1) => {
+  addToCartDB: async (customerId, productId, quantity = 1, color = "", size = "") => {
     return requests.post(`/customer/cart/${customerId}/add`, {
       productId,
       quantity,
+      color,
+      size,
     });
   },
 

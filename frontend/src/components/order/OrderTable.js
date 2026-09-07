@@ -37,7 +37,14 @@ const OrderTable = ({ data, currency }) => {
               {i + 1}
             </th>
             <td className="product-column px-2 py-1 font-normal text-gray-700 border-r border-gray-200 print:px-1 print:py-1 print:text-xs print:break-words">
-              {item.title}
+              <div>{item.title}</div>
+              {(item.color || item.size) && (
+                <div className="text-xs text-gray-500 font-medium">
+                  {item.color && `Color: ${item.color}`}
+                  {item.color && item.size && " | "}
+                  {item.size && `Size: ${item.size}`}
+                </div>
+              )}
             </td>
             <td className="px-2 py-1 whitespace-nowrap font-normal text-gray-700 text-center border-r border-gray-200 print:px-1 print:py-1 print:text-xs">
               {item.hsn || "-"}

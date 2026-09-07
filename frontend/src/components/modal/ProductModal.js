@@ -47,6 +47,38 @@ const ProductModal = ({
   const [variantTitle, setVariantTitle] = useState([]);
   const [variants, setVariants] = useState([]);
 
+  // Customer-entered Color and Size
+  const [customColor, setCustomColor] = useState("");
+  const [customSize, setCustomSize] = useState("");
+  const [colorError, setColorError] = useState(false);
+  const [sizeError, setSizeError] = useState(false);
+
+  const colorSuggestions = React.useMemo(() => {
+    const list = new Set();
+    if (Array.isArray(product?.colorVariants)) {
+      product.colorVariants.forEach((cv) => {
+        if (cv?.color) cv.color.split(",").forEach((c) => { const t = c.trim(); if (t) list.add(t); });
+      });
+    }
+    if (Array.isArray(product?.variants)) {
+      product.variants.forEach((v) => {
+        if (v?.color) v.color.split(",").forEach((c) => { const t = c.trim(); if (t) list.add(t); });
+      });
+    }
+    return Array.from(list);
+  }, [product]);
+
+  const sizeSuggestions = React.useMemo(() => {
+    const list = new Set();
+    ["UK 3", "UK 4", "UK 5", "UK 6", "UK 7", "UK 8", "UK 9", "UK 10"].forEach((s) => list.add(s));
+    if (Array.isArray(product?.variants)) {
+      product.variants.forEach((v) => {
+        if (v?.size) { const t = v.size.trim(); if (t) list.add(t); }
+      });
+    }
+    return Array.from(list);
+  }, [product]);
+
   useEffect(() => {
     // console.log('value', value, product);
     if (value) {
@@ -146,54 +178,51 @@ const ProductModal = ({
   }, [variants, attributes]);
 
   const handleAddToCart = (p) => {
-    if (p.variants.length === 1 && p.variants[0].quantity < 1)
-      return notifyError("Insufficient stock");
-
     if (stock <= 0) return notifyError("Insufficient stock");
 
-    if (
-      product?.variants.map(
-        (variant) =>
-          Object.entries(variant).sort().toString() ===
-          Object.entries(selectVariant).sort().toString()
-      )
-    ) {
-      const { variants, categories, description, ...updatedProduct } = product;
-      const priceToUse = p.variants.length === 0 ? getNumber(p.prices.price) : getNumber(price);
-      const originalToUse = p.variants.length === 0 ? getNumber(p.prices.originalPrice) : getNumber(originalPrice);
+    const cleanColor = customColor.trim();
+    const cleanSize = customSize.trim();
 
-      const newItem = {
-        ...updatedProduct,
-        id: `${
-          p?.variants.length <= 0
-            ? p._id
-            : p._id +
-              "-" +
-              variantTitle?.map((att) => selectVariant[att._id]).join("-")
-        }`,
-        title: `${
-          p?.variants.length <= 0
-            ? showingTranslateValue(p.title)
-            : showingTranslateValue(p.title) +
-              "-" +
-              variantTitle
-                ?.map((att) =>
-                  att.variants?.find((v) => v._id === selectVariant[att._id])
-                )
-                .map((el) => showingTranslateValue(el?.name))
-        }`,
-        image: img,
-        variant: selectVariant || {},
-        price: priceToUse,
-        originalPrice: originalToUse,
-      };
-
-      // console.log("newItem", newItem);
-
-      handleAddItem(newItem, 1);
-    } else {
-      return notifyError("Please select all variant first!");
+    let hasError = false;
+    if (!cleanColor) {
+      setColorError(true);
+      hasError = true;
     }
+    if (!cleanSize) {
+      setSizeError(true);
+      hasError = true;
+    }
+
+    if (hasError) {
+      return notifyError("Please enter your desired Color and Size");
+    }
+
+    const { variants, categories, description, ...updatedProduct } = product;
+    const priceToUse = price > 0 ? getNumber(price) : getNumber(p.prices?.price || 0);
+    const originalToUse = originalPrice > 0 ? getNumber(originalPrice) : getNumber(p.prices?.originalPrice || priceToUse);
+
+    const colorKey = cleanColor.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    const sizeKey = cleanSize.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+    const cartItemId = `${p._id}-${colorKey}-${sizeKey}`;
+
+    const newItem = {
+      ...updatedProduct,
+      id: cartItemId,
+      productId: p._id,
+      title: showingTranslateValue(p.title),
+      color: cleanColor,
+      size: cleanSize,
+      image: img || product.image?.[0] || product.images?.[0],
+      price: priceToUse,
+      originalPrice: originalToUse,
+      variant: {
+        color: cleanColor,
+        size: cleanSize,
+      },
+    };
+
+    handleAddItem(newItem, item);
+    setModalOpen(false);
   };
 
   const handleMoreInfo = (slug) => {
@@ -257,7 +286,7 @@ const ProductModal = ({
                   <Stock stock={stock} />
                 </div>
               </div>
-              <p className="text-sm leading-6 text-gray-500 md:leading-6">
+              <p className="text-sm leading-6 text-gray-400 md:leading-6 whitespace-pre-line">
                 {showingTranslateValue(product?.description)}
               </p>
               <div className="flex items-center my-4">
@@ -270,27 +299,106 @@ const ProductModal = ({
               </div>
  
 
-              <div className="mb-6 space-y-4">
-                {variantTitle?.map((a, i) => (
-                  <span key={a._id}>
-                    <h4 className="text-sm py-1 font-serif text-gray-700 font-bold">
-                      {showingTranslateValue(a?.name)}:
-                    </h4>
-                    <div className="flex flex-row mb-3">
-                      <VariantList
-                        att={a._id}
-                        lang={lang}
-                        option={a.option}
-                        setValue={setValue}
-                        varTitle={variantTitle}
-                        variants={product?.variants}
-                        setSelectVa={setSelectVa}
-                        selectVariant={selectVariant}
-                        setSelectVariant={setSelectVariant}
-                      />
+              <div className="mb-4 space-y-3">
+                {/* Color input */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-gray-700">
+                      Color <span className="text-red-500">*</span>
+                    </label>
+                    {customColor && (
+                      <span className="text-xs text-[#D4AF37] font-medium">{customColor}</span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={customColor}
+                    onChange={(e) => {
+                      setCustomColor(e.target.value);
+                      if (colorError) setColorError(false);
+                    }}
+                    placeholder="Enter color (e.g. Maroon, Black, White)"
+                    className={`w-full h-10 px-3 rounded-lg border text-sm focus:outline-none transition-colors ${
+                      colorError ? "border-red-500" : "border-gray-300 focus:border-[#D4AF37]"
+                    }`}
+                  />
+                  {colorError && (
+                    <p className="text-xs text-red-500 mt-0.5">Please enter color</p>
+                  )}
+                  {colorSuggestions.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {colorSuggestions.map((c, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            setCustomColor(c);
+                            setColorError(false);
+                            const matched = product?.colorVariants?.find(
+                              (cv) => cv.color && cv.color.toLowerCase().includes(c.toLowerCase())
+                            );
+                            if (matched?.images?.[0]) setImg(matched.images[0]);
+                          }}
+                          className={`px-2 py-0.5 text-xs rounded border transition-all ${
+                            customColor.toLowerCase() === c.toLowerCase()
+                              ? "bg-[#D4AF37] text-black font-semibold border-[#D4AF37]"
+                              : "bg-gray-100 text-gray-700 border-gray-200 hover:border-gray-400"
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))}
                     </div>
-                  </span>
-                ))}
+                  )}
+                </div>
+
+                {/* Size input */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-gray-700">
+                      Size <span className="text-red-500">*</span>
+                    </label>
+                    {customSize && (
+                      <span className="text-xs text-[#D4AF37] font-medium">{customSize}</span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={customSize}
+                    onChange={(e) => {
+                      setCustomSize(e.target.value);
+                      if (sizeError) setSizeError(false);
+                    }}
+                    placeholder="Enter size (e.g. UK 8, UK 9, UK 10)"
+                    className={`w-full h-10 px-3 rounded-lg border text-sm focus:outline-none transition-colors ${
+                      sizeError ? "border-red-500" : "border-gray-300 focus:border-[#D4AF37]"
+                    }`}
+                  />
+                  {sizeError && (
+                    <p className="text-xs text-red-500 mt-0.5">Please enter size</p>
+                  )}
+                  {sizeSuggestions.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {sizeSuggestions.map((s, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            setCustomSize(s);
+                            setSizeError(false);
+                          }}
+                          className={`px-2 py-0.5 text-xs rounded border transition-all ${
+                            customSize.toLowerCase() === s.toLowerCase()
+                              ? "bg-[#D4AF37] text-black font-semibold border-[#D4AF37]"
+                              : "bg-gray-100 text-gray-700 border-gray-200 hover:border-gray-400"
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center mt-4">

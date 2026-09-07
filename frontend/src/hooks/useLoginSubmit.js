@@ -45,9 +45,9 @@ const useLoginSubmit = () => {
         // Firebase Signup
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const firebaseUser = userCredential.user;
-        
+
         await sendEmailVerification(firebaseUser);
-        
+
         const idToken = await firebaseUser.getIdToken();
 
         const res = await CustomerServices.registerUser({
@@ -69,7 +69,7 @@ const useLoginSubmit = () => {
       } else if (router.pathname === "/auth/forget-password") {
         // Use Firebase to send the password reset email
         await sendPasswordResetEmail(auth, email);
-        
+
         notifySuccess("Password reset email sent! Please check your inbox.");
         reset();
         router.push("/auth/login");
@@ -119,7 +119,7 @@ const useLoginSubmit = () => {
         } catch (err) {
           console.error("Login error:", err);
           const respData = err?.response?.data;
-          
+
           if (err?.response?.status === 404 || respData?.error === "USER_NOT_FOUND") {
             const msg = respData?.message || "Account not found. Please register first.";
             notifyError(msg);

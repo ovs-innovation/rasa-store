@@ -51,12 +51,16 @@ const BrandMarquee = ({ displayBrands }) => {
             href={`/search?brand=${encodeURIComponent(brand.slug)}`}
             className="group flex w-[112px] shrink-0 flex-col items-center"
           >
-            <div className="flex h-[104px] w-[104px] items-center justify-center overflow-hidden rounded-full border border-neutral-200 bg-[#F9F9F9] transition-all duration-300 group-hover:scale-105 group-hover:border-[#D4AF37]">
+            <div className="relative flex h-[104px] w-[104px] items-center justify-center overflow-hidden rounded-full border border-neutral-200 bg-white transition-all duration-300 group-hover:scale-105 group-hover:border-[#D4AF37] shadow-sm">
               {brand.logo ? (
                 <img
                   src={brand.logo}
                   alt={brand.displayName}
-                  className="h-[100px] w-[100px] object-contain transition-transform duration-300 group-hover:scale-105"
+                  className={`h-full w-full ${
+                    brand.logo?.endsWith?.(".svg")
+                      ? "object-contain p-3"
+                      : "object-cover object-center"
+                  } transition-transform duration-300 group-hover:scale-105`}
                   loading="lazy"
                   draggable={false}
                 />
@@ -110,12 +114,16 @@ const ShopByBrandSection = ({ brands = [], enabled = true }) => {
               className="group block w-full overflow-hidden rounded-xl border border-neutral-200 bg-white transition-all duration-300 hover:border-[#D4AF37] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
             >
               <div className="relative w-full bg-white" style={{ paddingBottom: "95%" }}>
-                <div className="absolute inset-0 flex items-center justify-center p-1">
+                <div className="absolute inset-0 flex items-center justify-center">
                   {brand.logo ? (
                     <img
                       src={brand.logo}
                       alt={brand.displayName}
-                      className="h-[98%] w-[98%] object-contain transition-transform duration-300 group-hover:scale-105"
+                      className={`h-full w-full ${
+                        brand.logo?.endsWith?.(".svg")
+                          ? "object-contain p-4"
+                          : "object-cover object-center"
+                      } transition-transform duration-300 group-hover:scale-105`}
                       loading="lazy"
                       draggable={false}
                     />

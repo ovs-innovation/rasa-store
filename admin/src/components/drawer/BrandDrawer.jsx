@@ -109,6 +109,9 @@ const BrandDrawer = ({ id }) => {
                   useOriginalSize={true}
                   uniquePublicId={true}
                 />
+                <p className="text-[11px] text-gray-400 mt-1.5">
+                  Recommended ratio: <strong>1:1 (Square)</strong> or <strong>4:5</strong> (e.g. 600×600px). Images will automatically fit and center cleanly in the circular brand display on the website.
+                </p>
               </div>
             </div>
 

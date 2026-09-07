@@ -154,7 +154,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="py-6 border-t border-neutral-900/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="pt-6 pb-28 lg:pb-8 border-t border-neutral-900/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <p className="text-[9px] uppercase tracking-[0.15em] text-neutral-600 font-medium mb-1">
               © {new Date().getFullYear()} RASA Store. All rights reserved.

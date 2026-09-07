@@ -1908,7 +1908,7 @@ const getCart = async (req, res) => {
 const addToCart = async (req, res) => {
   try {
     const { customerId } = req.params;
-    const { productId, quantity = 1 } = req.body;
+    const { productId, quantity = 1, color = "", size = "" } = req.body;
 
     if (!productId) {
       return res.status(400).send({ message: "productId is required." });
@@ -1921,13 +1921,17 @@ const addToCart = async (req, res) => {
 
     const qty = Math.max(1, Number(quantity));
     const existingItem = customer.cart.find(
-      (c) => c.productId && c.productId.toString() === productId.toString()
+      (c) =>
+        c.productId &&
+        c.productId.toString() === productId.toString() &&
+        (c.color || "") === (color || "") &&
+        (c.size || "") === (size || "")
     );
 
     if (existingItem) {
       existingItem.quantity = existingItem.quantity + qty;
     } else {
-      customer.cart.push({ productId, quantity: qty });
+      customer.cart.push({ productId, quantity: qty, color, size });
     }
 
     await customer.save();

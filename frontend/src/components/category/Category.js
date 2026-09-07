@@ -44,6 +44,32 @@ const Category = () => {
     { title: "Contact Us", href: "/contact-us", icon: FiPhoneCall },
   ];
 
+  const handleNavigate = (e, url) => {
+    if (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    closeCategoryDrawer();
+
+    router.push(url).catch(() => {
+      window.location.href = url;
+    });
+
+    setTimeout(() => {
+      if (typeof window !== "undefined") {
+        const currentPath = window.location.pathname + window.location.search;
+        if (
+          currentPath !== url &&
+          (window.location.pathname.startsWith("/product") ||
+            router.pathname.startsWith("/product"))
+        ) {
+          window.location.href = url;
+        }
+      }
+    }, 150);
+  };
+
   return (
     <div className="flex flex-col w-full h-full bg-[#050505] text-white cursor-pointer scrollbar-hide border-r border-neutral-900/40">
       {categoryDrawerOpen && (
@@ -104,14 +130,14 @@ const Category = () => {
             <ul className="space-y-1">
               {mainLinks.map((item) => (
                 <li key={item.title}>
-                  <Link
+                  <a
                     href={item.href}
-                    onClick={closeCategoryDrawer}
+                    onClick={(e) => handleNavigate(e, item.href)}
                     className="flex items-center rounded-md px-2 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-300 hover:bg-neutral-900 hover:text-[#D4AF37] transition-all duration-150"
                   >
                     <item.icon className="flex-shrink-0 h-4 w-4 mr-3" />
                     <span>{item.title}</span>
-                  </Link>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -127,13 +153,12 @@ const Category = () => {
                 <div key={cat._id} className="border-b border-neutral-900/30">
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
                       if (hasChildren) {
                         setExpandedCategoryId(isExpanded ? null : cat._id);
                         return;
                       }
-                      closeCategoryDrawer();
-                      router.push(getCategoryNavUrl(cat));
+                      handleNavigate(e, getCategoryNavUrl(cat));
                     }}
                     className="flex w-full items-center gap-3 px-3 py-3 text-xs font-black uppercase tracking-widest text-neutral-200 hover:bg-neutral-900 hover:text-[#D4AF37] transition-colors"
                   >
@@ -158,22 +183,22 @@ const Category = () => {
 
                   {hasChildren && isExpanded && (
                     <div className="pb-3 pl-14 pr-3">
-                      <Link
+                      <a
                         href={getCategoryNavUrl(cat)}
-                        onClick={closeCategoryDrawer}
+                        onClick={(e) => handleNavigate(e, getCategoryNavUrl(cat))}
                         className="block py-2 text-[10px] font-black uppercase tracking-widest text-[#D4AF37] hover:text-white transition-colors"
                       >
                         View All {categoryName}
-                      </Link>
+                      </a>
                       {cat.children.map((sub) => (
-                        <Link
+                        <a
                           key={sub._id}
                           href={getCategoryNavUrl(sub)}
-                          onClick={closeCategoryDrawer}
+                          onClick={(e) => handleNavigate(e, getCategoryNavUrl(sub))}
                           className="block py-2 text-xs font-bold uppercase tracking-wider text-neutral-400 hover:text-[#D4AF37] transition-colors"
                         >
                           {showingTranslateValue(sub.name)}
-                        </Link>
+                        </a>
                       ))}
                     </div>
                   )}

@@ -43,6 +43,31 @@ const MobileFooter = () => {
     return null;
   }
 
+  const handleSafeNavigate = (e, targetUrl) => {
+    if (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+    }
+    if (typeof window !== "undefined") {
+      if (window.location.pathname === targetUrl) {
+        window.location.href = targetUrl;
+        return;
+      }
+    }
+    router.push(targetUrl).catch(() => {
+      window.location.href = targetUrl;
+    });
+    setTimeout(() => {
+      if (
+        typeof window !== "undefined" &&
+        (window.location.pathname.startsWith("/product") ||
+          router.pathname.startsWith("/product"))
+      ) {
+        window.location.href = targetUrl;
+      }
+    }, 200);
+  };
+
   const handleSearchChange = (value) => {
     setSearchText(value);
     setShowSuggestions(value.trim().length > 0);
@@ -87,6 +112,8 @@ const MobileFooter = () => {
     }
   };
 
+
+
   return (
     <>
       {/* Drawer lives off-canvas; keep it mounted without forcing page layout/scroll */}
@@ -104,6 +131,7 @@ const MobileFooter = () => {
             </button>
             <Link
               href="/"
+              onClick={(e) => handleSafeNavigate(e, "/")}
               className="flex h-10 w-10 shrink-0 items-center justify-center sm:h-11 sm:w-11"
               rel="noreferrer"
               aria-label={t("Home") || "Home"}
@@ -124,11 +152,10 @@ const MobileFooter = () => {
             type="button"
             onClick={openSearch}
             aria-label="Search products"
-            className={`hidden min-[400px]:flex h-9 min-w-0 flex-1 max-w-[190px] items-center gap-2 rounded-full border px-3 text-left transition-all ${
-              showSearch
-                ? "border-[#D4AF37]/60 bg-[#111] text-white"
-                : "border-neutral-800 bg-[#0d0d0d] text-neutral-500 hover:border-neutral-700"
-            }`}
+            className={`hidden min-[400px]:flex h-9 min-w-0 flex-1 max-w-[190px] items-center gap-2 rounded-full border px-3 text-left transition-all ${showSearch
+              ? "border-[#D4AF37]/60 bg-[#111] text-white"
+              : "border-neutral-800 bg-[#0d0d0d] text-neutral-500 hover:border-neutral-700"
+              }`}
           >
             <IoSearchOutline className="shrink-0 text-base text-neutral-400" />
             <span className="truncate text-[11px] font-medium">Search sneakers, bags...</span>
@@ -151,7 +178,7 @@ const MobileFooter = () => {
               className="relative p-1.5 text-neutral-300 hover:text-white transition-colors"
             >
               <FiShoppingCart className="w-6 h-6" />
-              {totalUniqueItems > 0 && (
+              {mounted && totalUniqueItems > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 text-[8px] font-black text-black bg-[#D4AF37] rounded-full border border-black flex items-center justify-center px-1">
                   {totalUniqueItems}
                 </span>

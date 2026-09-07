@@ -34,12 +34,20 @@ const Search = ({ products, attributes }) => {
     useContext(SidebarContext);
   const [visibleProduct, setVisibleProduct] = useState(18);
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { totalItems } = useCart();
   const { count: wishlistCount } = useWishlist();
   const isSidebarAction = useRef(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     setIsLoading(false);
+    if (products) {
+      setInitialProducts(products);
+    }
   }, [products, setIsLoading]);
 
   useEffect(() => {
@@ -125,10 +133,10 @@ const Search = ({ products, attributes }) => {
   // Sync sort state from URL when route is ready or query changes
   useEffect(() => {
     if (!router.isReady) return;
-    
+
     const sortFromUrl = router.query.sort;
     const currentSort = sortedField || "All";
-    
+
     // Only sync if URL value differs from current state (prevents loops)
     if (sortFromUrl && sortFromUrl !== currentSort) {
       setSortedField(sortFromUrl);
@@ -146,7 +154,7 @@ const Search = ({ products, attributes }) => {
     // Update state immediately for instant UI feedback
     // This triggers useFilter to recalculate productData
     setSortedField(value);
-    
+
     // Build query object preserving all existing params (id, brand, query, etc.)
     const newQuery = { ...router.query };
     if (value === "All" || value === "") {
@@ -154,7 +162,7 @@ const Search = ({ products, attributes }) => {
     } else {
       newQuery.sort = value;
     }
-    
+
     router.push(
       {
         pathname: "/search",
@@ -164,6 +172,8 @@ const Search = ({ products, attributes }) => {
       { shallow: false }
     );
   };
+
+  const isInitialMount = useRef(true);
 
   // Main synchronization useEffect for products and URL params
   useEffect(() => {
@@ -201,8 +211,32 @@ const Search = ({ products, attributes }) => {
       }
     };
 
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      // On initial mount, products are already supplied by getServerSideProps.
+      // Sync sidebar filter states from query params without triggering duplicate network fetch:
+      const catSlug = router.query.category;
+      const id = router.query._id;
+      const brandParam = router.query.brand;
+
+      if (catSlug) {
+        setSelectedCategories([catSlug]);
+      } else if (id) {
+        setSelectedCategories([String(id)]);
+      } else {
+        setSelectedCategories([]);
+      }
+
+      if (brandParam) {
+        setSelectedBrands([String(brandParam)]);
+      } else {
+        setSelectedBrands([]);
+      }
+      return;
+    }
+
     if (router.isReady) {
-      // Initialize selectedCategories from URL on first load or URL changes (when not triggered by sidebar checkbox itself)
+      // Initialize selectedCategories from URL on URL changes (when not triggered by sidebar checkbox itself)
       if (!isSidebarAction.current) {
         const catSlug = router.query.category;
         const id = router.query._id;
@@ -230,19 +264,19 @@ const Search = ({ products, attributes }) => {
   const clearSearchQuery = () => {
     // Check if any filtering params exist in URL that limit the initial data fetch
     if (
-      router.query.query || 
-      router.query._id || 
-      router.query.category || 
+      router.query.query ||
+      router.query._id ||
+      router.query.category ||
       router.query.brand
     ) {
       const newQuery = { ...router.query };
-      
+
       // Remove params that restrict the server-side product list
       delete newQuery.query;
       delete newQuery._id;
       delete newQuery.category;
       delete newQuery.brand;
-      
+
       router.push(
         {
           pathname: "/search",
@@ -267,7 +301,7 @@ const Search = ({ products, attributes }) => {
 
   const handleCategoryChange = (catIdOrIds) => {
     isSidebarAction.current = true;
-    
+
     // Clear URL params but keep it shallow to maintain state stability
     clearSearchQuery();
 
@@ -284,7 +318,7 @@ const Search = ({ products, attributes }) => {
       });
     } else {
       const catId = catIdOrIds;
-      setSelectedCategories((prev) => 
+      setSelectedCategories((prev) =>
         prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId]
       );
     }
@@ -336,11 +370,11 @@ const Search = ({ products, attributes }) => {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const trimmedSearchText = searchText.trim();
     setShowSuggestions(false);
     searchInputRef.current?.blur();
-    
+
     if (trimmedSearchText) {
       router.push(
         {
@@ -538,12 +572,12 @@ const Search = ({ products, attributes }) => {
       <div className="lg:hidden sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3">
         {isSearchOpen ? (
           <form onSubmit={handleSearchSubmit} className="relative flex items-center bg-white border-2 border-gray-200 rounded-full shadow-sm overflow-visible">
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => {
                 setIsSearchOpen(false);
                 setShowSuggestions(false);
-              }} 
+              }}
               className="text-gray-700 px-3"
             >
               <IoArrowBack size={24} />
@@ -563,7 +597,7 @@ const Search = ({ products, attributes }) => {
                 onBlur={(e) => {
                   const relatedTarget = e.relatedTarget;
                   const suggestionsContainer = document.querySelector('.search-suggestions-container');
-                  
+
                   if (!relatedTarget || (suggestionsContainer && !suggestionsContainer.contains(relatedTarget))) {
                     setTimeout(() => {
                       const activeElement = document.activeElement;
@@ -574,8 +608,8 @@ const Search = ({ products, attributes }) => {
                   }
                 }}
               />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-store-600 transition-colors"
               >
                 <IoSearchOutline className="text-lg" />
@@ -595,10 +629,20 @@ const Search = ({ products, attributes }) => {
         ) : (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
-              <button onClick={() => router.back()} className="text-gray-700 shrink-0">
+              <button
+                onClick={() => {
+                  router.push("/");
+                }}
+                className="text-white shrink-0 p-1 hover:text-[#D4AF37] transition-colors"
+                aria-label="Back to Home"
+              >
                 <IoArrowBack size={24} />
               </button>
-              <Link href="/" className="shrink-0" aria-label="Home">
+              <Link
+                href="/"
+                className="shrink-0"
+                aria-label="Home"
+              >
                 <img
                   src="/rasaLogo.png"
                   alt="The Rasa Store"
@@ -606,31 +650,31 @@ const Search = ({ products, attributes }) => {
                   draggable={false}
                 />
               </Link>
-              <h1 className="text-base font-semibold text-gray-800 capitalize truncate">
+              <h1 className="text-base font-bold text-white capitalize truncate tracking-wide">
                 {pageTitle}
               </h1>
             </div>
-            <div className="flex items-center gap-4 text-gray-700">
-              <button onClick={() => setIsSearchOpen(true)}>
+            <div className="flex items-center gap-3.5 text-neutral-300">
+              <button onClick={() => setIsSearchOpen(true)} className="p-1 hover:text-[#D4AF37] transition-colors" aria-label="Search">
                 <IoSearchOutline size={22} />
               </button>
-              <button onClick={() => router.push("/wishlist")} className="relative">
+              <button onClick={() => router.push("/wishlist")} className="relative p-1 hover:text-[#D4AF37] transition-colors" aria-label="Wishlist">
                 <FiHeart size={22} />
-                {wishlistCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-store-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                {mounted && wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#D4AF37] text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">
                     {wishlistCount}
                   </span>
                 )}
               </button>
-              <button onClick={() => router.push("/cart")} className="relative">
+              <button onClick={() => router.push("/cart")} className="relative p-1 hover:text-[#D4AF37] transition-colors" aria-label="Cart">
                 <FiShoppingCart size={22} />
-                {totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-store-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                {mounted && totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#D4AF37] text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center">
                     {totalItems}
                   </span>
                 )}
               </button>
-              <button onClick={() => router.push("/user/dashboard")}>
+              <button onClick={() => router.push("/user/dashboard")} className="p-1 hover:text-[#D4AF37] transition-colors" aria-label="Account">
                 <FiUser size={22} />
               </button>
             </div>
@@ -784,9 +828,8 @@ const Search = ({ products, attributes }) => {
                   handleSortChange("Low");
                   setIsSortModalOpen(false);
                 }}
-                className={`w-full text-left py-2 px-4 rounded-lg ${
-                  sortedField === "Low" ? "bg-store-100 text-store-600 font-semibold" : "text-gray-700"
-                }`}
+                className={`w-full text-left py-2 px-4 rounded-lg ${sortedField === "Low" ? "bg-store-100 text-store-600 font-semibold" : "text-gray-700"
+                  }`}
               >
                 Price: Low to High
               </button>
@@ -795,9 +838,8 @@ const Search = ({ products, attributes }) => {
                   handleSortChange("High");
                   setIsSortModalOpen(false);
                 }}
-                className={`w-full text-left py-2 px-4 rounded-lg ${
-                  sortedField === "High" ? "bg-store-100 text-store-600 font-semibold" : "text-gray-700"
-                }`}
+                className={`w-full text-left py-2 px-4 rounded-lg ${sortedField === "High" ? "bg-store-100 text-store-600 font-semibold" : "text-gray-700"
+                  }`}
               >
                 Price: High to Low
               </button>
