@@ -160,7 +160,7 @@ const ProductCard = ({
         />
       )}
 
-      <article className="product-card group relative flex h-full w-full flex-col overflow-hidden rounded-2xl border border-neutral-800/60 bg-[#0A0A0A] shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all duration-300 hover:border-[#D4AF37]/25 hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+      <article className="product-card group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-neutral-800/60 bg-[#0A0A0A] shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all duration-300 hover:border-[#D4AF37]/25 hover:shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
         {/* Full-bleed image — no side/top gap */}
         <button
           type="button"
@@ -232,7 +232,7 @@ const ProductCard = ({
 
         {/* Info */}
         <div className="flex flex-1 flex-col px-2.5 pb-2.5 pt-2 sm:px-4 sm:pb-4 sm:pt-3.5">
-          <p className="mb-0.5 truncate text-[7px] font-bold uppercase tracking-[0.22em] text-[#D4AF37] sm:mb-1 sm:text-[8px]">
+          <p className="mb-0.5 truncate text-[8px] font-bold uppercase tracking-[0.18em] text-[#D4AF37] sm:mb-1 sm:text-[8px]">
             {getBrandName()}
           </p>
 
@@ -242,7 +242,7 @@ const ProductCard = ({
             role="link"
             tabIndex={0}
             title={title}
-            className="mb-2 min-h-[1.75rem] cursor-pointer line-clamp-2 text-[10px] font-bold uppercase leading-snug tracking-wide text-white transition-colors hover:text-[#D4AF37] sm:mb-2.5 sm:min-h-[2.25rem] sm:text-xs"
+            className="mb-1.5 min-h-[1.75rem] cursor-pointer line-clamp-2 text-[10px] sm:text-xs font-bold uppercase leading-snug tracking-wide text-white transition-colors hover:text-[#D4AF37] sm:mb-2.5 sm:min-h-[2.25rem]"
           >
             {title}
           </h3>
@@ -269,7 +269,7 @@ const ProductCard = ({
                     const item = getItem(activeItemId);
                     return (
                       item && (
-                        <div className="flex h-full w-full items-center justify-between rounded-full border border-neutral-800 bg-[#111] px-3 text-white">
+                        <div className="flex h-full w-full items-center justify-between rounded-full border border-neutral-800 bg-[#111] px-2 sm:px-3 text-white">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -277,8 +277,9 @@ const ProductCard = ({
                               updateItemQuantity(item.id, item.quantity - 1);
                             }}
                             className="rounded-full p-1 hover:bg-white/10"
+                            aria-label="Decrease quantity"
                           >
-                            <IoRemove className="text-sm" />
+                            <IoRemove className="text-xs sm:text-sm" />
                           </button>
                           <span className="font-mono text-xs font-black text-[#D4AF37]">
                             {item.quantity}
@@ -290,22 +291,23 @@ const ProductCard = ({
                               handleIncreaseQuantity({ ...item, stock: product.stock });
                             }}
                             className="rounded-full p-1 hover:bg-white/10"
+                            aria-label="Increase quantity"
                           >
-                            <IoAdd className="text-sm" />
+                            <IoAdd className="text-xs sm:text-sm" />
                           </button>
                         </div>
                       )
                     );
                   })()
                 ) : (
-                  <div className="flex h-full gap-2">
+                  <div className="flex h-full gap-1.5 sm:gap-2">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         goToProduct();
                       }}
-                      className="flex h-full flex-1 items-center justify-center rounded-full bg-[#D4AF37] text-[7px] font-extrabold uppercase tracking-[0.14em] text-black transition-all hover:bg-[#EAC348] active:scale-[0.98] sm:text-[9px]"
+                      className="flex h-full flex-1 items-center justify-center rounded-full bg-[#D4AF37] px-2 text-[8px] font-extrabold uppercase tracking-[0.1em] text-black transition-all hover:bg-[#EAC348] active:scale-[0.98] sm:text-[9px] sm:tracking-[0.14em] whitespace-nowrap"
                     >
                       Shop Now
                     </button>

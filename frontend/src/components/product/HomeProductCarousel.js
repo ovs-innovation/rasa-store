@@ -10,15 +10,32 @@ import ProductCard from "@components/product/ProductCard";
 import ClientOnly from "@components/common/ClientOnly";
 
 const CarouselFallback = ({ products, attributes }) => (
-  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+  <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 items-stretch">
     {products.slice(0, 5).map((product) => (
-      <ProductCard key={product._id} product={product} attributes={attributes} />
+      <div key={product._id} className="min-w-0 w-full">
+        <ProductCard product={product} attributes={attributes} />
+      </div>
     ))}
   </div>
 );
 
 const HomeProductCarousel = ({ products, attributes, prevClass, nextClass, paginationClass }) => {
   if (!products?.length) return null;
+
+  // When there are 2 or fewer products (e.g. New Arrivals, Trending Now),
+  // display the products side-by-side simultaneously in a 2-column mobile grid.
+  // No carousel, no swiping, no dots, no empty track, no layout shifts.
+  if (products.length <= 2) {
+    return (
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 items-stretch">
+        {products.map((product) => (
+          <div key={product._id} className="min-w-0 w-full">
+            <ProductCard product={product} attributes={attributes} />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   const carousel = (
     <div className="relative group">
