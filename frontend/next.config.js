@@ -2,13 +2,13 @@ const runtimeCaching = require("next-pwa/cache");
 
 const withPWA = require("next-pwa")({
   dest: "public",
-  register: true,
-  runtimeCaching,
+  register: false,
+  disable: true, // Disabled: PWA SW was caching old JS bundles and causing stale UI after deployments
+  runtimeCaching: [],
   buildExcludes: [/middleware-manifest\.json$/],
   scope: "/",
   sw: "service-worker.js",
   skipWaiting: true,
-  disable: process.env.NODE_ENV !== "production",
 });
 
 /** @type {import('next').NextConfig} */

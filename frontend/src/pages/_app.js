@@ -34,10 +34,10 @@ function MyApp({ Component, pageProps }) {
   const router = useRouter();
   const [storeSetting, setStoreSetting] = useState(null);
 
-  // Dev safety: unregister any previously installed PWA service workers.
-  // Old SWs can cache API/HTML and cause "backend content" to appear after refresh.
+  // Unregister any old PWA service workers and clear their caches.
+  // This runs in ALL environments (including production) to prevent stale
+  // JS bundles from overriding new deployments via SW cache.
   useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
 
